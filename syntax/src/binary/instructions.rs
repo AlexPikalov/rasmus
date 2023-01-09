@@ -329,6 +329,149 @@ pub enum InstructionType {
     F64x2Gt,
     F64x2Le,
     F64x2Ge,
+    V128Not,
+    V128And,
+    V128AndNot,
+    V128Or,
+    V128Xor,
+    V128Bitselect,
+    V128AnyTrue,
+    I8x16Abs,
+    I8x16Neg,
+    I8x16Popcnt,
+    I8x16AllTrue,
+    I8x16Bitmask,
+    I8x16NarrowI16x8S,
+    I8x16NarrowI16x8U,
+    I8x16Shl,
+    I8x16ShrS,
+    I8x16ShrU,
+    I8x16Add,
+    I8x16AddSatS,
+    I8x16AddSatU,
+    I8x16Sub,
+    I8x16SubSatS,
+    I8x16SubSatU,
+    I8x16MinS,
+    I8x16MinU,
+    I8x16MaxS,
+    I8x16MaxU,
+    I8x16AvgrU,
+    I16x8ExtaddPairwiseI8x16S,
+    I16x8ExtaddPairwiseI8x16U,
+    I16x8Abs,
+    I16x8Neg,
+    I16x8Q15MulrSatS,
+    I16x8AllTrue,
+    I16x8Bitmask,
+    I16x8NarrowI32x4S,
+    I16x8NarrowI32x4U,
+    I16x8ExtendLowI8x16S,
+    I16x8ExtendHighI8x16S,
+    I16x8ExtendLowI8x16U,
+    I16x8ExtendHighI8x16U,
+    I16x8Shl,
+    I16x8ShrS,
+    I16x8ShrU,
+    I16x8Add,
+    I16x8AddSatS,
+    I16x8AddSatU,
+    I16x8Sub,
+    I16x8SubSatS,
+    I16x8SubSatU,
+    I16x8Mul,
+    I16x8MinS,
+    I16x8MinU,
+    I16x8MaxS,
+    I16x8MaxU,
+    I16x8AvgrU,
+    I16x8ExtmulLowI8x16S,
+    I16x8ExtmulHighI8x16S,
+    I16x8ExtmulLowI8x16U,
+    I16x8ExtmulHighI8x16U,
+    I32x4ExtaddPairwiseI16x8S,
+    I32x4ExtaddPairwiseI16x8U,
+    I32x4Abs,
+    I32x4Neg,
+    I32x4AllTrue,
+    I32x4Bitmask,
+    I32x4ExtendLowI16x8S,
+    I32x4ExtendHighI16x8S,
+    I32x4ExtendLowI16x8U,
+    I32x4ExtendHighI16x8U,
+    I32x4Shl,
+    I32x4ShrS,
+    I32x4ShrU,
+    I32x4Add,
+    I32x4Sub,
+    I32x4Mul,
+    I32x4MinS,
+    I32x4MinU,
+    I32x4MaxS,
+    I32x4MaxU,
+    I32x4DotI16x8S,
+    I32x4ExtmulLowI16x8S,
+    I32x4ExtmulHighI16x8S,
+    I32x4ExtmulLowI16x8U,
+    I32x4ExtmulHighI16x8U,
+    I64x2Abs,
+    I64x2Neg,
+    I64x2AllTrue,
+    I64x2Bitmask,
+    I64x2ExtendLowI32x4S,
+    I64x2ExtendHighI32x4S,
+    I64x2ExtendLowI32x4U,
+    I64x2ExtendHighI32x4U,
+    I64x2Shl,
+    I64x2ShrS,
+    I64x2ShrU,
+    I64x2Add,
+    I64x2Sub,
+    I64x2Mul,
+    I64x2ExtmulLowI32x4S,
+    I64x2ExtmulHighI32x4S,
+    I64x2ExtmulLowI32x4U,
+    I64x2ExtmulHighI32x4U,
+    F32x4Ceil,
+    F32x4Floor,
+    F32x4Trunc,
+    F32x4Nearest,
+    F32x4Abs,
+    F32x4Neg,
+    F32x4Sqrt,
+    F32x4Add,
+    F32x4Sub,
+    F32x4Mul,
+    F32x4Div,
+    F32x4Min,
+    F32x4Max,
+    F32x4Pmin,
+    F32x4Pmax,
+    F64x2Ceil,
+    F64x2Floor,
+    F64x2Trunc,
+    F64x2Nearest,
+    F64x2Abs,
+    F64x2Neg,
+    F64x2Sqrt,
+    F64x2Add,
+    F64x2Sub,
+    F64x2Mul,
+    F64x2Div,
+    F64x2Min,
+    F64x2Max,
+    F64x2Pmin,
+    F64x2Pmax,
+    I32x4TruncSatF32x4S,
+    I32x4TruncSatF32x4U,
+    F32x4ConvertI32x4S,
+    F32x4ConvertI32x4U,
+    I32x4TruncSatF64x2SZero,
+    I32x4TruncSatF64x2UZero,
+    F64x2ConvertLowI32x4S,
+    F64x2ConvertLowI32x4U,
+    F32x4DemoteF64x2Zero,
+    F64x2PromoteLowF32x4,
 }
 
 impl InstructionType {
@@ -645,6 +788,149 @@ impl InstructionType {
     const BYTE_PREFIX_F64x2_GT: U32Type = U32Type(74);
     const BYTE_PREFIX_F64x2_LE: U32Type = U32Type(75);
     const BYTE_PREFIX_F64x2_GE: U32Type = U32Type(76);
+    const BYTE_PREFIX_V128_NOT: U32Type = U32Type(77);
+    const BYTE_PREFIX_V128_AND: U32Type = U32Type(78);
+    const BYTE_PREFIX_V128_ANDNOT: U32Type = U32Type(79);
+    const BYTE_PREFIX_V128_OR: U32Type = U32Type(80);
+    const BYTE_PREFIX_V128_XOR: U32Type = U32Type(81);
+    const BYTE_PREFIX_V128_BITSELECT: U32Type = U32Type(82);
+    const BYTE_PREFIX_V128_ANYTRUE: U32Type = U32Type(83);
+    const BYTE_PREFIX_I8x16_ABS: U32Type = U32Type(96);
+    const BYTE_PREFIX_I8x16_NEG: U32Type = U32Type(97);
+    const BYTE_PREFIX_I8x16_POPCNT: U32Type = U32Type(98);
+    const BYTE_PREFIX_I8x16_ALL_TRUE: U32Type = U32Type(99);
+    const BYTE_PREFIX_I8x16_BITMASK: U32Type = U32Type(100);
+    const BYTE_PREFIX_I8x16_NARROW_I16x8_S: U32Type = U32Type(101);
+    const BYTE_PREFIX_I8x16_NARROW_I16x8_U: U32Type = U32Type(102);
+    const BYTE_PREFIX_I8x16_SHL: U32Type = U32Type(107);
+    const BYTE_PREFIX_I8x16_SHL_S: U32Type = U32Type(108);
+    const BYTE_PREFIX_I8x16_SHL_U: U32Type = U32Type(109);
+    const BYTE_PREFIX_I8x16_ADD: U32Type = U32Type(110);
+    const BYTE_PREFIX_I8x16_ADD_SAT_S: U32Type = U32Type(111);
+    const BYTE_PREFIX_I8x16_ADD_SAT_U: U32Type = U32Type(112);
+    const BYTE_PREFIX_I8x16_SUB: U32Type = U32Type(113);
+    const BYTE_PREFIX_I8x16_SUB_SAT_S: U32Type = U32Type(114);
+    const BYTE_PREFIX_I8x16_SUB_SAT_U: U32Type = U32Type(115);
+    const BYTE_PREFIX_I8x16_MIN_S: U32Type = U32Type(118);
+    const BYTE_PREFIX_I8x16_MIN_U: U32Type = U32Type(119);
+    const BYTE_PREFIX_I8x16_MAX_S: U32Type = U32Type(120);
+    const BYTE_PREFIX_I8x16_MAX_U: U32Type = U32Type(121);
+    const BYTE_PREFIX_I8x16_AVGR_U: U32Type = U32Type(123);
+    const BYTE_PREFIX_I16x8_EXTADD_PAIRWISE_I8x16_S: U32Type = U32Type(124);
+    const BYTE_PREFIX_I16x8_EXTADD_PAIRWISE_I8x16_U: U32Type = U32Type(125);
+    const BYTE_PREFIX_I16x8_ABS: U32Type = U32Type(128);
+    const BYTE_PREFIX_I16x8_NEG: U32Type = U32Type(129);
+    const BYTE_PREFIX_I16x8_Q15MULR_SAT_S: U32Type = U32Type(130);
+    const BYTE_PREFIX_I16x8_ALL_TRUE: U32Type = U32Type(131);
+    const BYTE_PREFIX_I16x8_BITMASK: U32Type = U32Type(132);
+    const BYTE_PREFIX_I16x8_NARROW_I32x4_S: U32Type = U32Type(133);
+    const BYTE_PREFIX_I16x8_NARROW_I32x4_U: U32Type = U32Type(134);
+    const BYTE_PREFIX_I16x8_EXTEND_LOW_I8x16_S: U32Type = U32Type(135);
+    const BYTE_PREFIX_I16x8_EXTEND_HIGH_I8x16_S: U32Type = U32Type(136);
+    const BYTE_PREFIX_I16x8_EXTEND_LOW_I8x16_U: U32Type = U32Type(137);
+    const BYTE_PREFIX_I16x8_EXTEND_HIGH_I8x16_U: U32Type = U32Type(138);
+    const BYTE_PREFIX_I16x8_SHL: U32Type = U32Type(139);
+    const BYTE_PREFIX_I16x8_SHL_S: U32Type = U32Type(140);
+    const BYTE_PREFIX_I16x8_SHL_U: U32Type = U32Type(141);
+    const BYTE_PREFIX_I16x8_ADD: U32Type = U32Type(142);
+    const BYTE_PREFIX_I16x8_ADD_SAT_S: U32Type = U32Type(143);
+    const BYTE_PREFIX_I16x8_ADD_SAT_U: U32Type = U32Type(144);
+    const BYTE_PREFIX_I16x8_SUB: U32Type = U32Type(145);
+    const BYTE_PREFIX_I16x8_SUB_SAT_S: U32Type = U32Type(146);
+    const BYTE_PREFIX_I16x8_SUB_SAT_U: U32Type = U32Type(147);
+    const BYTE_PREFIX_I16x8_MUL: U32Type = U32Type(149);
+    const BYTE_PREFIX_I16x8_MIN_S: U32Type = U32Type(150);
+    const BYTE_PREFIX_I16x8_MIN_U: U32Type = U32Type(151);
+    const BYTE_PREFIX_I16x8_MAX_S: U32Type = U32Type(152);
+    const BYTE_PREFIX_I16x8_MAX_U: U32Type = U32Type(153);
+    const BYTE_PREFIX_I16x8_AVGR_U: U32Type = U32Type(155);
+    const BYTE_PREFIX_I16x8_EXTMUL_LOW_I8x16_S: U32Type = U32Type(156);
+    const BYTE_PREFIX_I16x8_EXTMUL_HIGH_I8x16_S: U32Type = U32Type(157);
+    const BYTE_PREFIX_I16x8_EXTMUL_LOW_I8x16_U: U32Type = U32Type(158);
+    const BYTE_PREFIX_I16x8_EXTMUL_HIGH_I8x16_U: U32Type = U32Type(159);
+    const BYTE_PREFIX_I32x4_EXTADD_PAIRWISE_I16x8_S: U32Type = U32Type(126);
+    const BYTE_PREFIX_I32x4_EXTADD_PAIRWISE_I16x8_U: U32Type = U32Type(127);
+    const BYTE_PREFIX_I32x4_ABS: U32Type = U32Type(160);
+    const BYTE_PREFIX_I32x4_NEG: U32Type = U32Type(161);
+    const BYTE_PREFIX_I32x4_ALL_TRUE: U32Type = U32Type(163);
+    const BYTE_PREFIX_I32x4_BITMASK: U32Type = U32Type(164);
+    const BYTE_PREFIX_I32x4_EXTEND_LOW_I16x8_S: U32Type = U32Type(167);
+    const BYTE_PREFIX_I32x4_EXTEND_HIGH_I16x8_S: U32Type = U32Type(168);
+    const BYTE_PREFIX_I32x4_EXTEND_LOW_I16x8_U: U32Type = U32Type(169);
+    const BYTE_PREFIX_I32x4_EXTEND_HIGH_I16x8_U: U32Type = U32Type(170);
+    const BYTE_PREFIX_I32x4_SHL: U32Type = U32Type(171);
+    const BYTE_PREFIX_I32x4_SHL_S: U32Type = U32Type(172);
+    const BYTE_PREFIX_I32x4_SHL_U: U32Type = U32Type(173);
+    const BYTE_PREFIX_I32x4_ADD: U32Type = U32Type(174);
+    const BYTE_PREFIX_I32x4_SUB: U32Type = U32Type(177);
+    const BYTE_PREFIX_I32x4_MUL: U32Type = U32Type(181);
+    const BYTE_PREFIX_I32x4_MIN_S: U32Type = U32Type(182);
+    const BYTE_PREFIX_I32x4_MIN_U: U32Type = U32Type(183);
+    const BYTE_PREFIX_I32x4_MAX_S: U32Type = U32Type(184);
+    const BYTE_PREFIX_I32x4_MAX_U: U32Type = U32Type(185);
+    const BYTE_PREFIX_I32x4_DOT_I16x8_S: U32Type = U32Type(186);
+    const BYTE_PREFIX_I32x4_EXTMUL_LOW_I16x8_S: U32Type = U32Type(188);
+    const BYTE_PREFIX_I32x4_EXTMUL_HIGH_I16x8_S: U32Type = U32Type(189);
+    const BYTE_PREFIX_I32x4_EXTMUL_LOW_I16x8_U: U32Type = U32Type(190);
+    const BYTE_PREFIX_I32x4_EXTMUL_HIGH_I16x8_U: U32Type = U32Type(191);
+    const BYTE_PREFIX_I64x2_ABS: U32Type = U32Type(192);
+    const BYTE_PREFIX_I64x2_NEG: U32Type = U32Type(193);
+    const BYTE_PREFIX_I64x2_ALL_TRUE: U32Type = U32Type(195);
+    const BYTE_PREFIX_I64x2_BITMASK: U32Type = U32Type(196);
+    const BYTE_PREFIX_I64x2_EXTEND_LOW_I32x4_S: U32Type = U32Type(199);
+    const BYTE_PREFIX_I64x2_EXTEND_HIGH_I32x4_S: U32Type = U32Type(200);
+    const BYTE_PREFIX_I64x2_EXTEND_LOW_I32x4_U: U32Type = U32Type(201);
+    const BYTE_PREFIX_I64x2_EXTEND_HIGH_I32x4_U: U32Type = U32Type(202);
+    const BYTE_PREFIX_I64x2_SHL: U32Type = U32Type(203);
+    const BYTE_PREFIX_I64x2_SHL_S: U32Type = U32Type(204);
+    const BYTE_PREFIX_I64x2_SHL_U: U32Type = U32Type(205);
+    const BYTE_PREFIX_I64x2_ADD: U32Type = U32Type(206);
+    const BYTE_PREFIX_I64x2_SUB: U32Type = U32Type(209);
+    const BYTE_PREFIX_I64x2_MUL: U32Type = U32Type(213);
+    const BYTE_PREFIX_I64x2_EXTMUL_LOW_I32x4_S: U32Type = U32Type(220);
+    const BYTE_PREFIX_I64x2_EXTMUL_HIGH_I32x4_S: U32Type = U32Type(221);
+    const BYTE_PREFIX_I64x2_EXTMUL_LOW_I32x4_U: U32Type = U32Type(222);
+    const BYTE_PREFIX_I64x2_EXTMUL_HIGH_I32x4_U: U32Type = U32Type(223);
+    const BYTE_PREFIX_F32x4_CEIL: U32Type = U32Type(103);
+    const BYTE_PREFIX_F32x4_FLOOR: U32Type = U32Type(104);
+    const BYTE_PREFIX_F32x4_TRUNC: U32Type = U32Type(105);
+    const BYTE_PREFIX_F32x4_NEAREST: U32Type = U32Type(106);
+    const BYTE_PREFIX_F32x4_ABS: U32Type = U32Type(224);
+    const BYTE_PREFIX_F32x4_NEG: U32Type = U32Type(225);
+    const BYTE_PREFIX_F32x4_SQRT: U32Type = U32Type(227);
+    const BYTE_PREFIX_F32x4_ADD: U32Type = U32Type(228);
+    const BYTE_PREFIX_F32x4_SUB: U32Type = U32Type(229);
+    const BYTE_PREFIX_F32x4_MUL: U32Type = U32Type(230);
+    const BYTE_PREFIX_F32x4_DIV: U32Type = U32Type(231);
+    const BYTE_PREFIX_F32x4_MIN: U32Type = U32Type(232);
+    const BYTE_PREFIX_F32x4_MAX: U32Type = U32Type(233);
+    const BYTE_PREFIX_F32x4_PMIN: U32Type = U32Type(234);
+    const BYTE_PREFIX_F32x4_PMAX: U32Type = U32Type(235);
+    const BYTE_PREFIX_F64x2_CEIL: U32Type = U32Type(116);
+    const BYTE_PREFIX_F64x2_FLOOR: U32Type = U32Type(117);
+    const BYTE_PREFIX_F64x2_TRUNC: U32Type = U32Type(122);
+    const BYTE_PREFIX_F64x2_NEAREST: U32Type = U32Type(148);
+    const BYTE_PREFIX_F64x2_ABS: U32Type = U32Type(236);
+    const BYTE_PREFIX_F64x2_NEG: U32Type = U32Type(237);
+    const BYTE_PREFIX_F64x2_SQRT: U32Type = U32Type(239);
+    const BYTE_PREFIX_F64x2_ADD: U32Type = U32Type(240);
+    const BYTE_PREFIX_F64x2_SUB: U32Type = U32Type(241);
+    const BYTE_PREFIX_F64x2_MUL: U32Type = U32Type(242);
+    const BYTE_PREFIX_F64x2_DIV: U32Type = U32Type(243);
+    const BYTE_PREFIX_F64x2_MIN: U32Type = U32Type(244);
+    const BYTE_PREFIX_F64x2_MAX: U32Type = U32Type(245);
+    const BYTE_PREFIX_F64x2_PMIN: U32Type = U32Type(246);
+    const BYTE_PREFIX_F64x2_PMAX: U32Type = U32Type(247);
+    const BYTE_PREFIX_I32x4_TRUNC_SAT_F32x4_S: U32Type = U32Type(248);
+    const BYTE_PREFIX_I32x4_TRUNC_SAT_F32x4_U: U32Type = U32Type(249);
+    const BYTE_PREFIX_F32x4_CONVERT_I32x4_S: U32Type = U32Type(250);
+    const BYTE_PREFIX_F32x4_CONVERT_I32x4_U: U32Type = U32Type(251);
+    const BYTE_PREFIX_I32x4_TRUNC_SAT_F64x2_S_ZERO: U32Type = U32Type(252);
+    const BYTE_PREFIX_I32x4_TRUNC_SAT_F64x2_U_ZERO: U32Type = U32Type(253);
+    const BYTE_PREFIX_F64x2_CONVERT_LOW_I32x4_S: U32Type = U32Type(254);
+    const BYTE_PREFIX_F64x2_CONVERT_LOW_I32x4_U: U32Type = U32Type(255);
+    const BYTE_PREFIX_F32x4_DEMOTE_F64x2_ZERO: U32Type = U32Type(94);
+    const BYTE_PREFIX_F64x2_PROMOTE_LOW_F32x4: U32Type = U32Type(95);
 }
 
 pub struct BlockInstructionType {
