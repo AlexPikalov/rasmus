@@ -1,13 +1,27 @@
 use super::types::*;
 
+use nom::IResult as NomResult;
+
+#[derive(Debug)]
 pub struct ExpressionType {
     pub instructions: Vec<InstructionType>,
 }
 
 impl ExpressionType {
     const OP_CODE_END: Byte = 0x0B;
+
+    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        // TODO: implement
+        Ok((
+            bytes,
+            ExpressionType {
+                instructions: vec![InstructionType::Nop],
+            },
+        ))
+    }
 }
 
+#[derive(Debug)]
 pub enum BlockType {
     Empty,
     ValType(ValType),
@@ -18,6 +32,7 @@ impl BlockType {
     const OPCODE_EMPTY: Byte = 0x40;
 }
 
+#[derive(Debug)]
 pub enum InstructionType {
     // Control Instructions
     Unreachable,
@@ -41,7 +56,7 @@ pub enum InstructionType {
     // Parametric Instructions
     Drop,
     Select,
-    SelectVec(Vector<ValType>),
+    SelectVec(Vec<ValType>),
 
     // Variable Instructions
     LocalGet(LocalIdx),
@@ -933,67 +948,81 @@ impl InstructionType {
     const BYTE_PREFIX_F64x2_PROMOTE_LOW_F32x4: U32Type = U32Type(95);
 }
 
+#[derive(Debug)]
 pub struct BlockInstructionType {
     pub blocktype: BlockType,
     pub instructions: Vec<InstructionType>,
 }
 
+#[derive(Debug)]
 pub struct LoopInstructionType {
     pub blocktype: BlockType,
     pub instructions: Vec<InstructionType>,
 }
 
+#[derive(Debug)]
 pub struct IfInstructionType {
     pub blocktype: BlockType,
     pub if_instructions: Vec<InstructionType>,
 }
 
+#[derive(Debug)]
 pub struct IfElseInstructionType {
     pub blocktype: BlockType,
     pub if_instructions: Vec<InstructionType>,
     pub else_instructions: Vec<InstructionType>,
 }
 
+#[derive(Debug)]
 pub struct BrInstructionType {
     pub label: LabelIdx,
 }
 
+#[derive(Debug)]
 pub struct BrIfInstructionType {
     pub label: LabelIdx,
 }
 
+#[derive(Debug)]
 pub struct BrTableInstructionType {
-    pub labels: Vector<LabelIdx>,
+    pub labels: Vec<LabelIdx>,
     pub label_n: LabelIdx,
 }
 
+#[derive(Debug)]
 pub struct CallInstructionType {
     pub func_idx: FuncIdx,
 }
 
+#[derive(Debug)]
 pub struct CallIndirectInstructionType {
     pub type_idx: TypeIdx,
     pub table_idx: TableIdx,
 }
 
+#[derive(Debug)]
 pub struct RefNullInstructionType {
     pub ref_type: RefType,
 }
 
+#[derive(Debug)]
 pub struct RefFuncInstructionType {
     pub func_idx: FuncIdx,
 }
 
+#[derive(Debug)]
 pub struct TableInitInstructionType {
     pub elem: ElemIdx,
     pub table: TableIdx,
 }
 
+#[derive(Debug)]
 pub struct TableCopyInstructionType {
     pub lhs_table: TableIdx,
     pub rhs_table: TableIdx,
 }
 
+#[derive(Debug)]
 pub struct MemArgType {
     pub align: U32Type,
     pub offset: U32Type,

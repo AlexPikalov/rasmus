@@ -1,31 +1,56 @@
 pub use super::instructions::*;
 use super::types::*;
 
+use nom::{bytes::complete::take, IResult as NomResult};
+
 pub struct Module {
-    pub custom_section: Section<CustomSection>,
-    pub type_section: Section<Vector<FuncType>>,
-    pub import_section: Section<Vector<ImportType>>,
-    pub func_section: Section<Vector<TypeIdx>>,
-    pub table_section: Section<Vector<TableType>>,
-    pub memory_section: Section<Vector<MemType>>,
-    pub global_section: Section<Vector<GlobalType>>,
-    pub export_section: Section<Vector<ExportType>>,
-    pub start_section: Section<Vector<StartType>>,
-    pub element_section: Section<Vector<ElementSegmentType>>,
-    pub code_section: Section<Vector<CodeType>>,
-    pub data_section: Section<Vector<DataType>>,
-    pub data_count_section: Section<U32Type>,
+    pub types: Vec<FuncType>,
+    pub imports: Vec<ImportType>,
+    // TODO: rewrite to func
+    pub funcs: Vec<TypeIdx>,
+    pub tables: Vec<TableType>,
+    pub mems: Vec<MemType>,
+    pub globals: Vec<GlobalType>,
+    pub exports: Vec<ExportType>,
+    pub start: Option<StartType>,
+    pub elems: Vec<ElementSegmentType>,
+    pub code: Vec<CodeType>,
+    pub datas: Vec<DataType>,
+}
+
+impl Module {
+    pub const MAGIC: [u8; 4] = [0x00, 0x61, 0x73, 0x6D];
+    pub const VERSION: [u8; 4] = [0x01, 0x00, 0x00, 0x00];
+}
+
+impl Default for Module {
+    fn default() -> Self {
+        Module {
+            types: vec![],
+            imports: vec![],
+            funcs: vec![],
+            tables: vec![],
+            mems: vec![],
+            globals: vec![],
+            exports: vec![],
+            start: None,
+            elems: vec![],
+            code: vec![],
+            datas: vec![],
+        }
+    }
 }
 
 pub type SectionIdValue = Byte;
 
 pub struct Section<T> {
-    pub section_id: SectionIdValue,
+    pub section_id: SectionId,
     pub size: U32Type,
     pub cont: T,
 }
 
-enum SectionId {
+#[derive(Debug, PartialEq)]
+pub enum SectionId {
     Custom,
     Type,
     Import,
@@ -80,17 +105,20 @@ impl TryFrom<SectionIdValue> for SectionId {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct CustomSection {
     pub name: String,
-    pub bytes: Vector<Byte>,
+    pub bytes: Vec<Byte>,
 }
 
+#[derive(Debug)]
 pub struct ImportType {
     pub module: NameType,
     pub name: NameType,
     pub desc: ImportDescription,
 }
 
+#[derive(Debug)]
 pub enum ImportDescription {
     Func(TypeIdx),
     Table(TableType),
@@ -99,10 +127,10 @@ pub enum ImportDescription {
 }
 
 impl ImportDescription {
-    const ENCODE_BYTE_FUNC: Byte = 0x00;
-    const ENCODE_BYTE_TABLE: Byte = 0x01;
-    const ENCODE_BYTE_MEM: Byte = 0x02;
-    const ENCODE_BYTE_GLOBAL: Byte = 0x03;
+    pub const ENCODE_BYTE_FUNC: Byte = 0x00;
+    pub const ENCODE_BYTE_TABLE: Byte = 0x01;
+    pub const ENCODE_BYTE_MEM: Byte = 0x02;
+    pub const ENCODE_BYTE_GLOBAL: Byte = 0x03;
 }
 
 pub struct ExportType {
@@ -118,14 +146,20 @@ pub enum ExportDescription {
 }
 
 impl ExportDescription {
-    const ENCODE_BYTE_FUNC: Byte = 0x00;
-    const ENCODE_BYTE_TABLE: Byte = 0x01;
-    const ENCODE_BYTE_MEM: Byte = 0x02;
-    const ENCODE_BYTE_GLOBAL: Byte = 0x03;
+    pub const ENCODE_BYTE_FUNC: Byte = 0x00;
+    pub const ENCODE_BYTE_TABLE: Byte = 0x01;
+    pub const ENCODE_BYTE_MEM: Byte = 0x02;
+    pub const ENCODE_BYTE_GLOBAL: Byte = 0x03;
 }
 
 pub struct StartType {
     pub func: FuncIdx,
+}
+
+impl StartType {
+    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        U32Type::parse(bytes).map(|(b, val)| (b, StartType { func: FuncIdx(val) }))
+    }
 }
 
 pub enum ElementSegmentType {
@@ -148,30 +182,178 @@ impl ElementSegmentType {
     const BITFIELD_PASSIVE_REF: U32Type = U32Type(5);
     const BITFIELD_ACTIVE_REF: U32Type = U32Type(6);
     const BITFIELD_DECLARATIVE_REF: U32Type = U32Type(7);
+
+    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, bitfield) = U32Type::parse(bytes)?;
+
+        match bitfield {
+            Self::BITFIELD_ACTIVE0 => Active0FunctionsElementSegmentType::parse(bytes)
+                .map(|(b, v)| (b, ElementSegmentType::Active0Functions(v))),
+            Self::BITFIELD_ELEM_KIND_PASSIVE => {
+                ElemKindPassiveFunctionsElementSegmentType::parse(bytes)
+                    .map(|(b, v)| (b, ElementSegmentType::ElemKindPassiveFunctions(v)))
+            }
+            Self::BITFIELD_ELEM_KIND_ACTIVE => {
+                ElemKindActiveFunctionsElementSegmentType::parse(bytes)
+                    .map(|(b, v)| (b, ElementSegmentType::ElemKindActiveFunctions(v)))
+            }
+            Self::BITFIELD_ELEM_KIND_DECLARATIVE => {
+                ElemKindDeclarativeFunctionsElementSegmentType::parse(bytes)
+                    .map(|(b, v)| (b, ElementSegmentType::ElemKindDeclarativeFunctions(v)))
+            }
+            Self::BITFIELD_ACTIVE0_EXPR => Active0ExprElementSegmentType::parse(bytes)
+                .map(|(b, v)| (b, ElementSegmentType::Active0Expr(v))),
+            Self::BITFIELD_PASSIVE_REF => PassiveRefElementSegmentType::parse(bytes)
+                .map(|(b, v)| (b, ElementSegmentType::PassiveRef(v))),
+            Self::BITFIELD_ACTIVE_REF => ActiveRefElementSegmentType::parse(bytes)
+                .map(|(b, v)| (b, ElementSegmentType::ActiveRef(v))),
+            Self::BITFIELD_DECLARATIVE_REF => DeclarativeRefElementSegmentType::parse(bytes)
+                .map(|(b, v)| (b, ElementSegmentType::DeclarativeRef(v))),
+            _ => Err(nom::Err::Failure(nom::error::Error::new(
+                bytes,
+                nom::error::ErrorKind::Fail,
+            ))),
+        }
+    }
 }
 
 pub struct Active0FunctionsElementSegmentType {
     pub mode: ElemModeActive0,
     // RefType::FuncRef only
-    pub init: Vector<RefType>,
+    pub init: Vec<FuncIdx>,
+}
+
+impl Active0FunctionsElementSegmentType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, expression) = ExpressionType::parse(bytes)?;
+        let mut remaining_bytes = bytes;
+        let vector_len_parsed = U32Type::parse(remaining_bytes)?;
+        remaining_bytes = vector_len_parsed.0;
+        let vector_len = vector_len_parsed.1 .0 as usize;
+        let mut init: Vec<FuncIdx> = Vec::with_capacity(vector_len);
+
+        for _ in 0..vector_len {
+            let func_idx_parsed = U32Type::parse(remaining_bytes).map(|r| (r.0, FuncIdx(r.1)))?;
+
+            remaining_bytes = func_idx_parsed.0;
+            init.push(func_idx_parsed.1);
+        }
+
+        Ok((
+            remaining_bytes,
+            Active0FunctionsElementSegmentType {
+                mode: ElemModeActive0 { offset: expression },
+                init,
+            },
+        ))
+    }
 }
 
 pub struct ElemKindPassiveFunctionsElementSegmentType {
     pub elem_kind: ElemKind,
-    pub init: Vector<RefType>,
+    pub init: Vec<FuncIdx>,
     pub mode: ElemModePassive,
+}
+
+impl ElemKindPassiveFunctionsElementSegmentType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, elem_kind) = ElemKind::parse(bytes)?;
+
+        let mut remaining_bytes = bytes;
+        let vector_len_parsed = U32Type::parse(remaining_bytes)?;
+        remaining_bytes = vector_len_parsed.0;
+        let vector_len = vector_len_parsed.1 .0 as usize;
+        let mut init: Vec<FuncIdx> = Vec::with_capacity(vector_len);
+
+        for _ in 0..vector_len {
+            let func_idx_parsed = U32Type::parse(remaining_bytes).map(|r| (r.0, FuncIdx(r.1)))?;
+
+            remaining_bytes = func_idx_parsed.0;
+            init.push(func_idx_parsed.1);
+        }
+
+        Ok((
+            remaining_bytes,
+            ElemKindPassiveFunctionsElementSegmentType {
+                elem_kind,
+                init,
+                mode: ElemModePassive {},
+            },
+        ))
+    }
 }
 
 pub struct ElemKindActiveFunctionsElementSegmentType {
     pub elem_kind: ElemKind,
-    pub init: Vector<RefType>,
+    pub init: Vec<FuncIdx>,
     pub mode: ElemModeActive,
+}
+
+impl ElemKindActiveFunctionsElementSegmentType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, table_idx) = U32Type::parse(bytes).map(|(b, v)| (b, TableIdx(v)))?;
+        let (bytes, expression) = ExpressionType::parse(bytes)?;
+        let (bytes, elem_kind) = ElemKind::parse(bytes)?;
+
+        let mut remaining_bytes = bytes;
+        let vector_len_parsed = U32Type::parse(remaining_bytes)?;
+        remaining_bytes = vector_len_parsed.0;
+        let vector_len = vector_len_parsed.1 .0 as usize;
+        let mut init: Vec<FuncIdx> = Vec::with_capacity(vector_len);
+
+        for _ in 0..vector_len {
+            let func_idx_parsed = U32Type::parse(remaining_bytes).map(|r| (r.0, FuncIdx(r.1)))?;
+
+            remaining_bytes = func_idx_parsed.0;
+            init.push(func_idx_parsed.1);
+        }
+
+        Ok((
+            remaining_bytes,
+            ElemKindActiveFunctionsElementSegmentType {
+                elem_kind,
+                init,
+                mode: ElemModeActive {
+                    table_idx,
+                    offset: expression,
+                },
+            },
+        ))
+    }
 }
 
 pub struct ElemKindDeclarativeFunctionsElementSegmentType {
     pub elem_kind: ElemKind,
-    pub init: Vector<RefType>,
+    pub init: Vec<FuncIdx>,
     pub mode: ElemModeDeclarative,
+}
+
+impl ElemKindDeclarativeFunctionsElementSegmentType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, elem_kind) = ElemKind::parse(bytes)?;
+
+        let mut remaining_bytes = bytes;
+        let vector_len_parsed = U32Type::parse(remaining_bytes)?;
+        remaining_bytes = vector_len_parsed.0;
+        let vector_len = vector_len_parsed.1 .0 as usize;
+        let mut init: Vec<FuncIdx> = Vec::with_capacity(vector_len);
+
+        for _ in 0..vector_len {
+            let func_idx_parsed = U32Type::parse(remaining_bytes).map(|r| (r.0, FuncIdx(r.1)))?;
+
+            remaining_bytes = func_idx_parsed.0;
+            init.push(func_idx_parsed.1);
+        }
+
+        Ok((
+            remaining_bytes,
+            ElemKindDeclarativeFunctionsElementSegmentType {
+                elem_kind,
+                init,
+                mode: ElemModeDeclarative {},
+            },
+        ))
+    }
 }
 
 pub struct Active0ExprElementSegmentType {
@@ -211,21 +393,52 @@ pub enum ElemKind {
 
 impl ElemKind {
     const ENCODE_BYTE_FUNC_REF: Byte = 0x00;
+
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, elem_kind) = take(1usize)(bytes)?;
+
+        match elem_kind[0] {
+            Self::ENCODE_BYTE_FUNC_REF => Ok((bytes, ElemKind::FuncRef)),
+            _ => Err(nom::Err::Failure(nom::error::Error::new(
+                bytes,
+                nom::error::ErrorKind::Fail,
+            ))),
+        }
+    }
 }
 
+#[derive(Debug)]
 pub struct CodeType {
     pub size: U32Type,
     pub code: FuncCodeType,
 }
 
+#[derive(Debug)]
 pub struct FuncCodeType {
-    pub locals: Vector<LocalsType>,
+    pub locals: Vec<LocalsType>,
     pub expression: ExpressionType,
 }
 
+#[derive(Debug)]
 pub struct LocalsType {
     pub n: U32Type,
     pub val_types: Vec<ValType>,
+}
+
+impl LocalsType {
+    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], LocalsType> {
+        let (bytes, n) = U32Type::parse(bytes)?;
+        let mut remaining_bytes = bytes;
+        let mut val_types: Vec<ValType> = Vec::with_capacity(n.0 as usize);
+
+        for _ in 0..n.0 {
+            let parsed_val_type = ValType::parse(remaining_bytes)?;
+            remaining_bytes = parsed_val_type.0;
+            val_types.push(parsed_val_type.1);
+        }
+
+        Ok((remaining_bytes, LocalsType { n, val_types }))
+    }
 }
 
 pub enum DataType {
@@ -238,6 +451,10 @@ impl DataType {
     const BITFIELD_ACTIVE0: U32Type = U32Type(0);
     const BITFIELD_PASSIVE: U32Type = U32Type(1);
     const BITFIELD_ACTIVE: U32Type = U32Type(2);
+
+    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        unimplemented!()
+    }
 }
 
 type Active0DataType = GenericDataType<DataModeActive0>;
