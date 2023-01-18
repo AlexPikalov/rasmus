@@ -157,8 +157,8 @@ pub struct StartType {
     pub func: FuncIdx,
 }
 
-impl StartType {
-    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+impl ParseWithNom for StartType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         U32Type::parse(bytes).map(|(b, val)| (b, StartType { func: FuncIdx(val) }))
     }
 }
@@ -183,8 +183,10 @@ impl ElementSegmentType {
     const BITFIELD_PASSIVE_REF: U32Type = U32Type(5);
     const BITFIELD_ACTIVE_REF: U32Type = U32Type(6);
     const BITFIELD_DECLARATIVE_REF: U32Type = U32Type(7);
+}
 
-    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+impl ParseWithNom for ElementSegmentType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, bitfield) = U32Type::parse(bytes)?;
 
         match bitfield {
@@ -224,7 +226,7 @@ pub struct Active0FunctionsElementSegmentType {
     pub init: Vec<FuncIdx>,
 }
 
-impl Active0FunctionsElementSegmentType {
+impl ParseWithNom for Active0FunctionsElementSegmentType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, expression) = ExpressionType::parse(bytes)?;
         let mut remaining_bytes = bytes;
@@ -256,7 +258,7 @@ pub struct ElemKindPassiveFunctionsElementSegmentType {
     pub mode: ElemModePassive,
 }
 
-impl ElemKindPassiveFunctionsElementSegmentType {
+impl ParseWithNom for ElemKindPassiveFunctionsElementSegmentType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, elem_kind) = ElemKind::parse(bytes)?;
 
@@ -290,7 +292,7 @@ pub struct ElemKindActiveFunctionsElementSegmentType {
     pub mode: ElemModeActive,
 }
 
-impl ElemKindActiveFunctionsElementSegmentType {
+impl ParseWithNom for ElemKindActiveFunctionsElementSegmentType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, table_idx) = U32Type::parse(bytes).map(|(b, v)| (b, TableIdx(v)))?;
         let (bytes, expression) = ExpressionType::parse(bytes)?;
@@ -329,7 +331,7 @@ pub struct ElemKindDeclarativeFunctionsElementSegmentType {
     pub mode: ElemModeDeclarative,
 }
 
-impl ElemKindDeclarativeFunctionsElementSegmentType {
+impl ParseWithNom for ElemKindDeclarativeFunctionsElementSegmentType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, elem_kind) = ElemKind::parse(bytes)?;
 
@@ -362,7 +364,7 @@ pub struct Active0ExprElementSegmentType {
     pub mode: ElemModeActive0,
 }
 
-impl Active0ExprElementSegmentType {
+impl ParseWithNom for Active0ExprElementSegmentType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, offset) = ExpressionType::parse(bytes)?;
 
@@ -395,7 +397,7 @@ pub struct PassiveRefElementSegmentType {
     pub mode: ElemModePassive,
 }
 
-impl PassiveRefElementSegmentType {
+impl ParseWithNom for PassiveRefElementSegmentType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, ref_type) = RefType::parse(bytes)?;
 
@@ -429,7 +431,7 @@ pub struct ActiveRefElementSegmentType {
     pub mode: ElemModeActive,
 }
 
-impl ActiveRefElementSegmentType {
+impl ParseWithNom for ActiveRefElementSegmentType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, table_idx) = U32Type::parse(bytes)?;
         let (bytes, offset) = ExpressionType::parse(bytes)?;
@@ -467,7 +469,7 @@ pub struct DeclarativeRefElementSegmentType {
     pub mode: ElemModeDeclarative,
 }
 
-impl DeclarativeRefElementSegmentType {
+impl ParseWithNom for DeclarativeRefElementSegmentType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, ref_type) = RefType::parse(bytes)?;
         let mut remaining_bytes = bytes;
@@ -511,7 +513,9 @@ pub enum ElemKind {
 
 impl ElemKind {
     const ENCODE_BYTE_FUNC_REF: Byte = 0x00;
+}
 
+impl ParseWithNom for ElemKind {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, elem_kind) = take(1usize)(bytes)?;
 
@@ -543,8 +547,8 @@ pub struct LocalsType {
     pub val_types: Vec<ValType>,
 }
 
-impl LocalsType {
-    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], LocalsType> {
+impl ParseWithNom for LocalsType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], LocalsType> {
         let (bytes, n) = U32Type::parse(bytes)?;
         let mut remaining_bytes = bytes;
         let mut val_types: Vec<ValType> = Vec::with_capacity(n.0 as usize);
@@ -569,8 +573,10 @@ impl DataType {
     const BITFIELD_ACTIVE0: U32Type = U32Type(0);
     const BITFIELD_PASSIVE: U32Type = U32Type(1);
     const BITFIELD_ACTIVE: U32Type = U32Type(2);
+}
 
-    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+impl ParseWithNom for DataType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, bitfield) = U32Type::parse(bytes)?;
 
         match bitfield {
