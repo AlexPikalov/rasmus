@@ -346,10 +346,29 @@ impl ModuleParser {
 
         Ok(elems_types)
     }
+
+    fn parse_data_section(bytes: &[Byte]) -> ParseResult<Vec<DataType>> {
+        let mut remaining_bytes = bytes;
+        let vector_len_parsed = U32Type::parse(remaining_bytes)
+            .map_err(|_| SyntaxError::InvalidImportsModuleSection)?;
+        remaining_bytes = vector_len_parsed.0;
+        let vector_len = vector_len_parsed.1 .0 as usize;
+        let mut data_types: Vec<DataType> = Vec::with_capacity(vector_len);
+
+        for _ in 0..vector_len {
+            let elem_segment_type_parsed = DataType::parse(remaining_bytes)
+                .map_err(|_| SyntaxError::InvalidDatasModuleSection)?;
+
+            remaining_bytes = elem_segment_type_parsed.0;
+            data_types.push(elem_segment_type_parsed.1);
+        }
+
+        Ok(data_types)
+    }
 }
 
 impl ParseBin<Module> for ModuleParser {
-    fn parse(&mut self, bytes: &[Byte]) -> ParseResult<(Vec<Byte>, Module)> {
+    fn parse(bytes: &[Byte]) -> ParseResult<(Vec<Byte>, Module)> {
         let mut remainig_bytes = bytes;
         // FIXME: Is it possible to have few modules declared in the same file?
         remainig_bytes = Self::take_magic(remainig_bytes)
@@ -378,7 +397,14 @@ impl ParseBin<Module> for ModuleParser {
                 SectionId::Export => module.exports = Self::parse_exports_section(bytes)?,
                 SectionId::Start => module.start = Some(Self::parse_start_section(bytes)?),
                 SectionId::Element => module.elems = Self::parse_elems_section(bytes)?,
-                _ => println!("unhandled Section ID {:?}", section_id),
+                SectionId::Data => module.datas = Self::parse_data_section(bytes)?,
+                SectionId::DataCount => {
+                    let (_, data_count) = U32Type::parse(bytes)
+                        .map_err(|_| SyntaxError::InvalidDataCountModuleSection)?;
+                    if module.datas.len() != data_count.0 as usize {
+                        return Err(SyntaxError::DataCountDoesntMatchDataLen);
+                    }
+                }
             }
             println!("Section found: {:?}", section_id);
             println!("Section content: {:?}", section_content);
@@ -393,6 +419,7 @@ impl ParseBin<Module> for ModuleParser {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::binary::parse_trait::ParseBin;
 
     #[test]
     fn test_empty_module() {
@@ -401,8 +428,7 @@ mod test {
             std::env::var("CARGO_MANIFEST_DIR").unwrap()
         ))
         .unwrap();
-        let mut parser = ModuleParser::new();
-        parser.parse(&wasm).unwrap();
+        ModuleParser::parse(&wasm).unwrap();
     }
 
     #[test]
@@ -413,8 +439,7 @@ mod test {
         ))
         .unwrap();
 
-        let mut parser = ModuleParser::new();
-        let (_, module) = parser.parse(&wasm).unwrap();
+        let (_, module) = ModuleParser::parse(&wasm).unwrap();
 
         println!("TYPES: {:?}", module.types);
         println!("CODE: {:?}", module.code);

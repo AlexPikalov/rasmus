@@ -1,4 +1,5 @@
 pub use super::instructions::*;
+use super::parse_trait::ParseWithNom;
 use super::types::*;
 
 use nom::{bytes::complete::take, IResult as NomResult};
@@ -357,23 +358,140 @@ impl ElemKindDeclarativeFunctionsElementSegmentType {
 }
 
 pub struct Active0ExprElementSegmentType {
-    pub elems: Vector<ExpressionType>,
+    pub init: Vec<ExpressionType>,
     pub mode: ElemModeActive0,
 }
 
+impl Active0ExprElementSegmentType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, offset) = ExpressionType::parse(bytes)?;
+
+        let mut remaining_bytes = bytes;
+        let vector_len_parsed = U32Type::parse(remaining_bytes)?;
+        remaining_bytes = vector_len_parsed.0;
+        let vector_len = vector_len_parsed.1 .0 as usize;
+        let mut init: Vec<ExpressionType> = Vec::with_capacity(vector_len);
+
+        for _ in 0..vector_len {
+            let init_expression_parsed = ExpressionType::parse(remaining_bytes)?;
+
+            remaining_bytes = init_expression_parsed.0;
+            init.push(init_expression_parsed.1);
+        }
+
+        Ok((
+            remaining_bytes,
+            Active0ExprElementSegmentType {
+                init,
+                mode: ElemModeActive0 { offset },
+            },
+        ))
+    }
+}
+
 pub struct PassiveRefElementSegmentType {
-    pub elems: Vector<ExpressionType>,
+    pub ref_type: RefType,
+    pub init: Vec<ExpressionType>,
     pub mode: ElemModePassive,
 }
 
+impl PassiveRefElementSegmentType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, ref_type) = RefType::parse(bytes)?;
+
+        let mut remaining_bytes = bytes;
+        let vector_len_parsed = U32Type::parse(remaining_bytes)?;
+        remaining_bytes = vector_len_parsed.0;
+        let vector_len = vector_len_parsed.1 .0 as usize;
+        let mut init: Vec<ExpressionType> = Vec::with_capacity(vector_len);
+
+        for _ in 0..vector_len {
+            let init_expression_parsed = ExpressionType::parse(remaining_bytes)?;
+
+            remaining_bytes = init_expression_parsed.0;
+            init.push(init_expression_parsed.1);
+        }
+
+        Ok((
+            remaining_bytes,
+            PassiveRefElementSegmentType {
+                ref_type,
+                init,
+                mode: ElemModePassive {},
+            },
+        ))
+    }
+}
+
 pub struct ActiveRefElementSegmentType {
-    pub elems: Vector<ExpressionType>,
+    pub ref_type: RefType,
+    pub init: Vec<ExpressionType>,
     pub mode: ElemModeActive,
 }
 
+impl ActiveRefElementSegmentType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, table_idx) = U32Type::parse(bytes)?;
+        let (bytes, offset) = ExpressionType::parse(bytes)?;
+        let (bytes, ref_type) = RefType::parse(bytes)?;
+        let mut remaining_bytes = bytes;
+        let vector_len_parsed = U32Type::parse(remaining_bytes)?;
+        remaining_bytes = vector_len_parsed.0;
+        let vector_len = vector_len_parsed.1 .0 as usize;
+        let mut init: Vec<ExpressionType> = Vec::with_capacity(vector_len);
+
+        for _ in 0..vector_len {
+            let init_expression_parsed = ExpressionType::parse(remaining_bytes)?;
+
+            remaining_bytes = init_expression_parsed.0;
+            init.push(init_expression_parsed.1);
+        }
+
+        Ok((
+            remaining_bytes,
+            ActiveRefElementSegmentType {
+                ref_type,
+                init,
+                mode: ElemModeActive {
+                    table_idx: TableIdx(table_idx),
+                    offset,
+                },
+            },
+        ))
+    }
+}
+
 pub struct DeclarativeRefElementSegmentType {
-    pub elems: Vector<ExpressionType>,
+    pub ref_type: RefType,
+    pub init: Vec<ExpressionType>,
     pub mode: ElemModeDeclarative,
+}
+
+impl DeclarativeRefElementSegmentType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, ref_type) = RefType::parse(bytes)?;
+        let mut remaining_bytes = bytes;
+        let vector_len_parsed = U32Type::parse(remaining_bytes)?;
+        remaining_bytes = vector_len_parsed.0;
+        let vector_len = vector_len_parsed.1 .0 as usize;
+        let mut init: Vec<ExpressionType> = Vec::with_capacity(vector_len);
+
+        for _ in 0..vector_len {
+            let init_expression_parsed = ExpressionType::parse(remaining_bytes)?;
+
+            remaining_bytes = init_expression_parsed.0;
+            init.push(init_expression_parsed.1);
+        }
+
+        Ok((
+            remaining_bytes,
+            DeclarativeRefElementSegmentType {
+                ref_type,
+                init,
+                mode: ElemModeDeclarative {},
+            },
+        ))
+    }
 }
 
 pub struct ElemModeActive {
@@ -453,7 +571,23 @@ impl DataType {
     const BITFIELD_ACTIVE: U32Type = U32Type(2);
 
     pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
-        unimplemented!()
+        let (bytes, bitfield) = U32Type::parse(bytes)?;
+
+        match bitfield {
+            Self::BITFIELD_ACTIVE0 => {
+                Ok(Active0DataType::parse(bytes).map(|(b, v)| (b, DataType::Active0(v)))?)
+            }
+            Self::BITFIELD_ACTIVE => {
+                Ok(ActiveDataType::parse(bytes).map(|(b, v)| (b, DataType::Active(v)))?)
+            }
+            Self::BITFIELD_PASSIVE => {
+                Ok(PassiveDataType::parse(bytes).map(|(b, v)| (b, DataType::Passive(v)))?)
+            }
+            _ => Err(nom::Err::Failure(nom::error::Error::new(
+                bytes,
+                nom::error::ErrorKind::Fail,
+            ))),
+        }
     }
 }
 
@@ -465,14 +599,49 @@ pub struct DataModeActive0 {
     pub offset: ExpressionType,
 }
 
+impl ParseWithNom for DataModeActive0 {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        ExpressionType::parse(bytes).map(|(b, offset)| (b, DataModeActive0 { offset }))
+    }
+}
+
 pub struct DataModeActive {
     pub memory: MemIdx,
     pub offset: ExpressionType,
 }
 
+impl ParseWithNom for DataModeActive {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, memory) = U32Type::parse(bytes).map(|(b, v)| (b, MemIdx(v)))?;
+        ExpressionType::parse(bytes).map(|(b, offset)| (b, DataModeActive { memory, offset }))
+    }
+}
+
 pub struct DataModePassive;
+
+impl ParseWithNom for DataModePassive {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        Ok((bytes, DataModePassive {}))
+    }
+}
 
 pub struct GenericDataType<Mode> {
     pub mode: Mode,
-    pub init: Vector<Byte>,
+    pub init: Vec<Byte>,
+}
+
+impl<Mode: ParseWithNom> GenericDataType<Mode> {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, mode) = Mode::parse(bytes)?;
+        let (bytes, init_len) = U32Type::parse(bytes)?;
+        take(init_len.0 as usize)(bytes).map(|(b, init)| {
+            (
+                b,
+                GenericDataType {
+                    mode,
+                    init: init.to_vec(),
+                },
+            )
+        })
+    }
 }

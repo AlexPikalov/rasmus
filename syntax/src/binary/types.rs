@@ -256,7 +256,7 @@ pub struct LabelIdx(U32Type);
 #[derive(Debug)]
 pub struct LaneIdx(Byte);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct U32Type(pub u32);
 
 impl U32Type {
@@ -299,7 +299,10 @@ pub enum SyntaxError {
     InvalidGlobalsModuleSection,
     InvalidStartModuleSection,
     InvalidElementSegmentModuleSection,
+    InvalidDatasModuleSection,
+    InvalidDataCountModuleSection,
     UnexpectedModuleSectionId,
+    DataCountDoesntMatchDataLen,
 }
 
 pub struct NomError;
