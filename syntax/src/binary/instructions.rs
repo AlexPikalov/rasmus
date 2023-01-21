@@ -1,8 +1,13 @@
+use super::parse_trait::ParseWithNom;
+use super::parser_helpers::{parse, parse_all_to_vec};
 use super::types::*;
 
-use nom::IResult as NomResult;
+use nom::{
+    bytes::complete::{tag, take, take_till},
+    IResult as NomResult, Slice,
+};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ExpressionType {
     pub instructions: Vec<InstructionType>,
 }
@@ -10,8 +15,17 @@ pub struct ExpressionType {
 impl ExpressionType {
     const OP_CODE_END: Byte = 0x0B;
 
-    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
-        // TODO: implement
+    fn is_opcode_end(b: Byte) -> bool {
+        b == Self::OP_CODE_END
+    }
+}
+
+impl ParseWithNom for ExpressionType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, expression_bytes) = take_till(Self::is_opcode_end)(bytes)?;
+        let bytes = bytes.slice(1..);
+        println!("expression_bytes {:?}", expression_bytes);
+        // TODO: implement parse instructions
         Ok((
             bytes,
             ExpressionType {
@@ -21,7 +35,7 @@ impl ExpressionType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BlockType {
     Empty,
     ValType(ValType),
@@ -32,26 +46,47 @@ impl BlockType {
     const OPCODE_EMPTY: Byte = 0x40;
 }
 
-#[derive(Debug)]
+impl ParseWithNom for BlockType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        match bytes.get(0) {
+            Some(first_byte) => {
+                if *first_byte == Self::OPCODE_EMPTY {
+                    return Ok((bytes.slice(1..), Self::Empty));
+                }
+
+                if let Some(val_type) = ValType::recognize(*first_byte) {
+                    return Ok((bytes.slice(1..), Self::ValType(val_type)));
+                }
+
+                return S33Type::parse(bytes).map(|(b, v)| (b, Self::TypeIndex(v)));
+            }
+            None => Err(nom::Err::Failure(nom::error::Error::new(
+                bytes,
+                nom::error::ErrorKind::Fail,
+            ))),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum InstructionType {
     // Control Instructions
     Unreachable,
     Nop,
     Block(BlockInstructionType),
     Loop(LoopInstructionType),
-    If(IfInstructionType),
     IfElse(IfElseInstructionType),
-    Br(BrInstructionType),
-    BrIf(BrIfInstructionType),
-    BrTable(BrTableInstructionType),
+    Br(LabelIdx),
+    BrIf(LabelIdx),
+    BrTable((Vec<LabelIdx>, LabelIdx)),
     Return,
-    Call(CallInstructionType),
-    CallIndirect(CallIndirectInstructionType),
+    Call(FuncIdx),
+    CallIndirect((TypeIdx, TableIdx)),
 
     // Reference Instructions
-    RefNull(RefNullInstructionType),
+    RefNull(RefType),
     RefIsNull,
-    RefFunc(RefFuncInstructionType),
+    RefFunc(FuncIdx),
 
     // Parametric Instructions
     Drop,
@@ -68,37 +103,37 @@ pub enum InstructionType {
     // Table Instructions
     TableGet(TableIdx),
     TableSet(TableIdx),
-    TableInit(TableInitInstructionType),
+    TableInit((ElemIdx, TableIdx)),
     ElemDrop(ElemIdx),
-    TableCopy(TableCopyInstructionType),
-    TableGlow(TableIdx),
+    TableCopy((TableIdx, TableIdx)),
+    TableGrow(TableIdx),
     TableSize(TableIdx),
     TableFill(TableIdx),
 
     // Memory Instructions
-    I32Load(MemArgType),
-    I64Load(MemArgType),
-    F32Load(MemArgType),
-    F64Load(MemArgType),
-    I32Load8S(MemArgType),
-    I32Load8U(MemArgType),
-    I32Load16S(MemArgType),
-    I32Load16U(MemArgType),
-    I64Load8S(MemArgType),
-    I64Load8U(MemArgType),
-    I64Load16S(MemArgType),
-    I64Load16U(MemArgType),
-    I64Load32S(MemArgType),
-    I64Load32U(MemArgType),
-    I32Store(MemArgType),
-    I64Store(MemArgType),
-    F32Store(MemArgType),
-    F64Store(MemArgType),
-    I32Store8(MemArgType),
-    I32Store16(MemArgType),
-    I64Store8(MemArgType),
-    I64Store16(MemArgType),
-    I64Store32(MemArgType),
+    I32Load((U32Type, U32Type)),
+    I64Load((U32Type, U32Type)),
+    F32Load((U32Type, U32Type)),
+    F64Load((U32Type, U32Type)),
+    I32Load8S((U32Type, U32Type)),
+    I32Load8U((U32Type, U32Type)),
+    I32Load16S((U32Type, U32Type)),
+    I32Load16U((U32Type, U32Type)),
+    I64Load8S((U32Type, U32Type)),
+    I64Load8U((U32Type, U32Type)),
+    I64Load16S((U32Type, U32Type)),
+    I64Load16U((U32Type, U32Type)),
+    I64Load32S((U32Type, U32Type)),
+    I64Load32U((U32Type, U32Type)),
+    I32Store((U32Type, U32Type)),
+    I64Store((U32Type, U32Type)),
+    F32Store((U32Type, U32Type)),
+    F64Store((U32Type, U32Type)),
+    I32Store8((U32Type, U32Type)),
+    I32Store16((U32Type, U32Type)),
+    I64Store8((U32Type, U32Type)),
+    I64Store16((U32Type, U32Type)),
+    I64Store32((U32Type, U32Type)),
     MemorySize,
     MemoryGrow,
     MemoryInit(DataIdx),
@@ -249,28 +284,28 @@ pub enum InstructionType {
     I64TruncSatF64U,
 
     // Vector Instuctions
-    V128Load(MemArgType),
-    V128Load8x8S(MemArgType),
-    V128Load8x8U(MemArgType),
-    V128Load16x4S(MemArgType),
-    V128Load16x4U(MemArgType),
-    V128Load32x2S(MemArgType),
-    V128Load32x2U(MemArgType),
-    V128Load8Splat(MemArgType),
-    V128Load16Splat(MemArgType),
-    V128Load32Splat(MemArgType),
-    V128Load64Splat(MemArgType),
-    V128Load32Zero(MemArgType),
-    V128Load64Zero(MemArgType),
-    V128Store(MemArgType),
-    V128Load8Lane((MemArgType, LaneIdx)),
-    V128Load16Lane((MemArgType, LaneIdx)),
-    V128Load32Lane((MemArgType, LaneIdx)),
-    V128Load64Lane((MemArgType, LaneIdx)),
-    V128Store8Lane((MemArgType, LaneIdx)),
-    V128Store16Lane((MemArgType, LaneIdx)),
-    V128Store32Lane((MemArgType, LaneIdx)),
-    V128Store64Lane((MemArgType, LaneIdx)),
+    V128Load((U32Type, U32Type)),
+    V128Load8x8S((U32Type, U32Type)),
+    V128Load8x8U((U32Type, U32Type)),
+    V128Load16x4S((U32Type, U32Type)),
+    V128Load16x4U((U32Type, U32Type)),
+    V128Load32x2S((U32Type, U32Type)),
+    V128Load32x2U((U32Type, U32Type)),
+    V128Load8Splat((U32Type, U32Type)),
+    V128Load16Splat((U32Type, U32Type)),
+    V128Load32Splat((U32Type, U32Type)),
+    V128Load64Splat((U32Type, U32Type)),
+    V128Load32Zero((U32Type, U32Type)),
+    V128Load64Zero((U32Type, U32Type)),
+    V128Store((U32Type, U32Type)),
+    V128Load8Lane(((U32Type, U32Type), LaneIdx)),
+    V128Load16Lane(((U32Type, U32Type), LaneIdx)),
+    V128Load32Lane(((U32Type, U32Type), LaneIdx)),
+    V128Load64Lane(((U32Type, U32Type), LaneIdx)),
+    V128Store8Lane(((U32Type, U32Type), LaneIdx)),
+    V128Store16Lane(((U32Type, U32Type), LaneIdx)),
+    V128Store32Lane(((U32Type, U32Type), LaneIdx)),
+    V128Store64Lane(((U32Type, U32Type), LaneIdx)),
     // 16 Bytes
     V128Const(Vec<Byte>),
     // 16 LaneIdxs
@@ -496,7 +531,6 @@ impl InstructionType {
     const OPCODE_BLOCK: Byte = 0x02;
     const OPCODE_END: Byte = 0x0B;
     const OPCODE_LOOP: Byte = 0x03;
-    const OPCODE_IF: Byte = 0x04;
     const OPCODE_IF_ELSE: Byte = 0x04;
     const OPCODE_ELSE: Byte = 0x05;
     const OPCODE_BR: Byte = 0x0C;
@@ -504,6 +538,7 @@ impl InstructionType {
     const OPCODE_BR_TABLE: Byte = 0x0E;
     const OPCODE_RETURN: Byte = 0x0F;
     const OPCODE_CALL: Byte = 0x10;
+    const OPCODE_CALL_INDIRECT: Byte = 0x11;
 
     // Reference Instructions
     const OPCODE_REF_NULL: Byte = 0xD0;
@@ -946,84 +981,214 @@ impl InstructionType {
     const BYTE_PREFIX_F64x2_CONVERT_LOW_I32x4_U: U32Type = U32Type(255);
     const BYTE_PREFIX_F32x4_DEMOTE_F64x2_ZERO: U32Type = U32Type(94);
     const BYTE_PREFIX_F64x2_PROMOTE_LOW_F32x4: U32Type = U32Type(95);
+
+    fn parse_table_other(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, bytecode) = U32Type::parse(bytes)?;
+
+        match bytecode {
+            Self::BYTECODE_TABLE_INIT => parse(bytes).map(|(b, v)| (b, Self::TableInit(v))),
+            Self::BYTECODE_TABLE_DROP => parse(bytes).map(|(b, v)| (b, Self::ElemDrop(v))),
+            Self::BYTECODE_TABLE_COPY => parse(bytes).map(|(b, v)| (b, Self::TableCopy(v))),
+            Self::BYTECODE_TABLE_GROW => parse(bytes).map(|(b, v)| (b, Self::TableGrow(v))),
+            Self::BYTECODE_TABLE_SIZE => parse(bytes).map(|(b, v)| (b, Self::TableSize(v))),
+            Self::BYTECODE_TABLE_FILL => parse(bytes).map(|(b, v)| (b, Self::TableFill(v))),
+            _ => Err(nom::Err::Failure(nom::error::Error::new(
+                bytes,
+                nom::error::ErrorKind::Fail,
+            ))),
+        }
+    }
+
+    fn parse_memory_other(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, bytecode) = U32Type::parse(bytes)?;
+
+        match bytecode {
+            Self::BYTECODE_MEMORY_INIT => parse(bytes).map(|(b, v)| (b, Self::MemoryInit(v))),
+            Self::BYTECODE_DATA_DROP => parse(bytes).map(|(b, v)| (b, Self::DataDrop(v))),
+            Self::BYTECODE_MEMORY_COPY => {
+                Ok((tag(&[0x00, 0x00])(bytes).map(|r| r.0)?, Self::MemoryCopy))
+            }
+            Self::BYTECODE_MEMORY_FILL => Ok((tag(&[0x00])(bytes).map(|r| r.0)?, Self::MemoryFill)),
+            _ => Err(nom::Err::Failure(nom::error::Error::new(
+                bytes,
+                nom::error::ErrorKind::Fail,
+            ))),
+        }
+    }
 }
 
-#[derive(Debug)]
+impl ParseWithNom for InstructionType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, opcode) = take(1usize)(bytes)?;
+
+        match opcode[0] {
+            Self::OPCODE_UNREACHABLE => Ok((bytes, Self::Unreachable)),
+            Self::OPCODE_NOP => Ok((bytes, Self::Nop)),
+            Self::OPCODE_BLOCK => parse(bytes).map(|(b, v)| (b, Self::Block(v))),
+            Self::OPCODE_LOOP => parse(bytes).map(|(b, v)| (b, Self::Loop(v))),
+            Self::OPCODE_IF_ELSE => parse(bytes).map(|(b, v)| (b, Self::IfElse(v))),
+            Self::OPCODE_BR => LabelIdx::parse(bytes).map(|(b, v)| (b, Self::Br(v))),
+            Self::OPCODE_BR_IF => LabelIdx::parse(bytes).map(|(b, v)| (b, Self::BrIf(v))),
+            Self::OPCODE_BR_TABLE => parse(bytes).map(|(b, v)| (b, Self::BrTable(v))),
+            Self::OPCODE_RETURN => Ok((bytes, Self::Return)),
+            Self::OPCODE_CALL => parse(bytes).map(|(b, v)| (b, Self::Call(v))),
+            Self::OPCODE_CALL_INDIRECT => parse(bytes).map(|(b, v)| (b, Self::CallIndirect(v))),
+
+            Self::OPCODE_REF_NULL => parse(bytes).map(|(b, v)| (b, Self::RefNull(v))),
+            Self::OPCODE_REF_IS_NULL => Ok((bytes, Self::RefIsNull)),
+            Self::OPCODE_REF_FUNC => parse(bytes).map(|(b, v)| (b, Self::RefFunc(v))),
+            Self::OPCODE_DROP => Ok((bytes, Self::Drop)),
+            Self::OPCODE_SELECT => Ok((bytes, Self::Select)),
+
+            Self::OPCODE_SELECT_VEC => parse(bytes).map(|(b, v)| (b, Self::SelectVec(v))),
+            Self::OPCODE_LOCAL_GET => parse(bytes).map(|(b, v)| (b, Self::LocalGet(v))),
+            Self::OPCODE_LOCAL_SET => parse(bytes).map(|(b, v)| (b, Self::LocalSet(v))),
+            Self::OPCODE_LOCAL_TEE => parse(bytes).map(|(b, v)| (b, Self::LocalTee(v))),
+            Self::OPCODE_GLOBAL_GET => parse(bytes).map(|(b, v)| (b, Self::GlobalGet(v))),
+            Self::OPCODE_GLOBAL_SET => parse(bytes).map(|(b, v)| (b, Self::GlobalSet(v))),
+
+            Self::OPCODE_TABLE_GET => parse(bytes).map(|(b, v)| (b, Self::TableGet(v))),
+            Self::OPCODE_TABLE_SET => parse(bytes).map(|(b, v)| (b, Self::TableSet(v))),
+            Self::OPCODE_TABLE_OTHER => Self::parse_table_other(bytes),
+
+            Self::OPCODE_I32_LOAD => parse(bytes).map(|(b, v)| (b, Self::I32Load(v))),
+            Self::OPCODE_I64_LOAD => parse(bytes).map(|(b, v)| (b, Self::I64Load(v))),
+            Self::OPCODE_F32_LOAD => parse(bytes).map(|(b, v)| (b, Self::F32Load(v))),
+            Self::OPCODE_F64_LOAD => parse(bytes).map(|(b, v)| (b, Self::F64Load(v))),
+            Self::OPCODE_I32_LOAD_8_S => parse(bytes).map(|(b, v)| (b, Self::I32Load8S(v))),
+            Self::OPCODE_I32_LOAD_8_U => parse(bytes).map(|(b, v)| (b, Self::I32Load8U(v))),
+            Self::OPCODE_I32_LOAD_16_S => parse(bytes).map(|(b, v)| (b, Self::I32Load16S(v))),
+            Self::OPCODE_I32_LOAD_16_U => parse(bytes).map(|(b, v)| (b, Self::I32Load16U(v))),
+            Self::OPCODE_I64_LOAD_8_S => parse(bytes).map(|(b, v)| (b, Self::I64Load8S(v))),
+            Self::OPCODE_I64_LOAD_8_U => parse(bytes).map(|(b, v)| (b, Self::I64Load8U(v))),
+            Self::OPCODE_I64_LOAD_16_S => parse(bytes).map(|(b, v)| (b, Self::I64Load16S(v))),
+            Self::OPCODE_I64_LOAD_16_U => parse(bytes).map(|(b, v)| (b, Self::I64Load16U(v))),
+            Self::OPCODE_I64_LOAD_32_S => parse(bytes).map(|(b, v)| (b, Self::I64Load32S(v))),
+            Self::OPCODE_I64_LOAD_32_U => parse(bytes).map(|(b, v)| (b, Self::I64Load32U(v))),
+            Self::OPCODE_I32_STORE => parse(bytes).map(|(b, v)| (b, Self::I32Store(v))),
+            Self::OPCODE_I64_STORE => parse(bytes).map(|(b, v)| (b, Self::I64Store(v))),
+            Self::OPCODE_F32_STORE => parse(bytes).map(|(b, v)| (b, Self::F32Store(v))),
+            Self::OPCODE_F64_STORE => parse(bytes).map(|(b, v)| (b, Self::F64Store(v))),
+            Self::OPCODE_I32_STORE_8 => parse(bytes).map(|(b, v)| (b, Self::I32Store8(v))),
+            Self::OPCODE_I32_STORE_16 => parse(bytes).map(|(b, v)| (b, Self::I32Store16(v))),
+            Self::OPCODE_I64_STORE_8 => parse(bytes).map(|(b, v)| (b, Self::I64Store8(v))),
+            Self::OPCODE_I64_STORE_16 => parse(bytes).map(|(b, v)| (b, Self::I64Store16(v))),
+            Self::OPCODE_I64_STORE_32 => parse(bytes).map(|(b, v)| (b, Self::I64Store32(v))),
+            Self::OPCODE_MEMORY_SIZE => Ok((tag(&[0x00])(bytes).map(|v| v.0)?, Self::MemorySize)),
+            Self::OPCODE_MEMORY_GROW => Ok((tag(&[0x00])(bytes).map(|v| v.0)?, Self::MemoryGrow)),
+            Self::OPCODE_MEMORY_OTHER => Self::parse_memory_other(bytes),
+
+            _ => {
+                unimplemented!()
+            }
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct BlockInstructionType {
     pub blocktype: BlockType,
     pub instructions: Vec<InstructionType>,
 }
 
-#[derive(Debug)]
+impl ParseWithNom for BlockInstructionType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, blocktype) = BlockType::parse(bytes)?;
+        let (bytes, instructions) = parse_all_to_vec(bytes, InstructionType::OPCODE_END)?;
+
+        Ok((
+            bytes,
+            BlockInstructionType {
+                blocktype,
+                instructions,
+            },
+        ))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct LoopInstructionType {
     pub blocktype: BlockType,
     pub instructions: Vec<InstructionType>,
 }
 
-#[derive(Debug)]
+impl ParseWithNom for LoopInstructionType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, blocktype) = BlockType::parse(bytes)?;
+        let (bytes, instructions) = parse_all_to_vec(bytes, InstructionType::OPCODE_END)?;
+
+        Ok((
+            bytes,
+            LoopInstructionType {
+                blocktype,
+                instructions,
+            },
+        ))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct IfInstructionType {
     pub blocktype: BlockType,
     pub if_instructions: Vec<InstructionType>,
 }
 
-#[derive(Debug)]
+impl ParseWithNom for IfInstructionType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, blocktype) = BlockType::parse(bytes)?;
+        let (bytes, if_instructions) = parse_all_to_vec(bytes, InstructionType::OPCODE_ELSE)?;
+        // let (bytes, if_instructions) = Vec::parse(bytes)?;
+
+        Ok((
+            bytes,
+            IfInstructionType {
+                blocktype,
+                if_instructions,
+            },
+        ))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct IfElseInstructionType {
     pub blocktype: BlockType,
     pub if_instructions: Vec<InstructionType>,
     pub else_instructions: Vec<InstructionType>,
 }
 
-#[derive(Debug)]
-pub struct BrInstructionType {
-    pub label: LabelIdx,
-}
+impl ParseWithNom for IfElseInstructionType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, blocktype) = BlockType::parse(bytes)?;
 
-#[derive(Debug)]
-pub struct BrIfInstructionType {
-    pub label: LabelIdx,
-}
+        if bytes
+            .iter()
+            .find(|b| **b == InstructionType::OPCODE_ELSE)
+            .is_some()
+        {
+            // if ... else ... end instruction
+            let (bytes, if_instructions) = parse_all_to_vec(bytes, InstructionType::OPCODE_ELSE)?;
+            let (bytes, else_instructions) = parse_all_to_vec(bytes, InstructionType::OPCODE_END)?;
 
-#[derive(Debug)]
-pub struct BrTableInstructionType {
-    pub labels: Vec<LabelIdx>,
-    pub label_n: LabelIdx,
-}
+            Ok((
+                bytes,
+                IfElseInstructionType {
+                    blocktype,
+                    if_instructions,
+                    else_instructions,
+                },
+            ))
+        } else {
+            // if ... end (no else) instruction
+            let (bytes, if_instructions) = parse_all_to_vec(bytes, InstructionType::OPCODE_END)?;
 
-#[derive(Debug)]
-pub struct CallInstructionType {
-    pub func_idx: FuncIdx,
-}
-
-#[derive(Debug)]
-pub struct CallIndirectInstructionType {
-    pub type_idx: TypeIdx,
-    pub table_idx: TableIdx,
-}
-
-#[derive(Debug)]
-pub struct RefNullInstructionType {
-    pub ref_type: RefType,
-}
-
-#[derive(Debug)]
-pub struct RefFuncInstructionType {
-    pub func_idx: FuncIdx,
-}
-
-#[derive(Debug)]
-pub struct TableInitInstructionType {
-    pub elem: ElemIdx,
-    pub table: TableIdx,
-}
-
-#[derive(Debug)]
-pub struct TableCopyInstructionType {
-    pub lhs_table: TableIdx,
-    pub rhs_table: TableIdx,
-}
-
-#[derive(Debug)]
-pub struct MemArgType {
-    pub align: U32Type,
-    pub offset: U32Type,
+            Ok((
+                bytes,
+                IfElseInstructionType {
+                    blocktype,
+                    if_instructions,
+                    else_instructions: vec![],
+                },
+            ))
+        }
+    }
 }

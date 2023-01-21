@@ -1,4 +1,5 @@
-use super::parser_helpers::read_u32_leb128;
+use super::parse_trait::ParseWithNom;
+use super::parser_helpers::{read_s33_leb128, read_u32_leb128};
 use nom::error::ParseError as NomParseError;
 use nom::{bytes::complete::take, IResult as NomResult, Slice};
 
@@ -12,26 +13,29 @@ pub enum ValType {
 }
 
 impl ValType {
-    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], ValType> {
+    pub fn recognize(byte: Byte) -> Option<Self> {
+        match byte {
+            NumType::ENCODE_BYTE_I32 => Some(ValType::NumType(NumType::I32)),
+            NumType::ENCODE_BYTE_I64 => Some(ValType::NumType(NumType::I64)),
+            NumType::ENCODE_BYTE_F32 => Some(ValType::NumType(NumType::F32)),
+            NumType::ENCODE_BYTE_F64 => Some(ValType::NumType(NumType::F64)),
+            VecType::ENCODE_BYTE => Some(ValType::VecType(VecType::V128)),
+            RefType::ENCODE_BYTE_FUNC_REF => Some(ValType::RefType(RefType::FuncRef)),
+            RefType::ENCODE_BYTE_EXTERN_REF => Some(ValType::RefType(RefType::ExternRef)),
+            _ => None,
+        }
+    }
+}
+
+impl ParseWithNom for ValType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], ValType> {
         let encode_byte_parsed = take(1usize)(bytes)?;
 
-        let val = match encode_byte_parsed.1[0] {
-            NumType::ENCODE_BYTE_I32 => ValType::NumType(NumType::I32),
-            NumType::ENCODE_BYTE_I64 => ValType::NumType(NumType::I64),
-            NumType::ENCODE_BYTE_F32 => ValType::NumType(NumType::F32),
-            NumType::ENCODE_BYTE_F64 => ValType::NumType(NumType::F64),
-            VecType::ENCODE_BYTE => ValType::VecType(VecType::V128),
-            RefType::ENCODE_BYTE_FUNC_REF => ValType::RefType(RefType::FuncRef),
-            RefType::ENCODE_BYTE_EXTERN_REF => ValType::RefType(RefType::ExternRef),
-            _ => {
-                return Err(nom::Err::Failure(nom::error::Error::new(
-                    bytes,
-                    nom::error::ErrorKind::Fail,
-                )))
-            }
-        };
-
-        Ok((encode_byte_parsed.0, val))
+        Self::recognize(encode_byte_parsed.1[0])
+            .ok_or_else(|| {
+                nom::Err::Failure(nom::error::Error::new(bytes, nom::error::ErrorKind::Fail))
+            })
+            .map(|val| (encode_byte_parsed.0, val))
     }
 }
 
@@ -68,8 +72,10 @@ pub enum RefType {
 impl RefType {
     pub const ENCODE_BYTE_FUNC_REF: Byte = 0x70;
     pub const ENCODE_BYTE_EXTERN_REF: Byte = 0x6F;
+}
 
-    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+impl ParseWithNom for RefType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, encode_byte_slice) = take(1usize)(bytes)?;
 
         match encode_byte_slice[0] {
@@ -99,7 +105,7 @@ pub struct Vector<T: std::fmt::Debug> {
     pub elements: Vec<T>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct NameType(pub String);
 
 impl NameType {
@@ -115,7 +121,7 @@ impl NameType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct TableType {
     pub limits: LimitsType,
     pub element_ref_type: RefType,
@@ -136,7 +142,7 @@ impl TableType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct LimitsType {
     pub min: U32Type,
     pub max: Option<U32Type>,
@@ -175,7 +181,7 @@ impl LimitsType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct MemType {
     pub limits: LimitsType,
 }
@@ -188,7 +194,7 @@ impl MemType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct GlobalType {
     pub mut_type: MutType,
     pub val_type: ValType,
@@ -203,7 +209,7 @@ impl GlobalType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum MutType {
     Const,
     Var,
@@ -226,60 +232,158 @@ impl MutType {
         }
     }
 }
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct TypeIdx(pub U32Type);
 
-#[derive(Debug)]
+impl ParseWithNom for TypeIdx {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        U32Type::parse(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct FuncIdx(pub U32Type);
 
-#[derive(Debug)]
+impl ParseWithNom for FuncIdx {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        U32Type::parse(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct TableIdx(pub U32Type);
 
-#[derive(Debug)]
+impl ParseWithNom for TableIdx {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        U32Type::parse(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct MemIdx(pub U32Type);
 
-#[derive(Debug)]
+impl ParseWithNom for MemIdx {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        U32Type::parse(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct GlobalIdx(pub U32Type);
 
-#[derive(Debug)]
+impl ParseWithNom for GlobalIdx {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        U32Type::parse(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct ElemIdx(pub U32Type);
 
-#[derive(Debug)]
+impl ParseWithNom for ElemIdx {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        U32Type::parse(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct DataIdx(pub U32Type);
 
-#[derive(Debug)]
+impl ParseWithNom for DataIdx {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        U32Type::parse(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct LocalIdx(pub U32Type);
 
-#[derive(Debug)]
+impl ParseWithNom for LocalIdx {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        U32Type::parse(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct LabelIdx(U32Type);
 
-#[derive(Debug)]
+impl ParseWithNom for LabelIdx {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        U32Type::parse(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct LaneIdx(Byte);
+
+impl ParseWithNom for LaneIdx {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        take(1usize)(bytes).map(|(b, v)| (b, Self(v[0])))
+    }
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct U32Type(pub u32);
 
-impl U32Type {
-    pub fn parse(bytes: &[Byte]) -> NomResult<&[Byte], U32Type> {
+impl ParseWithNom for U32Type {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], U32Type> {
         let mut pos = 0usize;
         let val = read_u32_leb128(bytes, &mut pos);
         Ok((bytes.slice(pos..), U32Type(val)))
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct S33Type(pub i64);
 
-#[derive(Debug)]
+impl ParseWithNom for S33Type {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let mut pos = 0usize;
+        let val = read_s33_leb128(bytes, &mut pos);
+        Ok((bytes.slice(pos..), S33Type(val)))
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct I32Type(pub i32);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct I64Type(pub i64);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct F32Type(pub f32);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct F64Type(pub f64);
 
 pub type ParseResult<T> = Result<T, SyntaxError>;
@@ -301,6 +405,7 @@ pub enum SyntaxError {
     InvalidElementSegmentModuleSection,
     InvalidDatasModuleSection,
     InvalidDataCountModuleSection,
+    InvalidVectorLen,
     UnexpectedModuleSectionId,
     DataCountDoesntMatchDataLen,
 }

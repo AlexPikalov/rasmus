@@ -117,6 +117,7 @@ impl ModuleParser {
         Ok(code_types)
     }
 
+    // TODO: make it as a method of CodeType
     fn parse_code_type(bytes: &[Byte]) -> NomResult<&[Byte], CodeType> {
         let (bytes, code_len) = U32Type::parse(bytes)?;
         let (bytes, code_bytes) = take(code_len.0 as usize)(bytes)?;
@@ -131,7 +132,7 @@ impl ModuleParser {
             locals.push(locals_type_parsed.1);
         }
 
-        let (_, expression) = ExpressionType::parse(code_bytes)?;
+        let (_, expression) = ExpressionType::parse(remaining_bytes)?;
 
         Ok((
             bytes,
@@ -382,6 +383,8 @@ impl ParseBin<Module> for ModuleParser {
 
         while !remainig_bytes.is_empty() {
             let (b, section_id, section_content) = get_section_content!(remainig_bytes);
+            println!("Section found: {:?}", section_id);
+            println!("Section content: {:?}", section_content);
             match section_id {
                 SectionId::Custom => {
                     // custom sections are not a part of the Module structure, so ignore so far
@@ -391,24 +394,23 @@ impl ParseBin<Module> for ModuleParser {
                 SectionId::Code => module.code = Self::parse_code_section(section_content)?,
                 SectionId::Function => module.funcs = Self::parse_funcs_section(section_content)?,
                 SectionId::Import => module.imports = Self::parse_import_section(section_content)?,
-                SectionId::Table => module.tables = Self::parse_table_section(bytes)?,
-                SectionId::Memory => module.mems = Self::parse_memory_section(bytes)?,
-                SectionId::Global => module.globals = Self::parse_globals_section(bytes)?,
-                SectionId::Export => module.exports = Self::parse_exports_section(bytes)?,
-                SectionId::Start => module.start = Some(Self::parse_start_section(bytes)?),
-                SectionId::Element => module.elems = Self::parse_elems_section(bytes)?,
-                SectionId::Data => module.datas = Self::parse_data_section(bytes)?,
+                SectionId::Table => module.tables = Self::parse_table_section(section_content)?,
+                SectionId::Memory => module.mems = Self::parse_memory_section(section_content)?,
+                SectionId::Global => module.globals = Self::parse_globals_section(section_content)?,
+                SectionId::Export => module.exports = Self::parse_exports_section(section_content)?,
+                SectionId::Start => {
+                    module.start = Some(Self::parse_start_section(section_content)?)
+                }
+                SectionId::Element => module.elems = Self::parse_elems_section(section_content)?,
+                SectionId::Data => module.datas = Self::parse_data_section(section_content)?,
                 SectionId::DataCount => {
-                    let (_, data_count) = U32Type::parse(bytes)
+                    let (_, data_count) = U32Type::parse(section_content)
                         .map_err(|_| SyntaxError::InvalidDataCountModuleSection)?;
                     if module.datas.len() != data_count.0 as usize {
                         return Err(SyntaxError::DataCountDoesntMatchDataLen);
                     }
                 }
             }
-            println!("Section found: {:?}", section_id);
-            println!("Section content: {:?}", section_content);
-            // TODO: parse section content according to section id
             remainig_bytes = b;
         }
 
@@ -420,6 +422,141 @@ impl ParseBin<Module> for ModuleParser {
 mod test {
     use super::*;
     use crate::binary::parse_trait::ParseBin;
+
+    #[test]
+    fn test_complete_module() {
+        let wasm = std::fs::read(format!(
+            "{}/wasm_files/complete_module.wasm",
+            std::env::var("CARGO_MANIFEST_DIR").unwrap()
+        ))
+        .unwrap();
+        let (remaining_bytes, module) = ModuleParser::parse(&wasm).unwrap();
+
+        assert!(remaining_bytes.is_empty(), "should consume all bytes");
+
+        assert_eq!(
+            module.types,
+            vec![
+                FuncType {
+                    parameters: vec![ValType::NumType(NumType::F32)],
+                    results: vec![]
+                },
+                FuncType {
+                    parameters: vec![],
+                    results: vec![]
+                },
+            ],
+            "module.types"
+        );
+
+        assert_eq!(
+            module.imports,
+            vec![
+                ImportType {
+                    module: NameType("foo".into()),
+                    name: NameType("bar".into()),
+                    desc: ImportDescription::Func(TypeIdx(U32Type(0)))
+                },
+                ImportType {
+                    module: NameType("js".into()),
+                    name: NameType("global".into()),
+                    desc: ImportDescription::Global(GlobalType {
+                        mut_type: MutType::Var,
+                        val_type: ValType::NumType(NumType::I32)
+                    })
+                }
+            ],
+            "module.imports"
+        );
+
+        assert_eq!(
+            module.funcs,
+            vec![TypeIdx(U32Type(1)), TypeIdx(U32Type(1))],
+            "module.funcs"
+        );
+
+        // TODO: double-check
+        assert_eq!(
+            module.tables,
+            vec![TableType {
+                element_ref_type: RefType::FuncRef,
+                limits: LimitsType {
+                    max: Some(U32Type(1)),
+                    min: U32Type(0)
+                }
+            }],
+            "module.tables"
+        );
+
+        // TODO: double-check
+        assert_eq!(
+            module.mems,
+            vec![MemType {
+                limits: LimitsType {
+                    min: U32Type(1),
+                    max: Some(U32Type(1))
+                }
+            }],
+            "module.mems"
+        );
+
+        // FIXME:
+        // assert_eq!(
+        //     module.globals,
+        //     vec![GlobalType {
+        //         mut_type: MutType::Var,
+        //         val_type: ValType::NumType(NumType::I32)
+        //     }],
+        //     "module.globals"
+        // );
+
+        assert_eq!(
+            module.exports,
+            vec![ExportType {
+                name: NameType("e".into()),
+                desc: ExportDescription::Func(TypeIdx(U32Type(1)))
+            }],
+            "module.exports"
+        );
+
+        assert_eq!(
+            module.start,
+            Some(StartType {
+                func: FuncIdx(U32Type(1))
+            }),
+            "module.start"
+        );
+
+        assert_eq!(module.elems, vec![], "module.elems");
+
+        assert_eq!(
+            module.code,
+            vec![
+                CodeType {
+                    size: U32Type(2),
+                    code: FuncCodeType {
+                        locals: vec![],
+                        expression: ExpressionType {
+                            instructions: vec![]
+                        }
+                    }
+                },
+                CodeType {
+                    size: U32Type(5),
+                    code: FuncCodeType {
+                        locals: vec![],
+                        expression: ExpressionType {
+                            instructions: vec![
+                                InstructionType::I32Const(I32Type(42)),
+                                InstructionType::Drop
+                            ]
+                        }
+                    }
+                }
+            ],
+            "module.code"
+        );
+    }
 
     #[test]
     fn test_empty_module() {

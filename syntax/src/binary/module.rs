@@ -112,14 +112,14 @@ pub struct CustomSection {
     pub bytes: Vec<Byte>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct ImportType {
     pub module: NameType,
     pub name: NameType,
     pub desc: ImportDescription,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ImportDescription {
     Func(TypeIdx),
     Table(TableType),
@@ -134,11 +134,13 @@ impl ImportDescription {
     pub const ENCODE_BYTE_GLOBAL: Byte = 0x03;
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ExportType {
     pub name: NameType,
     pub desc: ExportDescription,
 }
 
+#[derive(Debug, PartialEq)]
 pub enum ExportDescription {
     Func(TypeIdx),
     Table(TableIdx),
@@ -153,6 +155,7 @@ impl ExportDescription {
     pub const ENCODE_BYTE_GLOBAL: Byte = 0x03;
 }
 
+#[derive(Debug, PartialEq)]
 pub struct StartType {
     pub func: FuncIdx,
 }
@@ -163,6 +166,7 @@ impl ParseWithNom for StartType {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum ElementSegmentType {
     Active0Functions(Active0FunctionsElementSegmentType),
     ElemKindPassiveFunctions(ElemKindPassiveFunctionsElementSegmentType),
@@ -220,6 +224,7 @@ impl ParseWithNom for ElementSegmentType {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Active0FunctionsElementSegmentType {
     pub mode: ElemModeActive0,
     // RefType::FuncRef only
@@ -252,6 +257,7 @@ impl ParseWithNom for Active0FunctionsElementSegmentType {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ElemKindPassiveFunctionsElementSegmentType {
     pub elem_kind: ElemKind,
     pub init: Vec<FuncIdx>,
@@ -286,6 +292,7 @@ impl ParseWithNom for ElemKindPassiveFunctionsElementSegmentType {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ElemKindActiveFunctionsElementSegmentType {
     pub elem_kind: ElemKind,
     pub init: Vec<FuncIdx>,
@@ -325,6 +332,7 @@ impl ParseWithNom for ElemKindActiveFunctionsElementSegmentType {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ElemKindDeclarativeFunctionsElementSegmentType {
     pub elem_kind: ElemKind,
     pub init: Vec<FuncIdx>,
@@ -359,6 +367,7 @@ impl ParseWithNom for ElemKindDeclarativeFunctionsElementSegmentType {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Active0ExprElementSegmentType {
     pub init: Vec<ExpressionType>,
     pub mode: ElemModeActive0,
@@ -391,6 +400,7 @@ impl ParseWithNom for Active0ExprElementSegmentType {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct PassiveRefElementSegmentType {
     pub ref_type: RefType,
     pub init: Vec<ExpressionType>,
@@ -425,6 +435,7 @@ impl ParseWithNom for PassiveRefElementSegmentType {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ActiveRefElementSegmentType {
     pub ref_type: RefType,
     pub init: Vec<ExpressionType>,
@@ -463,6 +474,7 @@ impl ParseWithNom for ActiveRefElementSegmentType {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct DeclarativeRefElementSegmentType {
     pub ref_type: RefType,
     pub init: Vec<ExpressionType>,
@@ -496,17 +508,24 @@ impl ParseWithNom for DeclarativeRefElementSegmentType {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ElemModeActive {
     pub table_idx: TableIdx,
     pub offset: ExpressionType,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ElemModeActive0 {
     pub offset: ExpressionType,
 }
+
+#[derive(Debug, PartialEq)]
 pub struct ElemModePassive;
+
+#[derive(Debug, PartialEq)]
 pub struct ElemModeDeclarative;
 
+#[derive(Debug, PartialEq)]
 pub enum ElemKind {
     FuncRef,
 }
@@ -529,19 +548,19 @@ impl ParseWithNom for ElemKind {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct CodeType {
     pub size: U32Type,
     pub code: FuncCodeType,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct FuncCodeType {
     pub locals: Vec<LocalsType>,
     pub expression: ExpressionType,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct LocalsType {
     pub n: U32Type,
     pub val_types: Vec<ValType>,
@@ -601,6 +620,7 @@ type Active0DataType = GenericDataType<DataModeActive0>;
 type ActiveDataType = GenericDataType<DataModeActive>;
 type PassiveDataType = GenericDataType<DataModePassive>;
 
+#[derive(Debug)]
 pub struct DataModeActive0 {
     pub offset: ExpressionType,
 }
@@ -611,6 +631,7 @@ impl ParseWithNom for DataModeActive0 {
     }
 }
 
+#[derive(Debug)]
 pub struct DataModeActive {
     pub memory: MemIdx,
     pub offset: ExpressionType,
@@ -623,6 +644,7 @@ impl ParseWithNom for DataModeActive {
     }
 }
 
+#[derive(Debug)]
 pub struct DataModePassive;
 
 impl ParseWithNom for DataModePassive {
@@ -636,7 +658,7 @@ pub struct GenericDataType<Mode> {
     pub init: Vec<Byte>,
 }
 
-impl<Mode: ParseWithNom> GenericDataType<Mode> {
+impl<Mode: ParseWithNom + std::fmt::Debug> GenericDataType<Mode> {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, mode) = Mode::parse(bytes)?;
         let (bytes, init_len) = U32Type::parse(bytes)?;
