@@ -1,7 +1,11 @@
 use super::parse_trait::ParseWithNom;
-use super::parser_helpers::{read_s33_leb128, read_u32_leb128};
+use super::parser_helpers::{read_i32_leb128, read_i64_leb128, read_s33_leb128, read_u32_leb128};
 use nom::error::ParseError as NomParseError;
-use nom::{bytes::complete::take, IResult as NomResult, Slice};
+use nom::{
+    bytes::complete::take,
+    number::complete::{le_f32, le_f64},
+    IResult as NomResult, Slice,
+};
 
 pub type Byte = u8;
 
@@ -377,14 +381,48 @@ impl ParseWithNom for S33Type {
 #[derive(Debug, PartialEq)]
 pub struct I32Type(pub i32);
 
+impl ParseWithNom for I32Type {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let mut pos = 0usize;
+        let val = read_i32_leb128(bytes, &mut pos);
+        Ok((bytes.slice(pos..), Self(val)))
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct I64Type(pub i64);
+
+impl ParseWithNom for I64Type {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let mut pos = 0usize;
+        let val = read_i64_leb128(bytes, &mut pos);
+        Ok((bytes.slice(pos..), Self(val)))
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub struct F32Type(pub f32);
 
+impl ParseWithNom for F32Type {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        le_f32(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct F64Type(pub f64);
+
+impl ParseWithNom for F64Type {
+    fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
+    where
+        Self: Sized,
+    {
+        le_f64(bytes).map(|(b, v)| (b, Self(v)))
+    }
+}
 
 pub type ParseResult<T> = Result<T, SyntaxError>;
 

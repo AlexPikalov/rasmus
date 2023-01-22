@@ -14,22 +14,16 @@ pub struct ExpressionType {
 
 impl ExpressionType {
     const OP_CODE_END: Byte = 0x0B;
-
-    fn is_opcode_end(b: Byte) -> bool {
-        b == Self::OP_CODE_END
-    }
 }
 
 impl ParseWithNom for ExpressionType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
-        let (bytes, expression_bytes) = take_till(Self::is_opcode_end)(bytes)?;
-        let bytes = bytes.slice(1..);
-        println!("expression_bytes {:?}", expression_bytes);
-        // TODO: implement parse instructions
+        let (bytes, instructions) = parse_all_to_vec(bytes, Self::OP_CODE_END)?;
+
         Ok((
             bytes,
             ExpressionType {
-                instructions: vec![InstructionType::Nop],
+                instructions: instructions,
             },
         ))
     }
@@ -560,7 +554,7 @@ impl InstructionType {
     // Table Instructions
     const OPCODE_TABLE_GET: Byte = 0x25;
     const OPCODE_TABLE_SET: Byte = 0x26;
-    const OPCODE_TABLE_OTHER: Byte = 0xFC;
+    const OPCODE_OTHER: Byte = 0xFC;
     const BYTECODE_TABLE_INIT: U32Type = U32Type(12);
     const BYTECODE_TABLE_DROP: U32Type = U32Type(13);
     const BYTECODE_TABLE_COPY: U32Type = U32Type(14);
@@ -594,7 +588,6 @@ impl InstructionType {
     const OPCODE_I64_STORE_32: Byte = 0x3E;
     const OPCODE_MEMORY_SIZE: Byte = 0x3F;
     const OPCODE_MEMORY_GROW: Byte = 0x40;
-    const OPCODE_MEMORY_OTHER: Byte = 0xFC;
     const BYTECODE_MEMORY_INIT: U32Type = U32Type(8);
     const BYTECODE_DATA_DROP: U32Type = U32Type(9);
     const BYTECODE_MEMORY_COPY: U32Type = U32Type(10);
@@ -733,7 +726,6 @@ impl InstructionType {
     const OPCODE_I64_EXTEND_8_S: Byte = 0xC2;
     const OPCODE_I64_EXTEND_16_S: Byte = 0xC3;
     const OPCODE_I64_EXTEND_32_S: Byte = 0xC4;
-    const OPCODE_TRUNC_SAT_ALL: Byte = 0xFC;
     const BYTE_PREFIX_I32_TRUNC_SAT_F32_S: U32Type = U32Type(0);
     const BYTE_PREFIX_I32_TRUNC_SAT_F32_U: U32Type = U32Type(1);
     const BYTE_PREFIX_I32_TRUNC_SAT_F64_S: U32Type = U32Type(2);
@@ -982,10 +974,25 @@ impl InstructionType {
     const BYTE_PREFIX_F32x4_DEMOTE_F64x2_ZERO: U32Type = U32Type(94);
     const BYTE_PREFIX_F64x2_PROMOTE_LOW_F32x4: U32Type = U32Type(95);
 
-    fn parse_table_other(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+    fn parse_other(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, bytecode) = U32Type::parse(bytes)?;
 
         match bytecode {
+            Self::BYTE_PREFIX_I32_TRUNC_SAT_F32_S => Ok((bytes, Self::I32TruncSatF32S)),
+            Self::BYTE_PREFIX_I32_TRUNC_SAT_F32_U => Ok((bytes, Self::I32TruncSatF32U)),
+            Self::BYTE_PREFIX_I32_TRUNC_SAT_F64_S => Ok((bytes, Self::I32TruncSatF64S)),
+            Self::BYTE_PREFIX_I32_TRUNC_SAT_F64_U => Ok((bytes, Self::I32TruncSatF64U)),
+            Self::BYTE_PREFIX_I64_TRUNC_SAT_F32_S => Ok((bytes, Self::I64TruncSatF32S)),
+            Self::BYTE_PREFIX_I64_TRUNC_SAT_F32_U => Ok((bytes, Self::I64TruncSatF32U)),
+            Self::BYTE_PREFIX_I64_TRUNC_SAT_F64_S => Ok((bytes, Self::I64TruncSatF64S)),
+            Self::BYTE_PREFIX_I64_TRUNC_SAT_F64_U => Ok((bytes, Self::I64TruncSatF64U)),
+
+            Self::BYTECODE_MEMORY_INIT => parse(bytes).map(|(b, v)| (b, Self::MemoryInit(v))),
+            Self::BYTECODE_DATA_DROP => parse(bytes).map(|(b, v)| (b, Self::DataDrop(v))),
+            Self::BYTECODE_MEMORY_COPY => {
+                Ok((tag(&[0x00, 0x00])(bytes).map(|r| r.0)?, Self::MemoryCopy))
+            }
+            Self::BYTECODE_MEMORY_FILL => Ok((tag(&[0x00])(bytes).map(|r| r.0)?, Self::MemoryFill)),
             Self::BYTECODE_TABLE_INIT => parse(bytes).map(|(b, v)| (b, Self::TableInit(v))),
             Self::BYTECODE_TABLE_DROP => parse(bytes).map(|(b, v)| (b, Self::ElemDrop(v))),
             Self::BYTECODE_TABLE_COPY => parse(bytes).map(|(b, v)| (b, Self::TableCopy(v))),
@@ -999,16 +1006,10 @@ impl InstructionType {
         }
     }
 
-    fn parse_memory_other(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
-        let (bytes, bytecode) = U32Type::parse(bytes)?;
+    fn parse_vector_instruction(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, byteprefix) = U32Type::parse(bytes)?;
 
-        match bytecode {
-            Self::BYTECODE_MEMORY_INIT => parse(bytes).map(|(b, v)| (b, Self::MemoryInit(v))),
-            Self::BYTECODE_DATA_DROP => parse(bytes).map(|(b, v)| (b, Self::DataDrop(v))),
-            Self::BYTECODE_MEMORY_COPY => {
-                Ok((tag(&[0x00, 0x00])(bytes).map(|r| r.0)?, Self::MemoryCopy))
-            }
-            Self::BYTECODE_MEMORY_FILL => Ok((tag(&[0x00])(bytes).map(|r| r.0)?, Self::MemoryFill)),
+        match byteprefix {
             _ => Err(nom::Err::Failure(nom::error::Error::new(
                 bytes,
                 nom::error::ErrorKind::Fail,
@@ -1027,8 +1028,8 @@ impl ParseWithNom for InstructionType {
             Self::OPCODE_BLOCK => parse(bytes).map(|(b, v)| (b, Self::Block(v))),
             Self::OPCODE_LOOP => parse(bytes).map(|(b, v)| (b, Self::Loop(v))),
             Self::OPCODE_IF_ELSE => parse(bytes).map(|(b, v)| (b, Self::IfElse(v))),
-            Self::OPCODE_BR => LabelIdx::parse(bytes).map(|(b, v)| (b, Self::Br(v))),
-            Self::OPCODE_BR_IF => LabelIdx::parse(bytes).map(|(b, v)| (b, Self::BrIf(v))),
+            Self::OPCODE_BR => parse(bytes).map(|(b, v)| (b, Self::Br(v))),
+            Self::OPCODE_BR_IF => parse(bytes).map(|(b, v)| (b, Self::BrIf(v))),
             Self::OPCODE_BR_TABLE => parse(bytes).map(|(b, v)| (b, Self::BrTable(v))),
             Self::OPCODE_RETURN => Ok((bytes, Self::Return)),
             Self::OPCODE_CALL => parse(bytes).map(|(b, v)| (b, Self::Call(v))),
@@ -1049,7 +1050,7 @@ impl ParseWithNom for InstructionType {
 
             Self::OPCODE_TABLE_GET => parse(bytes).map(|(b, v)| (b, Self::TableGet(v))),
             Self::OPCODE_TABLE_SET => parse(bytes).map(|(b, v)| (b, Self::TableSet(v))),
-            Self::OPCODE_TABLE_OTHER => Self::parse_table_other(bytes),
+            Self::OPCODE_OTHER => Self::parse_other(bytes),
 
             Self::OPCODE_I32_LOAD => parse(bytes).map(|(b, v)| (b, Self::I32Load(v))),
             Self::OPCODE_I64_LOAD => parse(bytes).map(|(b, v)| (b, Self::I64Load(v))),
@@ -1076,11 +1077,147 @@ impl ParseWithNom for InstructionType {
             Self::OPCODE_I64_STORE_32 => parse(bytes).map(|(b, v)| (b, Self::I64Store32(v))),
             Self::OPCODE_MEMORY_SIZE => Ok((tag(&[0x00])(bytes).map(|v| v.0)?, Self::MemorySize)),
             Self::OPCODE_MEMORY_GROW => Ok((tag(&[0x00])(bytes).map(|v| v.0)?, Self::MemoryGrow)),
-            Self::OPCODE_MEMORY_OTHER => Self::parse_memory_other(bytes),
 
-            _ => {
-                unimplemented!()
-            }
+            Self::OPCODE_I32_CONST => parse(bytes).map(|(b, v)| (b, Self::I32Const(v))),
+            Self::OPCODE_I64_CONST => parse(bytes).map(|(b, v)| (b, Self::I64Const(v))),
+            Self::OPCODE_F32_CONST => parse(bytes).map(|(b, v)| (b, Self::F32Const(v))),
+            Self::OPCODE_F64_CONST => parse(bytes).map(|(b, v)| (b, Self::F64Const(v))),
+            Self::OPCODE_I32_EQZ => Ok((bytes, Self::I32Eqz)),
+            Self::OPCODE_I32_EQ => Ok((bytes, Self::I32Eq)),
+            Self::OPCODE_I32_NE => Ok((bytes, Self::I32Ne)),
+            Self::OPCODE_I32_LT_S => Ok((bytes, Self::I32LtS)),
+            Self::OPCODE_I32_LT_U => Ok((bytes, Self::I32LtU)),
+            Self::OPCODE_I32_GT_S => Ok((bytes, Self::I32GtS)),
+            Self::OPCODE_I32_GT_U => Ok((bytes, Self::I32GtU)),
+            Self::OPCODE_I32_LE_S => Ok((bytes, Self::I32LeS)),
+            Self::OPCODE_I32_LE_U => Ok((bytes, Self::I32LeU)),
+            Self::OPCODE_I32_GE_S => Ok((bytes, Self::I32GeS)),
+            Self::OPCODE_I32_GE_U => Ok((bytes, Self::I32GeU)),
+            Self::OPCODE_I64_EQZ => Ok((bytes, Self::I64Eqz)),
+            Self::OPCODE_I64_EQ => Ok((bytes, Self::I64Eq)),
+            Self::OPCODE_I64_NE => Ok((bytes, Self::I64Ne)),
+            Self::OPCODE_I64_LT_S => Ok((bytes, Self::I64LtS)),
+            Self::OPCODE_I64_LT_U => Ok((bytes, Self::I64LtU)),
+            Self::OPCODE_I64_GT_S => Ok((bytes, Self::I64GtS)),
+            Self::OPCODE_I64_GT_U => Ok((bytes, Self::I64GtU)),
+            Self::OPCODE_I64_LE_S => Ok((bytes, Self::I64LeS)),
+            Self::OPCODE_I64_LE_U => Ok((bytes, Self::I64LeU)),
+            Self::OPCODE_I64_GE_S => Ok((bytes, Self::I64GeS)),
+            Self::OPCODE_I64_GE_U => Ok((bytes, Self::I64GeU)),
+            Self::OPCODE_F32_EQ => Ok((bytes, Self::F32Eq)),
+            Self::OPCODE_F32_NE => Ok((bytes, Self::F32Ne)),
+            Self::OPCODE_F32_LT => Ok((bytes, Self::F32Lt)),
+            Self::OPCODE_F32_GT => Ok((bytes, Self::F32Gt)),
+            Self::OPCODE_F32_LE => Ok((bytes, Self::F32Le)),
+            Self::OPCODE_F32_GE => Ok((bytes, Self::F32Ge)),
+            Self::OPCODE_F64_EQ => Ok((bytes, Self::F64Eq)),
+            Self::OPCODE_F64_NE => Ok((bytes, Self::F64Ne)),
+            Self::OPCODE_F64_LT => Ok((bytes, Self::F64Lt)),
+            Self::OPCODE_F64_GT => Ok((bytes, Self::F64Gt)),
+            Self::OPCODE_F64_LE => Ok((bytes, Self::F64Le)),
+            Self::OPCODE_F64_GE => Ok((bytes, Self::F64Ge)),
+            Self::OPCODE_I32_CLZ => Ok((bytes, Self::I32Clz)),
+            Self::OPCODE_I32_CTZ => Ok((bytes, Self::I32Ctz)),
+            Self::OPCODE_I32_POPCNT => Ok((bytes, Self::I32Popcnt)),
+            Self::OPCODE_I32_ADD => Ok((bytes, Self::I32Add)),
+            Self::OPCODE_I32_SUB => Ok((bytes, Self::I32Sub)),
+            Self::OPCODE_I32_MUL => Ok((bytes, Self::I32Mul)),
+            Self::OPCODE_I32_DIV_S => Ok((bytes, Self::I32DivS)),
+            Self::OPCODE_I32_DIV_U => Ok((bytes, Self::I32DivU)),
+            Self::OPCODE_I32_REM_S => Ok((bytes, Self::I32RemS)),
+            Self::OPCODE_I32_REM_U => Ok((bytes, Self::I32RemU)),
+            Self::OPCODE_I32_AND => Ok((bytes, Self::I32And)),
+            Self::OPCODE_I32_OR => Ok((bytes, Self::I32Or)),
+            Self::OPCODE_I32_XOR => Ok((bytes, Self::I32Xor)),
+            Self::OPCODE_I32_SHL => Ok((bytes, Self::I32Shl)),
+            Self::OPCODE_I32_SHR_S => Ok((bytes, Self::I32ShrS)),
+            Self::OPCODE_I32_SHR_U => Ok((bytes, Self::I32ShrU)),
+            Self::OPCODE_I32_ROTL => Ok((bytes, Self::I32Rotl)),
+            Self::OPCODE_I32_ROTR => Ok((bytes, Self::I32Rotr)),
+            Self::OPCODE_I64_CLZ => Ok((bytes, Self::I64Clz)),
+            Self::OPCODE_I64_CTZ => Ok((bytes, Self::I64Ctz)),
+            Self::OPCODE_I64_POPCNT => Ok((bytes, Self::I64Popcnt)),
+            Self::OPCODE_I64_ADD => Ok((bytes, Self::I64Add)),
+            Self::OPCODE_I64_SUB => Ok((bytes, Self::I64Sub)),
+            Self::OPCODE_I64_MUL => Ok((bytes, Self::I64Mul)),
+            Self::OPCODE_I64_DIV_S => Ok((bytes, Self::I64DivS)),
+            Self::OPCODE_I64_DIV_U => Ok((bytes, Self::I64DivU)),
+            Self::OPCODE_I64_REM_S => Ok((bytes, Self::I64RemS)),
+            Self::OPCODE_I64_REM_U => Ok((bytes, Self::I64RemU)),
+            Self::OPCODE_I64_AND => Ok((bytes, Self::I64And)),
+            Self::OPCODE_I64_OR => Ok((bytes, Self::I64Or)),
+            Self::OPCODE_I64_XOR => Ok((bytes, Self::I64Xor)),
+            Self::OPCODE_I64_SHL => Ok((bytes, Self::I64Shl)),
+            Self::OPCODE_I64_SHR_S => Ok((bytes, Self::I64ShrS)),
+            Self::OPCODE_I64_SHR_U => Ok((bytes, Self::I64ShrU)),
+            Self::OPCODE_I64_ROTL => Ok((bytes, Self::I64Rotl)),
+            Self::OPCODE_I64_ROTR => Ok((bytes, Self::I64Rotr)),
+
+            Self::OPCODE_F32_ABS => Ok((bytes, Self::F32Abs)),
+            Self::OPCODE_F32_NEG => Ok((bytes, Self::F32Neg)),
+            Self::OPCODE_F32_CEIL => Ok((bytes, Self::F32Ceil)),
+            Self::OPCODE_F32_FLOOR => Ok((bytes, Self::F32Floor)),
+            Self::OPCODE_F32_TRUNC => Ok((bytes, Self::F32Trunc)),
+            Self::OPCODE_F32_NEAREST => Ok((bytes, Self::F32Nearest)),
+            Self::OPCODE_F32_SQRT => Ok((bytes, Self::F32Sqrt)),
+            Self::OPCODE_F32_ADD => Ok((bytes, Self::F32Add)),
+            Self::OPCODE_F32_SUB => Ok((bytes, Self::F32Sub)),
+            Self::OPCODE_F32_MUL => Ok((bytes, Self::F32Mul)),
+            Self::OPCODE_F32_DIV => Ok((bytes, Self::F32Div)),
+            Self::OPCODE_F32_MIN => Ok((bytes, Self::F32Min)),
+            Self::OPCODE_F32_MAX => Ok((bytes, Self::F32Max)),
+            Self::OPCODE_F32_COPYSIGN => Ok((bytes, Self::F32Copysign)),
+            Self::OPCODE_F64_ABS => Ok((bytes, Self::F64Abs)),
+            Self::OPCODE_F64_NEG => Ok((bytes, Self::F64Neg)),
+            Self::OPCODE_F64_CEIL => Ok((bytes, Self::F64Ceil)),
+            Self::OPCODE_F64_FLOOR => Ok((bytes, Self::F64Floor)),
+            Self::OPCODE_F64_TRUNC => Ok((bytes, Self::F64Trunc)),
+            Self::OPCODE_F64_NEAREST => Ok((bytes, Self::F64Nearest)),
+            Self::OPCODE_F64_SQRT => Ok((bytes, Self::F64Sqrt)),
+            Self::OPCODE_F64_ADD => Ok((bytes, Self::F64Add)),
+            Self::OPCODE_F64_SUB => Ok((bytes, Self::F64Sub)),
+            Self::OPCODE_F64_MUL => Ok((bytes, Self::F64Mul)),
+            Self::OPCODE_F64_DIV => Ok((bytes, Self::F64Div)),
+            Self::OPCODE_F64_MIN => Ok((bytes, Self::F64Min)),
+            Self::OPCODE_F64_MAX => Ok((bytes, Self::F64Max)),
+            Self::OPCODE_F64_COPYSIGN => Ok((bytes, Self::F64Copysign)),
+            Self::OPCODE_I32_WRAP_I64 => Ok((bytes, Self::I32WrapI64)),
+            Self::OPCODE_I32_TRUNC_F32_S => Ok((bytes, Self::I32TruncF32S)),
+            Self::OPCODE_I32_TRUNC_F32_U => Ok((bytes, Self::I32TruncF32U)),
+            Self::OPCODE_I32_TRUNC_F64_S => Ok((bytes, Self::I32TruncF64S)),
+            Self::OPCODE_I32_TRUNC_F64_U => Ok((bytes, Self::I32TruncF64U)),
+            Self::OPCODE_I64_EXTEND_I32_S => Ok((bytes, Self::I64ExtendI32S)),
+            Self::OPCODE_I64_EXTEND_I32_U => Ok((bytes, Self::I64ExtendI32U)),
+            Self::OPCODE_I64_TRUNC_F32_S => Ok((bytes, Self::I64TruncF32S)),
+            Self::OPCODE_I64_TRUNC_F32_U => Ok((bytes, Self::I64TruncF32U)),
+            Self::OPCODE_I64_TRUNC_F64_S => Ok((bytes, Self::I64TruncF64S)),
+            Self::OPCODE_I64_TRUNC_F64_U => Ok((bytes, Self::I64TruncF64U)),
+            Self::OPCODE_F32_CONVERT_I32_S => Ok((bytes, Self::F32ConvertI32S)),
+            Self::OPCODE_F32_CONVERT_I32_U => Ok((bytes, Self::F32ConvertI32U)),
+            Self::OPCODE_F32_CONVERT_I64_S => Ok((bytes, Self::F32ConvertI64S)),
+            Self::OPCODE_F32_CONVERT_I64_U => Ok((bytes, Self::F32ConvertI64U)),
+            Self::OPCODE_F32_DEMOTE_F64 => Ok((bytes, Self::F32DemoteF64)),
+            Self::OPCODE_F64_CONVERT_I32_S => Ok((bytes, Self::F64ConvertI32S)),
+            Self::OPCODE_F64_CONVERT_I32_U => Ok((bytes, Self::F64ConvertI32U)),
+            Self::OPCODE_F64_CONVERT_I64_S => Ok((bytes, Self::F64ConvertI64S)),
+            Self::OPCODE_F64_CONVERT_I64_U => Ok((bytes, Self::F64ConvertI64U)),
+            Self::OPCODE_F64_PROMOTE_F32 => Ok((bytes, Self::F64PromoteF32)),
+            Self::OPCODE_I32_REINTERPRET_F32 => Ok((bytes, Self::I32ReinterpretF32)),
+            Self::OPCODE_I64_REINTERPRET_F64 => Ok((bytes, Self::I64ReinterpretF64)),
+            Self::OPCODE_F32_REINTERPRET_I32 => Ok((bytes, Self::F32ReinterpretI32)),
+            Self::OPCODE_F64_REINTERPRET_I64 => Ok((bytes, Self::F64ReinterpretI64)),
+            Self::OPCODE_I32_EXTEND_8_S => Ok((bytes, Self::I32Extend8S)),
+            Self::OPCODE_I32_EXTEND_16_S => Ok((bytes, Self::I32Extend16S)),
+            Self::OPCODE_I64_EXTEND_8_S => Ok((bytes, Self::I64Extend8S)),
+            Self::OPCODE_I64_EXTEND_16_S => Ok((bytes, Self::I64Extend16S)),
+            Self::OPCODE_I64_EXTEND_32_S => Ok((bytes, Self::I64Extend32S)),
+
+            Self::OPCODE_VECTOR_INSTRUCTIONS => Self::parse_vector_instruction(bytes),
+
+            _ => Err(nom::Err::Failure(nom::error::Error::new(
+                bytes,
+                nom::error::ErrorKind::Fail,
+            ))),
         }
     }
 }
