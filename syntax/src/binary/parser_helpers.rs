@@ -4,10 +4,7 @@ use super::{
     types::*,
 };
 
-use nom::{
-    bytes::complete::{take, take_till},
-    IResult as NomResult, Slice,
-};
+use nom::{bytes::complete::take_till, IResult as NomResult, Slice};
 
 pub use super::parse_instruction_fn::parse_instruction;
 

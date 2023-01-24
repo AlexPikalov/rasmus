@@ -845,8 +845,8 @@ impl InstructionType {
     const BYTE_PREFIX_I8x16_NARROW_I16x8_S: U32Type = U32Type(101);
     const BYTE_PREFIX_I8x16_NARROW_I16x8_U: U32Type = U32Type(102);
     const BYTE_PREFIX_I8x16_SHL: U32Type = U32Type(107);
-    const BYTE_PREFIX_I8x16_SHL_S: U32Type = U32Type(108);
-    const BYTE_PREFIX_I8x16_SHL_U: U32Type = U32Type(109);
+    const BYTE_PREFIX_I8x16_SHR_S: U32Type = U32Type(108);
+    const BYTE_PREFIX_I8x16_SHR_U: U32Type = U32Type(109);
     const BYTE_PREFIX_I8x16_ADD: U32Type = U32Type(110);
     const BYTE_PREFIX_I8x16_ADD_SAT_S: U32Type = U32Type(111);
     const BYTE_PREFIX_I8x16_ADD_SAT_U: U32Type = U32Type(112);
@@ -872,8 +872,8 @@ impl InstructionType {
     const BYTE_PREFIX_I16x8_EXTEND_LOW_I8x16_U: U32Type = U32Type(137);
     const BYTE_PREFIX_I16x8_EXTEND_HIGH_I8x16_U: U32Type = U32Type(138);
     const BYTE_PREFIX_I16x8_SHL: U32Type = U32Type(139);
-    const BYTE_PREFIX_I16x8_SHL_S: U32Type = U32Type(140);
-    const BYTE_PREFIX_I16x8_SHL_U: U32Type = U32Type(141);
+    const BYTE_PREFIX_I16x8_SHR_S: U32Type = U32Type(140);
+    const BYTE_PREFIX_I16x8_SHR_U: U32Type = U32Type(141);
     const BYTE_PREFIX_I16x8_ADD: U32Type = U32Type(142);
     const BYTE_PREFIX_I16x8_ADD_SAT_S: U32Type = U32Type(143);
     const BYTE_PREFIX_I16x8_ADD_SAT_U: U32Type = U32Type(144);
@@ -1010,6 +1010,226 @@ impl InstructionType {
         let (bytes, byteprefix) = U32Type::parse(bytes)?;
 
         match byteprefix {
+            Self::BYTE_PREFIX_V128_LOAD => parse(bytes).map(|(b, v)| (b, Self::V128Load(v))),
+            Self::BYTE_PREFIX_V128_LOAD_8x8_S => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load8x8S(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_8x8_U => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load8x8U(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_16x4_S => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load16x4S(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_16x4_U => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load16x4U(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_32x2_S => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load32x2S(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_32x2_U => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load32x2U(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_8_SPLAT => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load8Splat(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_16_SPLAT => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load16Splat(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_32_SPLAT => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load32Splat(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_64_SPLAT => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load64Splat(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_32_ZERO => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load32Zero(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_64_ZERO => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load64Zero(v)))
+            }
+            Self::BYTE_PREFIX_V128_STORE => parse(bytes).map(|(b, v)| (b, Self::V128Store(v))),
+            Self::BYTE_PREFIX_V128_LOAD_8_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load8Lane(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_16_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load16Lane(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_32_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load32Lane(v)))
+            }
+            Self::BYTE_PREFIX_V128_LOAD_64_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Load64Lane(v)))
+            }
+            Self::BYTE_PREFIX_V128_STORE_8_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Store8Lane(v)))
+            }
+            Self::BYTE_PREFIX_V128_STORE_16_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Store16Lane(v)))
+            }
+            Self::BYTE_PREFIX_V128_STORE_32_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Store32Lane(v)))
+            }
+            Self::BYTE_PREFIX_V128_STORE_64_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::V128Store64Lane(v)))
+            }
+            Self::BYTE_PREFIX_V128_CONST => parse(bytes).map(|(b, v)| (b, Self::V128Const(v))),
+            Self::BYTE_PREFIX_I8x16_SHUFFLE => {
+                parse(bytes).map(|(b, v)| (b, Self::I8x16Shuffle(v)))
+            }
+            Self::BYTE_PREFIX_I8x16_EXTRACT_LANE_S => {
+                parse(bytes).map(|(b, v)| (b, Self::I8x16ExtractLaneS(v)))
+            }
+            Self::BYTE_PREFIX_I8x16_EXTRACT_LANE_U => {
+                parse(bytes).map(|(b, v)| (b, Self::I8x16ExtractLaneU(v)))
+            }
+            Self::BYTE_PREFIX_I8x16_REPLACE_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::I8x16ReplaceLane(v)))
+            }
+            Self::BYTE_PREFIX_I16x8_EXTRACT_LANE_S => {
+                parse(bytes).map(|(b, v)| (b, Self::I16x8ExtractLaneS(v)))
+            }
+            Self::BYTE_PREFIX_I16x8_EXTRACT_LANE_U => {
+                parse(bytes).map(|(b, v)| (b, Self::I16x8ExtractLaneU(v)))
+            }
+            Self::BYTE_PREFIX_I16x8_REPLACE_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::I16x8ReplaceLane(v)))
+            }
+            Self::BYTE_PREFIX_I32x4_EXTRACT_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::I32x4ExtractLane(v)))
+            }
+            Self::BYTE_PREFIX_I32x4_REPLACE_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::I32x4ReplaceLane(v)))
+            }
+            Self::BYTE_PREFIX_I64x2_EXTRACT_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::I64x2ExtractLane(v)))
+            }
+            Self::BYTE_PREFIX_I64x2_REPLACE_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::I64x2ReplaceLane(v)))
+            }
+            Self::BYTE_PREFIX_F32x4_EXTRACT_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::F32x4ExtractLane(v)))
+            }
+            Self::BYTE_PREFIX_F32x4_REPLACE_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::F32x4ReplaceLane(v)))
+            }
+            Self::BYTE_PREFIX_F64x2_EXTRACT_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::F64x2ExtractLane(v)))
+            }
+            Self::BYTE_PREFIX_F64x2_REPLACE_LANE => {
+                parse(bytes).map(|(b, v)| (b, Self::F64x2ReplaceLane(v)))
+            }
+            Self::BYTE_PREFIX_I8x16_SWIZZLE => Ok((bytes, Self::I8x16Swizzle)),
+            Self::BYTE_PREFIX_I8x16_SPLAT => Ok((bytes, Self::I8x16Splat)),
+            Self::BYTE_PREFIX_I16x8_SPLAT => Ok((bytes, Self::I16x8Splat)),
+            Self::BYTE_PREFIX_I32x4_SPLAT => Ok((bytes, Self::I32x4Splat)),
+            Self::BYTE_PREFIX_I64x2_SPLAT => Ok((bytes, Self::I64x2Splat)),
+            Self::BYTE_PREFIX_F32x4_SPLAT => Ok((bytes, Self::F32x4Splat)),
+            Self::BYTE_PREFIX_F64x2_SPLAT => Ok((bytes, Self::F64x2Splat)),
+            Self::BYTE_PREFIX_I8x16_EQ => Ok((bytes, Self::I8x16Eq)),
+            Self::BYTE_PREFIX_I8x16_NE => Ok((bytes, Self::I8x16Ne)),
+            Self::BYTE_PREFIX_I8x16_LT_S => Ok((bytes, Self::I8x16LtS)),
+            Self::BYTE_PREFIX_I8x16_LT_U => Ok((bytes, Self::I8x16LtU)),
+            Self::BYTE_PREFIX_I8x16_GT_S => Ok((bytes, Self::I8x16GtS)),
+            Self::BYTE_PREFIX_I8x16_GT_U => Ok((bytes, Self::I8x16GtU)),
+            Self::BYTE_PREFIX_I8x16_LE_S => Ok((bytes, Self::I8x16LeS)),
+            Self::BYTE_PREFIX_I8x16_LE_U => Ok((bytes, Self::I8x16LeU)),
+            Self::BYTE_PREFIX_I8x16_GE_S => Ok((bytes, Self::I8x16GeS)),
+            Self::BYTE_PREFIX_I8x16_GE_U => Ok((bytes, Self::I8x16GeU)),
+            Self::BYTE_PREFIX_I16x8_EQ => Ok((bytes, Self::I16x8Eq)),
+            Self::BYTE_PREFIX_I16x8_NE => Ok((bytes, Self::I16x8Ne)),
+            Self::BYTE_PREFIX_I16x8_LT_S => Ok((bytes, Self::I16x8LtS)),
+            Self::BYTE_PREFIX_I16x8_LT_U => Ok((bytes, Self::I16x8LtU)),
+            Self::BYTE_PREFIX_I16x8_GT_S => Ok((bytes, Self::I16x8GtS)),
+            Self::BYTE_PREFIX_I16x8_GT_U => Ok((bytes, Self::I16x8GtU)),
+            Self::BYTE_PREFIX_I16x8_LE_S => Ok((bytes, Self::I16x8LeS)),
+            Self::BYTE_PREFIX_I16x8_LE_U => Ok((bytes, Self::I16x8LeU)),
+            Self::BYTE_PREFIX_I16x8_GE_S => Ok((bytes, Self::I16x8GeS)),
+            Self::BYTE_PREFIX_I16x8_GE_U => Ok((bytes, Self::I16x8GeU)),
+            Self::BYTE_PREFIX_I32x4_EQ => Ok((bytes, Self::I32x4Eq)),
+            Self::BYTE_PREFIX_I32x4_NE => Ok((bytes, Self::I32x4Ne)),
+            Self::BYTE_PREFIX_I32x4_LT_S => Ok((bytes, Self::I32x4LtS)),
+            Self::BYTE_PREFIX_I32x4_LT_U => Ok((bytes, Self::I32x4LtU)),
+            Self::BYTE_PREFIX_I32x4_GT_S => Ok((bytes, Self::I32x4GtS)),
+            Self::BYTE_PREFIX_I32x4_GT_U => Ok((bytes, Self::I32x4GtU)),
+            Self::BYTE_PREFIX_I32x4_LE_S => Ok((bytes, Self::I32x4LeS)),
+            Self::BYTE_PREFIX_I32x4_LE_U => Ok((bytes, Self::I32x4LeU)),
+            Self::BYTE_PREFIX_I32x4_GE_S => Ok((bytes, Self::I32x4GeS)),
+            Self::BYTE_PREFIX_I32x4_GE_U => Ok((bytes, Self::I32x4GeU)),
+            Self::BYTE_PREFIX_I64x2_EQ => Ok((bytes, Self::I64x2Eq)),
+            Self::BYTE_PREFIX_I64x2_NE => Ok((bytes, Self::I64x2Ne)),
+            Self::BYTE_PREFIX_I64x2_LT_S => Ok((bytes, Self::I64x2LtS)),
+            Self::BYTE_PREFIX_I64x2_GT_S => Ok((bytes, Self::I64x2GtS)),
+            Self::BYTE_PREFIX_I64x2_LE_S => Ok((bytes, Self::I64x2LeS)),
+            Self::BYTE_PREFIX_I64x2_GE_S => Ok((bytes, Self::I64x2GeS)),
+            Self::BYTE_PREFIX_F32x4_EQ => Ok((bytes, Self::F32x4Eq)),
+            Self::BYTE_PREFIX_F32x4_NE => Ok((bytes, Self::F32x4Ne)),
+            Self::BYTE_PREFIX_F32x4_LT => Ok((bytes, Self::F32x4Lt)),
+            Self::BYTE_PREFIX_F32x4_GT => Ok((bytes, Self::F32x4Gt)),
+            Self::BYTE_PREFIX_F32x4_LE => Ok((bytes, Self::F32x4Le)),
+            Self::BYTE_PREFIX_F32x4_GE => Ok((bytes, Self::F32x4Ge)),
+            Self::BYTE_PREFIX_F64x2_EQ => Ok((bytes, Self::F64x2Eq)),
+            Self::BYTE_PREFIX_F64x2_NE => Ok((bytes, Self::F64x2Ne)),
+            Self::BYTE_PREFIX_F64x2_LT => Ok((bytes, Self::F64x2Lt)),
+            Self::BYTE_PREFIX_F64x2_GT => Ok((bytes, Self::F64x2Gt)),
+            Self::BYTE_PREFIX_F64x2_LE => Ok((bytes, Self::F64x2Le)),
+            Self::BYTE_PREFIX_F64x2_GE => Ok((bytes, Self::F64x2Ge)),
+            Self::BYTE_PREFIX_V128_NOT => Ok((bytes, Self::V128Not)),
+            Self::BYTE_PREFIX_V128_AND => Ok((bytes, Self::V128And)),
+            Self::BYTE_PREFIX_V128_ANDNOT => Ok((bytes, Self::V128AndNot)),
+            Self::BYTE_PREFIX_V128_OR => Ok((bytes, Self::V128Or)),
+            Self::BYTE_PREFIX_V128_XOR => Ok((bytes, Self::V128Xor)),
+            Self::BYTE_PREFIX_V128_BITSELECT => Ok((bytes, Self::V128Bitselect)),
+            Self::BYTE_PREFIX_V128_ANYTRUE => Ok((bytes, Self::V128Bitselect)),
+
+            Self::BYTE_PREFIX_I8x16_ABS => Ok((bytes, Self::I8x16Abs)),
+            Self::BYTE_PREFIX_I8x16_NEG => Ok((bytes, Self::I8x16Neg)),
+            Self::BYTE_PREFIX_I8x16_POPCNT => Ok((bytes, Self::I8x16Popcnt)),
+            Self::BYTE_PREFIX_I8x16_ALL_TRUE => Ok((bytes, Self::I8x16AllTrue)),
+            Self::BYTE_PREFIX_I8x16_BITMASK => Ok((bytes, Self::I8x16Bitmask)),
+            Self::BYTE_PREFIX_I8x16_NARROW_I16x8_S => Ok((bytes, Self::I8x16NarrowI16x8S)),
+            Self::BYTE_PREFIX_I8x16_NARROW_I16x8_U => Ok((bytes, Self::I8x16NarrowI16x8U)),
+            Self::BYTE_PREFIX_I8x16_SHL => Ok((bytes, Self::I8x16Shl)),
+            Self::BYTE_PREFIX_I8x16_SHR_S => Ok((bytes, Self::I8x16ShrS)),
+            Self::BYTE_PREFIX_I8x16_SHR_U => Ok((bytes, Self::I8x16ShrU)),
+            Self::BYTE_PREFIX_I8x16_ADD => Ok((bytes, Self::I8x16Add)),
+            Self::BYTE_PREFIX_I8x16_ADD_SAT_S => Ok((bytes, Self::I8x16AddSatS)),
+            Self::BYTE_PREFIX_I8x16_ADD_SAT_U => Ok((bytes, Self::I8x16AddSatU)),
+            Self::BYTE_PREFIX_I8x16_SUB => Ok((bytes, Self::I8x16Sub)),
+            Self::BYTE_PREFIX_I8x16_SUB_SAT_S => Ok((bytes, Self::I8x16SubSatS)),
+            Self::BYTE_PREFIX_I8x16_SUB_SAT_U => Ok((bytes, Self::I8x16SubSatU)),
+            Self::BYTE_PREFIX_I8x16_MIN_S => Ok((bytes, Self::I8x16MinS)),
+            Self::BYTE_PREFIX_I8x16_MIN_U => Ok((bytes, Self::I8x16MinU)),
+            Self::BYTE_PREFIX_I8x16_MAX_S => Ok((bytes, Self::I8x16MaxS)),
+            Self::BYTE_PREFIX_I8x16_MAX_U => Ok((bytes, Self::I8x16MaxU)),
+            Self::BYTE_PREFIX_I8x16_AVGR_U => Ok((bytes, Self::I8x16AvgrU)),
+
+            Self::BYTE_PREFIX_I16x8_EXTADD_PAIRWISE_I8x16_S => {
+                Ok((bytes, Self::I16x8ExtaddPairwiseI8x16S))
+            }
+            Self::BYTE_PREFIX_I16x8_EXTADD_PAIRWISE_I8x16_U => {
+                Ok((bytes, Self::I16x8ExtaddPairwiseI8x16U))
+            }
+            Self::BYTE_PREFIX_I16x8_ABS => Ok((bytes, Self::I16x8Abs)),
+            Self::BYTE_PREFIX_I16x8_NEG => Ok((bytes, Self::I16x8Neg)),
+            Self::BYTE_PREFIX_I16x8_Q15MULR_SAT_S => Ok((bytes, Self::I16x8Q15MulrSatS)),
+            Self::BYTE_PREFIX_I16x8_ALL_TRUE => Ok((bytes, Self::I8x16AllTrue)),
+            Self::BYTE_PREFIX_I16x8_BITMASK => Ok((bytes, Self::I8x16Bitmask)),
+            Self::BYTE_PREFIX_I16x8_NARROW_I32x4_S => Ok((bytes, Self::I16x8NarrowI32x4S)),
+            Self::BYTE_PREFIX_I16x8_NARROW_I32x4_U => Ok((bytes, Self::I16x8NarrowI32x4U)),
+            Self::BYTE_PREFIX_I16x8_EXTEND_LOW_I8x16_S => Ok((bytes, Self::I16x8ExtendLowI8x16S)),
+            Self::BYTE_PREFIX_I16x8_EXTEND_HIGH_I8x16_S => Ok((bytes, Self::I16x8ExtendHighI8x16S)),
+            Self::BYTE_PREFIX_I16x8_EXTEND_LOW_I8x16_U => Ok((bytes, Self::I16x8ExtendLowI8x16U)),
+            Self::BYTE_PREFIX_I16x8_EXTEND_HIGH_I8x16_U => Ok((bytes, Self::I16x8ExtendHighI8x16U)),
+            Self::BYTE_PREFIX_I16x8_SHL => Ok((bytes, Self::I16x8Shl)),
+            Self::BYTE_PREFIX_I16x8_SHR_S => Ok((bytes, Self::I16x8ShrS)),
+            Self::BYTE_PREFIX_I16x8_SHR_U => Ok((bytes, Self::I16x8ShrU)),
+            Self::BYTE_PREFIX_I16x8_ADD => Ok((bytes, Self::I16x8Add)),
+            Self::BYTE_PREFIX_I16x8_ADD_SAT_S => Ok((bytes, Self::I16x8AddSatS)),
+            Self::BYTE_PREFIX_I16x8_ADD_SAT_U => Ok((bytes, Self::I16x8AddSatU)),
+            Self::BYTE_PREFIX_I16x8_SUB => Ok((bytes, Self::I16x8Sub)),
+            Self::BYTE_PREFIX_I16x8_SUB_SAT_S => Ok((bytes, Self::I16x8SubSatS)),
+            Self::BYTE_PREFIX_I16x8_SUB_SAT_U => Ok((bytes, Self::I16x8SubSatU)),
+
             _ => Err(nom::Err::Failure(nom::error::Error::new(
                 bytes,
                 nom::error::ErrorKind::Fail,

@@ -1,5 +1,8 @@
 use super::types::*;
-use nom::IResult as NomResult;
+use nom::{
+    bytes::complete::{take, take_till},
+    IResult as NomResult,
+};
 
 pub trait ParseBin<T: Sized> {
     fn parse(bytes: &[u8]) -> ParseResult<(Vec<Byte>, T)>
@@ -49,5 +52,13 @@ impl<T: ParseWithNom + Sized> ParseWithNom for Vec<T> {
         }
 
         Ok((remaining_bytes, types))
+    }
+}
+
+impl ParseWithNom for Vec<Byte> {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, vector_len) = U32Type::parse(bytes)?;
+
+        take(vector_len.0 as usize)(bytes).map(|(b, v)| (b, v.to_vec()))
     }
 }
