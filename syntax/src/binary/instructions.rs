@@ -901,8 +901,8 @@ impl InstructionType {
     const BYTE_PREFIX_I32x4_EXTEND_LOW_I16x8_U: U32Type = U32Type(169);
     const BYTE_PREFIX_I32x4_EXTEND_HIGH_I16x8_U: U32Type = U32Type(170);
     const BYTE_PREFIX_I32x4_SHL: U32Type = U32Type(171);
-    const BYTE_PREFIX_I32x4_SHL_S: U32Type = U32Type(172);
-    const BYTE_PREFIX_I32x4_SHL_U: U32Type = U32Type(173);
+    const BYTE_PREFIX_I32x4_SHR_S: U32Type = U32Type(172);
+    const BYTE_PREFIX_I32x4_SHR_U: U32Type = U32Type(173);
     const BYTE_PREFIX_I32x4_ADD: U32Type = U32Type(174);
     const BYTE_PREFIX_I32x4_SUB: U32Type = U32Type(177);
     const BYTE_PREFIX_I32x4_MUL: U32Type = U32Type(181);
@@ -924,8 +924,8 @@ impl InstructionType {
     const BYTE_PREFIX_I64x2_EXTEND_LOW_I32x4_U: U32Type = U32Type(201);
     const BYTE_PREFIX_I64x2_EXTEND_HIGH_I32x4_U: U32Type = U32Type(202);
     const BYTE_PREFIX_I64x2_SHL: U32Type = U32Type(203);
-    const BYTE_PREFIX_I64x2_SHL_S: U32Type = U32Type(204);
-    const BYTE_PREFIX_I64x2_SHL_U: U32Type = U32Type(205);
+    const BYTE_PREFIX_I64x2_SHR_S: U32Type = U32Type(204);
+    const BYTE_PREFIX_I64x2_SHR_U: U32Type = U32Type(205);
     const BYTE_PREFIX_I64x2_ADD: U32Type = U32Type(206);
     const BYTE_PREFIX_I64x2_SUB: U32Type = U32Type(209);
     const BYTE_PREFIX_I64x2_MUL: U32Type = U32Type(213);
@@ -1180,7 +1180,6 @@ impl InstructionType {
             Self::BYTE_PREFIX_V128_XOR => Ok((bytes, Self::V128Xor)),
             Self::BYTE_PREFIX_V128_BITSELECT => Ok((bytes, Self::V128Bitselect)),
             Self::BYTE_PREFIX_V128_ANYTRUE => Ok((bytes, Self::V128Bitselect)),
-
             Self::BYTE_PREFIX_I8x16_ABS => Ok((bytes, Self::I8x16Abs)),
             Self::BYTE_PREFIX_I8x16_NEG => Ok((bytes, Self::I8x16Neg)),
             Self::BYTE_PREFIX_I8x16_POPCNT => Ok((bytes, Self::I8x16Popcnt)),
@@ -1202,7 +1201,6 @@ impl InstructionType {
             Self::BYTE_PREFIX_I8x16_MAX_S => Ok((bytes, Self::I8x16MaxS)),
             Self::BYTE_PREFIX_I8x16_MAX_U => Ok((bytes, Self::I8x16MaxU)),
             Self::BYTE_PREFIX_I8x16_AVGR_U => Ok((bytes, Self::I8x16AvgrU)),
-
             Self::BYTE_PREFIX_I16x8_EXTADD_PAIRWISE_I8x16_S => {
                 Ok((bytes, Self::I16x8ExtaddPairwiseI8x16S))
             }
@@ -1229,6 +1227,107 @@ impl InstructionType {
             Self::BYTE_PREFIX_I16x8_SUB => Ok((bytes, Self::I16x8Sub)),
             Self::BYTE_PREFIX_I16x8_SUB_SAT_S => Ok((bytes, Self::I16x8SubSatS)),
             Self::BYTE_PREFIX_I16x8_SUB_SAT_U => Ok((bytes, Self::I16x8SubSatU)),
+            Self::BYTE_PREFIX_I16x8_MUL => Ok((bytes, Self::I16x8Mul)),
+            Self::BYTE_PREFIX_I16x8_MIN_S => Ok((bytes, Self::I16x8MinS)),
+            Self::BYTE_PREFIX_I16x8_MIN_U => Ok((bytes, Self::I16x8MinU)),
+            Self::BYTE_PREFIX_I16x8_MAX_S => Ok((bytes, Self::I16x8MaxS)),
+            Self::BYTE_PREFIX_I16x8_MAX_U => Ok((bytes, Self::I16x8MaxU)),
+            Self::BYTE_PREFIX_I16x8_AVGR_U => Ok((bytes, Self::I16x8AvgrU)),
+            Self::BYTE_PREFIX_I16x8_EXTMUL_LOW_I8x16_S => Ok((bytes, Self::I16x8ExtmulLowI8x16S)),
+            Self::BYTE_PREFIX_I16x8_EXTMUL_HIGH_I8x16_S => Ok((bytes, Self::I16x8ExtmulHighI8x16S)),
+            Self::BYTE_PREFIX_I16x8_EXTMUL_LOW_I8x16_U => Ok((bytes, Self::I16x8ExtmulLowI8x16U)),
+            Self::BYTE_PREFIX_I16x8_EXTMUL_HIGH_I8x16_U => Ok((bytes, Self::I16x8ExtmulHighI8x16U)),
+            Self::BYTE_PREFIX_I32x4_EXTADD_PAIRWISE_I16x8_S => {
+                Ok((bytes, Self::I32x4ExtaddPairwiseI16x8S))
+            }
+            Self::BYTE_PREFIX_I32x4_EXTADD_PAIRWISE_I16x8_U => {
+                Ok((bytes, Self::I32x4ExtaddPairwiseI16x8U))
+            }
+            Self::BYTE_PREFIX_I32x4_ABS => Ok((bytes, Self::I32x4Abs)),
+            Self::BYTE_PREFIX_I32x4_NEG => Ok((bytes, Self::I32x4Neg)),
+            Self::BYTE_PREFIX_I32x4_ALL_TRUE => Ok((bytes, Self::I32x4AllTrue)),
+            Self::BYTE_PREFIX_I32x4_BITMASK => Ok((bytes, Self::I32x4Bitmask)),
+            Self::BYTE_PREFIX_I32x4_EXTEND_LOW_I16x8_S => Ok((bytes, Self::I32x4ExtendLowI16x8S)),
+            Self::BYTE_PREFIX_I32x4_EXTEND_HIGH_I16x8_S => Ok((bytes, Self::I32x4ExtendHighI16x8S)),
+            Self::BYTE_PREFIX_I32x4_EXTEND_LOW_I16x8_U => Ok((bytes, Self::I32x4ExtendLowI16x8U)),
+            Self::BYTE_PREFIX_I32x4_EXTEND_HIGH_I16x8_U => Ok((bytes, Self::I32x4ExtendHighI16x8U)),
+            Self::BYTE_PREFIX_I32x4_SHL => Ok((bytes, Self::I32x4Shl)),
+            Self::BYTE_PREFIX_I32x4_SHR_S => Ok((bytes, Self::I32x4ShrS)),
+            Self::BYTE_PREFIX_I32x4_SHR_U => Ok((bytes, Self::I32x4ShrU)),
+            Self::BYTE_PREFIX_I32x4_ADD => Ok((bytes, Self::I32x4Add)),
+            Self::BYTE_PREFIX_I32x4_SUB => Ok((bytes, Self::I16x8Sub)),
+            Self::BYTE_PREFIX_I32x4_MUL => Ok((bytes, Self::I16x8Mul)),
+            Self::BYTE_PREFIX_I32x4_MIN_S => Ok((bytes, Self::I16x8MinS)),
+            Self::BYTE_PREFIX_I32x4_MIN_U => Ok((bytes, Self::I16x8MinU)),
+            Self::BYTE_PREFIX_I32x4_MAX_S => Ok((bytes, Self::I16x8MaxS)),
+            Self::BYTE_PREFIX_I32x4_MAX_U => Ok((bytes, Self::I16x8MaxU)),
+            Self::BYTE_PREFIX_I32x4_DOT_I16x8_S => Ok((bytes, Self::I16x8MaxU)),
+            Self::BYTE_PREFIX_I32x4_EXTMUL_LOW_I16x8_S => Ok((bytes, Self::I32x4ExtmulLowI16x8S)),
+            Self::BYTE_PREFIX_I32x4_EXTMUL_HIGH_I16x8_S => Ok((bytes, Self::I32x4ExtmulHighI16x8S)),
+            Self::BYTE_PREFIX_I32x4_EXTMUL_LOW_I16x8_U => Ok((bytes, Self::I32x4ExtmulLowI16x8U)),
+            Self::BYTE_PREFIX_I32x4_EXTMUL_HIGH_I16x8_U => Ok((bytes, Self::I32x4ExtmulHighI16x8U)),
+            Self::BYTE_PREFIX_I64x2_ABS => Ok((bytes, Self::I64x2Abs)),
+            Self::BYTE_PREFIX_I64x2_NEG => Ok((bytes, Self::I64x2Neg)),
+            Self::BYTE_PREFIX_I64x2_ALL_TRUE => Ok((bytes, Self::I64x2AllTrue)),
+            Self::BYTE_PREFIX_I64x2_BITMASK => Ok((bytes, Self::I64x2Bitmask)),
+            Self::BYTE_PREFIX_I64x2_EXTEND_LOW_I32x4_S => Ok((bytes, Self::I64x2ExtendLowI32x4S)),
+            Self::BYTE_PREFIX_I64x2_EXTEND_HIGH_I32x4_S => Ok((bytes, Self::I64x2ExtendHighI32x4S)),
+            Self::BYTE_PREFIX_I64x2_EXTEND_LOW_I32x4_U => Ok((bytes, Self::I64x2ExtendLowI32x4U)),
+            Self::BYTE_PREFIX_I64x2_EXTEND_HIGH_I32x4_U => Ok((bytes, Self::I64x2ExtendHighI32x4U)),
+            Self::BYTE_PREFIX_I64x2_SHL => Ok((bytes, Self::I64x2Shl)),
+            Self::BYTE_PREFIX_I64x2_SHR_S => Ok((bytes, Self::I64x2ShrS)),
+            Self::BYTE_PREFIX_I64x2_SHR_U => Ok((bytes, Self::I64x2ShrU)),
+            Self::BYTE_PREFIX_I64x2_ADD => Ok((bytes, Self::I64x2Add)),
+            Self::BYTE_PREFIX_I64x2_SUB => Ok((bytes, Self::I64x2Sub)),
+            Self::BYTE_PREFIX_I64x2_MUL => Ok((bytes, Self::I64x2Mul)),
+            Self::BYTE_PREFIX_I64x2_EXTMUL_LOW_I32x4_S => Ok((bytes, Self::I64x2ExtmulLowI32x4S)),
+            Self::BYTE_PREFIX_I64x2_EXTMUL_HIGH_I32x4_S => Ok((bytes, Self::I64x2ExtmulHighI32x4S)),
+            Self::BYTE_PREFIX_I64x2_EXTMUL_LOW_I32x4_U => Ok((bytes, Self::I64x2ExtmulLowI32x4U)),
+            Self::BYTE_PREFIX_I64x2_EXTMUL_HIGH_I32x4_U => Ok((bytes, Self::I64x2ExtmulHighI32x4U)),
+            Self::BYTE_PREFIX_F32x4_CEIL => Ok((bytes, Self::F32x4Ceil)),
+            Self::BYTE_PREFIX_F32x4_FLOOR => Ok((bytes, Self::F32x4Floor)),
+            Self::BYTE_PREFIX_F32x4_TRUNC => Ok((bytes, Self::F32x4Trunc)),
+            Self::BYTE_PREFIX_F32x4_NEAREST => Ok((bytes, Self::F32x4Nearest)),
+            Self::BYTE_PREFIX_F32x4_ABS => Ok((bytes, Self::F32x4Abs)),
+            Self::BYTE_PREFIX_F32x4_NEG => Ok((bytes, Self::F32x4Neg)),
+            Self::BYTE_PREFIX_F32x4_SQRT => Ok((bytes, Self::F32x4Sqrt)),
+            Self::BYTE_PREFIX_F32x4_ADD => Ok((bytes, Self::F32x4Add)),
+            Self::BYTE_PREFIX_F32x4_SUB => Ok((bytes, Self::F32x4Sub)),
+            Self::BYTE_PREFIX_F32x4_MUL => Ok((bytes, Self::F32x4Mul)),
+            Self::BYTE_PREFIX_F32x4_DIV => Ok((bytes, Self::F32x4Div)),
+            Self::BYTE_PREFIX_F32x4_MIN => Ok((bytes, Self::F32x4Min)),
+            Self::BYTE_PREFIX_F32x4_MAX => Ok((bytes, Self::F32x4Max)),
+            Self::BYTE_PREFIX_F32x4_PMIN => Ok((bytes, Self::F32x4Pmin)),
+            Self::BYTE_PREFIX_F32x4_PMAX => Ok((bytes, Self::F32x4Pmax)),
+            Self::BYTE_PREFIX_F64x2_CEIL => Ok((bytes, Self::F64x2Ceil)),
+            Self::BYTE_PREFIX_F64x2_FLOOR => Ok((bytes, Self::F64x2Floor)),
+            Self::BYTE_PREFIX_F64x2_TRUNC => Ok((bytes, Self::F64x2Trunc)),
+            Self::BYTE_PREFIX_F64x2_NEAREST => Ok((bytes, Self::F64x2Nearest)),
+            Self::BYTE_PREFIX_F64x2_ABS => Ok((bytes, Self::F64x2Abs)),
+            Self::BYTE_PREFIX_F64x2_NEG => Ok((bytes, Self::F64x2Neg)),
+            Self::BYTE_PREFIX_F64x2_SQRT => Ok((bytes, Self::F64x2Sqrt)),
+            Self::BYTE_PREFIX_F64x2_ADD => Ok((bytes, Self::F64x2Add)),
+            Self::BYTE_PREFIX_F64x2_SUB => Ok((bytes, Self::F64x2Sub)),
+            Self::BYTE_PREFIX_F64x2_MUL => Ok((bytes, Self::F64x2Mul)),
+            Self::BYTE_PREFIX_F64x2_DIV => Ok((bytes, Self::F64x2Div)),
+            Self::BYTE_PREFIX_F64x2_MIN => Ok((bytes, Self::F64x2Min)),
+            Self::BYTE_PREFIX_F64x2_MAX => Ok((bytes, Self::F64x2Max)),
+            Self::BYTE_PREFIX_F64x2_PMIN => Ok((bytes, Self::F64x2Pmin)),
+            Self::BYTE_PREFIX_F64x2_PMAX => Ok((bytes, Self::F64x2Pmax)),
+            Self::BYTE_PREFIX_I32x4_TRUNC_SAT_F32x4_S => Ok((bytes, Self::I32x4TruncSatF32x4S)),
+            Self::BYTE_PREFIX_I32x4_TRUNC_SAT_F32x4_U => Ok((bytes, Self::I32x4TruncSatF32x4U)),
+            Self::BYTE_PREFIX_F32x4_CONVERT_I32x4_S => Ok((bytes, Self::F32x4ConvertI32x4S)),
+            Self::BYTE_PREFIX_F32x4_CONVERT_I32x4_U => Ok((bytes, Self::F32x4ConvertI32x4U)),
+            Self::BYTE_PREFIX_I32x4_TRUNC_SAT_F64x2_S_ZERO => {
+                Ok((bytes, Self::I32x4TruncSatF64x2SZero))
+            }
+            Self::BYTE_PREFIX_I32x4_TRUNC_SAT_F64x2_U_ZERO => {
+                Ok((bytes, Self::I32x4TruncSatF64x2UZero))
+            }
+            Self::BYTE_PREFIX_F64x2_CONVERT_LOW_I32x4_S => Ok((bytes, Self::F64x2ConvertLowI32x4S)),
+            Self::BYTE_PREFIX_F64x2_CONVERT_LOW_I32x4_U => Ok((bytes, Self::F64x2ConvertLowI32x4U)),
+            Self::BYTE_PREFIX_F32x4_DEMOTE_F64x2_ZERO => Ok((bytes, Self::F32x4DemoteF64x2Zero)),
+            Self::BYTE_PREFIX_F64x2_PROMOTE_LOW_F32x4 => Ok((bytes, Self::F64x2PromoteLowF32x4)),
 
             _ => Err(nom::Err::Failure(nom::error::Error::new(
                 bytes,
