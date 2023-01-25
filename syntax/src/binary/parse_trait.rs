@@ -1,4 +1,4 @@
-use super::types::*;
+use super::super::types::*;
 use nom::{
     bytes::complete::{take, take_till},
     IResult as NomResult,

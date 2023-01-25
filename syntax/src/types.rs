@@ -1,5 +1,7 @@
-use super::parse_trait::ParseWithNom;
-use super::parser_helpers::{read_i32_leb128, read_i64_leb128, read_s33_leb128, read_u32_leb128};
+use super::binary::parse_trait::ParseWithNom;
+use super::binary::parser_helpers::{
+    read_i32_leb128, read_i64_leb128, read_s33_leb128, read_u32_leb128,
+};
 use nom::error::ParseError as NomParseError;
 use nom::{
     bytes::complete::take,

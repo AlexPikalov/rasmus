@@ -1,5 +1,5 @@
+use super::binary::parse_trait::ParseWithNom;
 pub use super::instructions::*;
-use super::parse_trait::ParseWithNom;
 use super::types::*;
 
 use nom::{bytes::complete::take, IResult as NomResult};

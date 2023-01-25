@@ -1,12 +1,8 @@
-use super::{
-    instructions::{ExpressionType, InstructionType},
-    parse_trait::ParseWithNom,
-    types::*,
-};
+use crate::types::*;
+
+use super::parse_trait::ParseWithNom;
 
 use nom::{bytes::complete::take_till, IResult as NomResult, Slice};
-
-pub use super::parse_instruction_fn::parse_instruction;
 
 // Copied from https://doc.rust-lang.org/stable/nightly-rustc/src/rustc_serialize/leb128.rs.html
 macro_rules! impl_read_unsigned_leb128 {

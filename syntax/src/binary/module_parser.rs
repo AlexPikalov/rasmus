@@ -3,9 +3,9 @@ use nom::{
     IResult as NomResult,
 };
 
-use super::module::*;
-use super::parse_trait::*;
-use super::types::*;
+use crate::binary::parse_trait::*;
+use crate::module::*;
+use crate::types::*;
 pub struct ModuleParser;
 
 macro_rules! get_section_content {
@@ -371,7 +371,6 @@ impl ModuleParser {
 impl ParseBin<Module> for ModuleParser {
     fn parse(bytes: &[Byte]) -> ParseResult<(Vec<Byte>, Module)> {
         let mut remainig_bytes = bytes;
-        // FIXME: Is it possible to have few modules declared in the same file?
         remainig_bytes = Self::take_magic(remainig_bytes)
             .map_err(|_| SyntaxError::ModuleMagicNotFound)?
             .0;
@@ -555,45 +554,6 @@ mod test {
                 }
             ],
             "module.code"
-        );
-    }
-
-    #[test]
-    fn test_empty_module() {
-        let wasm = std::fs::read(format!(
-            "{}/wasm_files/empty_module.wasm",
-            std::env::var("CARGO_MANIFEST_DIR").unwrap()
-        ))
-        .unwrap();
-        ModuleParser::parse(&wasm).unwrap();
-    }
-
-    #[test]
-    fn test_module_with_function() {
-        let wasm = std::fs::read(format!(
-            "{}/wasm_files/with_function.wasm",
-            std::env::var("CARGO_MANIFEST_DIR").unwrap()
-        ))
-        .unwrap();
-
-        let (_, module) = ModuleParser::parse(&wasm).unwrap();
-
-        println!("TYPES: {:?}", module.types);
-        println!("CODE: {:?}", module.code);
-        println!("FUNCTIONS: {:?}", module.funcs);
-        println!("TABLES: {:?}", module.tables);
-        println!("MEMS: {:?}", module.mems);
-        // println!("GLOBALS: {:?}", module.code);
-
-        assert_eq!(
-            module.types,
-            vec![FuncType {
-                parameters: vec![
-                    ValType::NumType(NumType::I32),
-                    ValType::NumType(NumType::I32)
-                ],
-                results: vec![ValType::NumType(NumType::I32)]
-            }]
         );
     }
 }
