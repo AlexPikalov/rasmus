@@ -1,6 +1,6 @@
 use super::binary::parse_trait::ParseWithNom;
 use super::binary::parser_helpers::{
-    read_i32_leb128, read_i64_leb128, read_s33_leb128, read_u32_leb128,
+    parse as nom_parse, read_i32_leb128, read_i64_leb128, read_s33_leb128, read_u32_leb128,
 };
 use nom::error::ParseError as NomParseError;
 use nom::{
@@ -42,6 +42,15 @@ impl ParseWithNom for ValType {
                 nom::Err::Failure(nom::error::Error::new(bytes, nom::error::ErrorKind::Fail))
             })
             .map(|val| (encode_byte_parsed.0, val))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct ResultType(pub Vec<ValType>);
+
+impl ParseWithNom for ResultType {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        nom_parse(bytes).map(|(b, v)| (b, Self(v)))
     }
 }
 
@@ -358,7 +367,7 @@ impl ParseWithNom for LaneIdx {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, PartialOrd)]
 pub struct U32Type(pub u32);
 
 impl ParseWithNom for U32Type {
@@ -453,11 +462,11 @@ pub enum SyntaxError {
 pub struct NomError;
 
 impl NomParseError<NomError> for NomError {
-    fn from_error_kind(input: NomError, kind: nom::error::ErrorKind) -> Self {
+    fn from_error_kind(_input: NomError, _kind: nom::error::ErrorKind) -> Self {
         NomError
     }
 
-    fn append(input: NomError, kind: nom::error::ErrorKind, other: Self) -> Self {
+    fn append(_input: NomError, _kind: nom::error::ErrorKind, _other: Self) -> Self {
         NomError
     }
 }

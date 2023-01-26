@@ -1,9 +1,11 @@
+#![allow(non_upper_case_globals)]
+
 use super::binary::parse_trait::ParseWithNom;
 use super::binary::parser_helpers::{parse, parse_all_to_vec};
 use super::types::*;
 
 use nom::{
-    bytes::complete::{tag, take, take_till},
+    bytes::complete::{tag, take},
     IResult as NomResult, Slice,
 };
 

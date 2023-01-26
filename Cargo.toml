@@ -1,3 +1,6 @@
 [workspace]
 
-members = ["code_gen", "engine", "syntax"]
+members = [
+  "code_gen",
+  "syntax"
+]
