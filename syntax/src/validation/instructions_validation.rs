@@ -229,6 +229,74 @@ pub fn get_stack_type_for_instruction(instruction: InstructionType) -> StackType
             outputs: vec![OpdType::NumType(NumType::I32)],
         },
         // t.cvtop
+        I::I32WrapI64 => StackType {
+            inputs: vec![OpdType::NumType(NumType::I32)],
+            outputs: vec![OpdType::NumType(NumType::I64)],
+        },
+        I::I32Extend8S | I::I32Extend16S => StackType {
+            inputs: vec![OpdType::NumType(NumType::I32)],
+            outputs: vec![OpdType::NumType(NumType::I32)],
+        },
+        I::I64Extend8S | I::I64Extend16S | I::I64Extend32S => StackType {
+            inputs: vec![OpdType::NumType(NumType::I64)],
+            outputs: vec![OpdType::NumType(NumType::I64)],
+        },
+        I::I32TruncF32S | I::I32TruncF32U | I::I32TruncSatF32S | I::I32TruncSatF32U => StackType {
+            inputs: vec![OpdType::NumType(NumType::F32)],
+            outputs: vec![OpdType::NumType(NumType::I32)],
+        },
+        I::I32TruncF64S | I::I32TruncF64U | I::I32TruncSatF64S | I::I32TruncSatF64U => StackType {
+            inputs: vec![OpdType::NumType(NumType::F64)],
+            outputs: vec![OpdType::NumType(NumType::I32)],
+        },
+        I::I64TruncF32S | I::I64TruncF32U | I::I64TruncSatF32S | I::I64TruncSatF32U => StackType {
+            inputs: vec![OpdType::NumType(NumType::F32)],
+            outputs: vec![OpdType::NumType(NumType::I64)],
+        },
+        I::I64TruncF64S | I::I64TruncF64U | I::I64TruncSatF64S | I::I64TruncSatF64U => StackType {
+            inputs: vec![OpdType::NumType(NumType::F64)],
+            outputs: vec![OpdType::NumType(NumType::I64)],
+        },
+        I::F32ConvertI32S | I::F32ConvertI32U => StackType {
+            inputs: vec![OpdType::NumType(NumType::I32)],
+            outputs: vec![OpdType::NumType(NumType::F32)],
+        },
+        I::F32ConvertI64S | I::F32ConvertI64U => StackType {
+            inputs: vec![OpdType::NumType(NumType::I64)],
+            outputs: vec![OpdType::NumType(NumType::F32)],
+        },
+        I::F64ConvertI32S | I::F64ConvertI32U => StackType {
+            inputs: vec![OpdType::NumType(NumType::I32)],
+            outputs: vec![OpdType::NumType(NumType::F64)],
+        },
+        I::F64ConvertI64S | I::F64ConvertI64U => StackType {
+            inputs: vec![OpdType::NumType(NumType::I64)],
+            outputs: vec![OpdType::NumType(NumType::F64)],
+        },
+        I::F32DemoteF64 => StackType {
+            inputs: vec![OpdType::NumType(NumType::F64)],
+            outputs: vec![OpdType::NumType(NumType::F32)],
+        },
+        I::F64PromoteF32 => StackType {
+            inputs: vec![OpdType::NumType(NumType::F32)],
+            outputs: vec![OpdType::NumType(NumType::F64)],
+        },
+        I::I32ReinterpretF32 => StackType {
+            inputs: vec![OpdType::NumType(NumType::F32)],
+            outputs: vec![OpdType::NumType(NumType::I32)],
+        },
+        I::I64ReinterpretF64 => StackType {
+            inputs: vec![OpdType::NumType(NumType::F64)],
+            outputs: vec![OpdType::NumType(NumType::I64)],
+        },
+        I::F32ReinterpretI32 => StackType {
+            inputs: vec![OpdType::NumType(NumType::I32)],
+            outputs: vec![OpdType::NumType(NumType::F32)],
+        },
+        I::F64ReinterpretI64 => StackType {
+            inputs: vec![OpdType::NumType(NumType::I64)],
+            outputs: vec![OpdType::NumType(NumType::F64)],
+        },
         // _ => unimplemented!() |
     }
 }
