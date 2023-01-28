@@ -50,6 +50,8 @@ pub fn is_global_type_valid(_global_type: GlobalType, _ctx: ValidationContext) -
     true
 }
 
+// Can be used for imports sub-type checking
+
 pub fn does_limits_match(lhs: LimitsType, rhs: LimitsType) -> bool {
     lhs.min >= rhs.min
         && (rhs.max.is_none() || rhs.max.zip(lhs.max).map(|(r, l)| l <= r).unwrap_or(false))
