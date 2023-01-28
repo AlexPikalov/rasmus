@@ -2,6 +2,8 @@ use super::context::ValidationContext;
 use crate::instructions::BlockType;
 use crate::types::*;
 
+// TODO: refactor following functions to returl ValidationResult instead of bool
+
 pub fn is_limit_type_valid(limit: LimitsType, range: U32Type, ctx: ValidationContext) -> bool {
     limit.min <= range
         && limit

@@ -78,7 +78,7 @@ impl NumType {
     pub const ENCODE_BYTE_F64: Byte = 0x7C;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum RefType {
     FuncRef,
     ExternRef,
