@@ -59,7 +59,7 @@ macro_rules! impl_read_signed_leb128 {
 
             if (shift < <$int_ty>::BITS) && ((byte & 0x40) != 0) {
                 // sign extend
-                result |= (!0 << shift);
+                result |= !0 << shift;
             }
 
             result
@@ -92,7 +92,7 @@ pub fn read_s33_leb128(slice: &[u8], position: &mut usize) -> i64 {
 
     if (shift < 33) && ((byte & 0x40) != 0) {
         // sign extend
-        result |= (!0 << shift);
+        result |= !0 << shift;
     }
 
     result

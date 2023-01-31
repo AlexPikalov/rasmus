@@ -1,3 +1,4 @@
+use crate::check;
 use crate::instructions::{InstructionType, InstructionType as I};
 use crate::types::*;
 
@@ -8,8 +9,10 @@ use super::validation_error::{ValidationError, ValidationResult};
 // example: `(i64.const 0) (i32.const 1)` i32.add is invalid
 // in a sequence despite each of individual instruction may be valid.
 
+const MAX_ALLOWED_LINE_IDX: u8 = 32;
+
 #[derive(Debug, PartialEq)]
-enum OpdType {
+pub enum OpdType {
     Strict(ValType),
     Any,
     AnyOf(Vec<ValType>),
@@ -65,6 +68,7 @@ impl OperandStack {
 }
 
 /// Stack types describe how instructions manipulate the operand stack.
+#[derive(Debug, PartialEq)]
 pub struct StackType {
     /// Operand types which an instruction pops from a Stack.
     pub inputs: Vec<OpdType>,
@@ -99,7 +103,7 @@ pub fn get_stack_type_for_instruction(
     instruction: &InstructionType,
     ctx: &ValidationContext,
 ) -> ValidationResult<StackType> {
-    let stack_type = match *instruction {
+    let stack_type = match instruction {
         // Numeric Instructions
         // t.const c
         I::I32Const(_) => StackType {
@@ -334,10 +338,7 @@ pub fn get_stack_type_for_instruction(
             outputs: vec![ValType::RefType(ref_type.clone())],
         },
         I::RefIsNull => StackType {
-            inputs: vec![OpdType::AnyOf(vec![
-                ValType::RefType(RefType::FuncRef),
-                ValType::RefType(RefType::ExternRef),
-            ])],
+            inputs: vec![OpdType::AnyOf(ValType::get_ref_types())],
             outputs: vec![ValType::NumType(NumType::I32)],
         },
         I::RefFunc(ref func_idx) => {
@@ -351,9 +352,203 @@ pub fn get_stack_type_for_instruction(
                 inputs: vec![],
                 outputs: vec![ValType::RefType(RefType::FuncRef)],
             }
-        } //
-          // _ => unimplemented!() |
+        }
+
+        // Vector Instructions
+        // v128.const
+        I::V128Const(_) => StackType {
+            inputs: vec![],
+            outputs: vec![ValType::v128()],
+        },
+        // v128.vvunop
+        I::V128Not => StackType {
+            inputs: vec![OpdType::Strict(ValType::v128())],
+            outputs: vec![ValType::v128()],
+        },
+        // v128.vvbinop
+        I::V128And | I::V128AndNot | I::V128Or | I::V128Xor => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+            ],
+            outputs: vec![ValType::v128()],
+        },
+        // v128.vvternop
+        I::V128Bitselect => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+            ],
+            outputs: vec![ValType::v128()],
+        },
+        // v128.vvtestop
+        I::V128AnyTrue => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+            ],
+            outputs: vec![ValType::v128()],
+        },
+        // i8x16.swizzle
+        I::I8x16Swizzle => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+            ],
+            outputs: vec![ValType::v128()],
+        },
+        I::I8x16Shuffle(lane_indexes) => {
+            for lane_idx in lane_indexes {
+                if lane_idx.0 >= MAX_ALLOWED_LINE_IDX {
+                    return Err(ValidationError::LaneIndexIsOutOfRange {
+                        value: lane_idx.0,
+                        max_allowed: 32,
+                    });
+                }
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::v128()),
+                    OpdType::Strict(ValType::v128()),
+                ],
+                outputs: vec![ValType::v128()],
+            }
+        }
+        // shape.splat (more details about 'shape' - https://webassembly.github.io/spec/core/valid/instructions.html#vector-instructions)
+        I::I8x16Splat | I::I16x8Splat | I::I32x4Splat => StackType {
+            inputs: vec![OpdType::Strict(ValType::i32())],
+            outputs: vec![ValType::v128()],
+        },
+        I::I64x2Splat => StackType {
+            inputs: vec![OpdType::Strict(ValType::i64())],
+            outputs: vec![ValType::v128()],
+        },
+        I::F32x4Splat => StackType {
+            inputs: vec![OpdType::Strict(ValType::f32())],
+            outputs: vec![ValType::v128()],
+        },
+        I::F64x2Splat => StackType {
+            inputs: vec![OpdType::Strict(ValType::f64())],
+            outputs: vec![ValType::v128()],
+        },
+        // shape.extract_lane_sx
+        I::I8x16ExtractLaneS(lane_idx) | I::I8x16ExtractLaneU(lane_idx) => check! {
+            extract_lane i8, 16, lane_idx
+        },
+        I::I16x8ExtractLaneS(lane_idx) | I::I16x8ExtractLaneU(lane_idx) => check! {
+            extract_lane i16, 8, lane_idx
+        },
+        I::I32x4ExtractLane(lane_idx) => check! {
+            extract_lane i32, 4, lane_idx
+        },
+        I::I64x2ExtractLane(lane_idx) => check! {
+            extract_lane i64, 2, lane_idx
+        },
+        I::F32x4ExtractLane(lane_idx) => check! {
+            extract_lane f32, 4, lane_idx
+        },
+        I::F64x2ExtractLane(lane_idx) => check! {
+            extract_lane f64, 2, lane_idx
+        },
+        I::I8x16ReplaceLane(lane_idx) => check! {
+            replace_lane i8, 16, lane_idx
+        },
+        I::I16x8ReplaceLane(lane_idx) => check! {
+            replace_lane i16, 8, lane_idx
+        },
+        I::I32x4ReplaceLane(lane_idx) => check! {
+            replace_lane i32, 4, lane_idx
+        },
+        I::I64x2ReplaceLane(lane_idx) => check! {
+            replace_lane i64, 2, lane_idx
+        },
+        I::F32x4ReplaceLane(lane_idx) => check! {
+            replace_lane f32, 4, lane_idx
+        },
+        I::F64x2ReplaceLane(lane_idx) => check! {
+            replace_lane f64, 2, lane_idx
+        },
+        I::I8x16Abs
+        | I::I8x16Neg
+        | I::I16x8Abs
+        | I::I16x8Neg
+        | I::I32x4Abs
+        | I::I32x4Neg
+        | I::I64x2Abs
+        | I::I64x2Neg
+        | I::F32x4Abs
+        | I::F32x4Neg
+        | I::F64x2Abs
+        | I::F64x2Neg
+        | I::F32x4Sqrt
+        | I::F64x2Sqrt
+        | I::F32x4Ceil
+        | I::F64x2Ceil
+        | I::F32x4Floor
+        | I::F64x2Floor
+        | I::F32x4Trunc
+        | I::F64x2Trunc
+        | I::F32x4Nearest
+        | I::F64x2Nearest
+        | I::I8x16Popcnt => StackType {
+            inputs: vec![OpdType::Strict(ValType::v128())],
+            outputs: vec![ValType::v128()],
+        },
+        // I::I8x18Abs | I::I8x18Neg =>
+        // shape.vunop
+        // vunop = uiunop | vfunop | popcnt
+
+        // _ => unimplemented!(),
+        // _ => unimplemented!(),
     };
 
     Ok(stack_type)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_check_macro() {
+        let allowed_lane_idx = 1u8;
+        let not_allowed_lane = 20u8;
+
+        {
+            let test_check = || {
+                let lane_idx = LaneIdx(allowed_lane_idx);
+                Ok(check! {
+                    extract_lane i8, 16, lane_idx
+                })
+            };
+
+            assert_eq!(
+                test_check().unwrap(),
+                StackType {
+                    inputs: vec![OpdType::Strict(ValType::v128())],
+                    outputs: vec![ValType::i32()],
+                }
+            );
+        }
+
+        {
+            let test_check = || {
+                let lane_idx = LaneIdx(not_allowed_lane);
+                Ok(check! {
+                    extract_lane i8, 16, lane_idx
+                })
+            };
+
+            assert_eq!(
+                test_check().unwrap_err(),
+                ValidationError::LaneIndexIsOutOfRange {
+                    value: not_allowed_lane,
+                    max_allowed: 15
+                }
+            );
+        }
+    }
 }
