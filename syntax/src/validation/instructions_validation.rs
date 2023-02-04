@@ -844,13 +844,9 @@ pub fn get_stack_type_for_instruction(
                 outputs: vec![],
             }
         }
-        I::I32Load((align, _)) => {
-            if ctx.mems.get(0).is_none() {
-                return Err(ValidationError::MemNotFound);
-            }
-
-            if align.0 > 32 / 8 {
-                return Err(ValidationError::MemargAlignTooBig);
+        I::I32Load(mem_arg) => {
+            check! {
+                memarg 32, ctx, mem_arg
             }
 
             StackType {
@@ -858,13 +854,9 @@ pub fn get_stack_type_for_instruction(
                 outputs: vec![ValType::i32()],
             }
         }
-        I::I64Load((align, _)) => {
-            if ctx.mems.get(0).is_none() {
-                return Err(ValidationError::MemNotFound);
-            }
-
-            if align.0 > 64 / 8 {
-                return Err(ValidationError::MemargAlignTooBig);
+        I::I64Load(mem_arg) => {
+            check! {
+                memarg 64, ctx, mem_arg
             }
 
             StackType {
@@ -872,13 +864,9 @@ pub fn get_stack_type_for_instruction(
                 outputs: vec![ValType::i64()],
             }
         }
-        I::F32Load((align, _)) => {
-            if ctx.mems.get(0).is_none() {
-                return Err(ValidationError::MemNotFound);
-            }
-
-            if align.0 > 32 / 8 {
-                return Err(ValidationError::MemargAlignTooBig);
+        I::F32Load(mem_arg) => {
+            check! {
+                memarg 32, ctx, mem_arg
             }
 
             StackType {
@@ -886,13 +874,9 @@ pub fn get_stack_type_for_instruction(
                 outputs: vec![ValType::f32()],
             }
         }
-        I::F64Load((align, _)) => {
-            if ctx.mems.get(0).is_none() {
-                return Err(ValidationError::MemNotFound);
-            }
-
-            if align.0 > 64 / 8 {
-                return Err(ValidationError::MemargAlignTooBig);
+        I::F64Load(mem_arg) => {
+            check! {
+                memarg 64, ctx, mem_arg
             }
 
             StackType {
@@ -900,13 +884,9 @@ pub fn get_stack_type_for_instruction(
                 outputs: vec![ValType::f64()],
             }
         }
-        I::I32Load8S((align, _)) | I::I32Load8U((align, _)) => {
-            if ctx.mems.get(0).is_none() {
-                return Err(ValidationError::MemNotFound);
-            }
-
-            if align.0 > 8u32 / 8 {
-                return Err(ValidationError::MemargAlignTooBig);
+        I::I32Load8S(mem_arg) | I::I32Load8U(mem_arg) => {
+            check! {
+                memarg 8, ctx, mem_arg
             }
 
             StackType {
@@ -914,13 +894,9 @@ pub fn get_stack_type_for_instruction(
                 outputs: vec![ValType::i32()],
             }
         }
-        I::I32Load16S((align, _)) | I::I32Load16U((align, _)) => {
-            if ctx.mems.get(0).is_none() {
-                return Err(ValidationError::MemNotFound);
-            }
-
-            if align.0 > 16u32 / 8 {
-                return Err(ValidationError::MemargAlignTooBig);
+        I::I32Load16S(mem_arg) | I::I32Load16U(mem_arg) => {
+            check! {
+                memarg 16, ctx, mem_arg
             }
 
             StackType {
@@ -928,13 +904,9 @@ pub fn get_stack_type_for_instruction(
                 outputs: vec![ValType::i32()],
             }
         }
-        I::I64Load8S((align, _)) | I::I64Load8U((align, _)) => {
-            if ctx.mems.get(0).is_none() {
-                return Err(ValidationError::MemNotFound);
-            }
-
-            if align.0 > 8u32 / 8 {
-                return Err(ValidationError::MemargAlignTooBig);
+        I::I64Load8S(mem_arg) | I::I64Load8U(mem_arg) => {
+            check! {
+                memarg 8, ctx, mem_arg
             }
 
             StackType {
@@ -942,13 +914,9 @@ pub fn get_stack_type_for_instruction(
                 outputs: vec![ValType::i64()],
             }
         }
-        I::I64Load16S((align, _)) | I::I64Load16U((align, _)) => {
-            if ctx.mems.get(0).is_none() {
-                return Err(ValidationError::MemNotFound);
-            }
-
-            if align.0 > 16u32 / 8 {
-                return Err(ValidationError::MemargAlignTooBig);
+        I::I64Load16S(mem_arg) | I::I64Load16U(mem_arg) => {
+            check! {
+                memarg 16, ctx, mem_arg
             }
 
             StackType {
@@ -956,20 +924,155 @@ pub fn get_stack_type_for_instruction(
                 outputs: vec![ValType::i64()],
             }
         }
-        I::I64Load32S((align, _)) | I::I64Load32U((align, _)) => {
-            if ctx.mems.get(0).is_none() {
-                return Err(ValidationError::MemNotFound);
-            }
-
-            if align.0 > 32u32 / 8 {
-                return Err(ValidationError::MemargAlignTooBig);
+        I::I64Load32S(mem_arg) | I::I64Load32U(mem_arg) => {
+            check! {
+                memarg 32, ctx, mem_arg
             }
 
             StackType {
                 inputs: vec![OpdType::Strict(ValType::i32())],
                 outputs: vec![ValType::i64()],
             }
-        } // _ => unimplemented!(),
+        }
+        I::I32Store(mem_arg) => {
+            check! {
+                memarg 32, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::I64Store(mem_arg) => {
+            check! {
+                memarg 64, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i64()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::F32Store(mem_arg) => {
+            check! {
+                memarg 32, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::f32()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::F64Store(mem_arg) => {
+            check! {
+                memarg 64, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::f64()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::V128Store(mem_arg) => {
+            check! {
+                memarg 128, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::v128()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::I32Store8(mem_arg) => {
+            check! {
+                memarg 8, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::I32Store16(mem_arg) => {
+            check! {
+                memarg 16, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::I64Store8(mem_arg) => {
+            check! {
+                memarg 8, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i64()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::I64Store16(mem_arg) => {
+            check! {
+                memarg 16, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i64()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::I64Store32(mem_arg) => {
+            check! {
+                memarg 32, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i64()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::V128Load8x8S(mem_arg) | I::V128Load8x8U(mem_arg) => check! {
+            memarg_vec_load ctx, mem_arg, 8, 8
+        },
+        I::V128Load16x4S(mem_arg) | I::V128Load16x4U(mem_arg) => check! {
+            memarg_vec_load ctx, mem_arg, 16, 4
+        },
+        I::V128Load32x2S(mem_arg) | I::V128Load32x2U(mem_arg) => check! {
+            memarg_vec_load ctx, mem_arg, 32, 2
+        }, // _ => unimplemented!(),
     };
 
     Ok(stack_type)

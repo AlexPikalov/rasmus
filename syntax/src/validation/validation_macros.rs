@@ -122,4 +122,31 @@ macro_rules! check {
 
       crate::replace_lane_stack_type!($n $dim,  vec![OpdType::Strict(ValType::v128())])
   }};
+  (memarg $bits:expr, $ctx:expr, $memarg:expr) => {{
+    if $ctx.mems.get(0).is_none() {
+        return Err(ValidationError::MemNotFound);
+    }
+
+    if $memarg.0.0 > $bits / 8 {
+        return Err(ValidationError::MemargAlignTooBig);
+    }
+  }};
+  (memarg_vec_load $ctx:expr, $memarg:expr, $n:expr, $m:expr) => {{
+    if $ctx.mems.get(0).is_none() {
+        return Err(ValidationError::MemNotFound);
+    }
+
+    if $memarg.0.0 > $n / 8 * $m {
+        return Err(ValidationError::MemargAlignTooBig);
+    }
+
+    StackType {
+        inputs: vec![
+            OpdType::Strict(ValType::i32()),
+        ],
+        outputs: vec![
+            ValType::v128()
+        ],
+    }
+  }}
 }
