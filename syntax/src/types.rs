@@ -11,7 +11,7 @@ use nom::{
 
 pub type Byte = u8;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ValType {
     NumType(NumType),
     VecType(VecType),
@@ -96,7 +96,7 @@ impl ParseWithNom for ResultType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum VecType {
     V128,
 }
@@ -105,7 +105,7 @@ impl VecType {
     pub const ENCODE_BYTE: Byte = 0x7B;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum NumType {
     I32,
     I64,

@@ -95,10 +95,6 @@ pub fn is_instr_sequence_valid(
     Ok(())
 }
 
-pub fn is_instruction_valid(instruction: &InstructionType, ctx: &ValidationContext) -> bool {
-    unimplemented!()
-}
-
 pub fn get_stack_type_for_instruction(
     instruction: &InstructionType,
     ctx: &ValidationContext,
@@ -497,12 +493,483 @@ pub fn get_stack_type_for_instruction(
             inputs: vec![OpdType::Strict(ValType::v128())],
             outputs: vec![ValType::v128()],
         },
-        // I::I8x18Abs | I::I8x18Neg =>
-        // shape.vunop
-        // vunop = uiunop | vfunop | popcnt
+        I::I8x16Add
+        | I::I8x16Sub
+        | I::I16x8Add
+        | I::I16x8Sub
+        | I::I32x4Add
+        | I::I32x4Sub
+        | I::I64x2Add
+        | I::I64x2Sub
+        | I::F32x4Add
+        | I::F32x4Sub
+        | I::F32x4Mul
+        | I::F32x4Div
+        | I::F32x4Min
+        | I::F32x4Max
+        | I::F32x4Pmin
+        | I::F32x4Pmax
+        | I::F64x2Add
+        | I::F64x2Sub
+        | I::F64x2Mul
+        | I::F64x2Div
+        | I::F64x2Min
+        | I::F64x2Max
+        | I::F64x2Pmin
+        | I::F64x2Pmax
+        | I::I8x16MinS
+        | I::I8x16MinU
+        | I::I8x16MaxS
+        | I::I8x16MaxU
+        | I::I16x8MinS
+        | I::I16x8MinU
+        | I::I16x8MaxS
+        | I::I16x8MaxU
+        | I::I32x4MinS
+        | I::I32x4MinU
+        | I::I32x4MaxS
+        | I::I32x4MaxU
+        | I::I8x16AddSatS
+        | I::I8x16AddSatU
+        | I::I8x16SubSatS
+        | I::I8x16SubSatU
+        | I::I16x8AddSatS
+        | I::I16x8AddSatU
+        | I::I16x8SubSatS
+        | I::I16x8SubSatU
+        | I::I16x8Mul
+        | I::I32x4Mul
+        | I::I64x2Mul
+        | I::I8x16AvgrU
+        | I::I16x8AvgrU
+        | I::I16x8Q15MulrSatS => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+            ],
+            outputs: vec![ValType::v128()],
+        },
+        I::I8x16AllTrue | I::I16x8AllTrue | I::I32x4AllTrue | I::I64x2AllTrue => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+            ],
+            outputs: vec![ValType::i32()],
+        },
+        I::I16x8ExtendLowI8x16S
+        | I::I16x8ExtendHighI8x16S
+        | I::I16x8ExtendLowI8x16U
+        | I::I16x8ExtendHighI8x16U
+        | I::I32x4ExtendLowI16x8S
+        | I::I32x4ExtendHighI16x8S
+        | I::I32x4ExtendLowI16x8U
+        | I::I32x4ExtendHighI16x8U
+        | I::I32x4TruncSatF32x4S
+        | I::I32x4TruncSatF32x4U
+        | I::I64x2ExtendLowI32x4S
+        | I::I64x2ExtendHighI32x4S
+        | I::I64x2ExtendLowI32x4U
+        | I::I64x2ExtendHighI32x4U
+        | I::F32x4ConvertI32x4S
+        | I::F32x4ConvertI32x4U
+        | I::I32x4TruncSatF64x2SZero
+        | I::I32x4TruncSatF64x2UZero
+        | I::F64x2ConvertLowI32x4S
+        | I::F64x2ConvertLowI32x4U
+        | I::F32x4DemoteF64x2Zero
+        | I::F64x2PromoteLowF32x4 => StackType {
+            inputs: vec![OpdType::Strict(ValType::v128())],
+            outputs: vec![ValType::v128()],
+        },
+        // ishape.narrow_ishape_sx
+        I::I16x8NarrowI32x4S
+        | I::I16x8NarrowI32x4U
+        | I::I8x16NarrowI16x8S
+        | I::I8x16NarrowI16x8U => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+            ],
+            outputs: vec![ValType::v128()],
+        },
+        // ishape.bitmask
+        I::I8x16Bitmask | I::I16x8Bitmask | I::I32x4Bitmask | I::I64x2Bitmask => StackType {
+            inputs: vec![OpdType::Strict(ValType::v128())],
+            outputs: vec![ValType::i32()],
+        },
+        // ishape.dot_ishape_s
+        I::I32x4DotI16x8S => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+            ],
+            outputs: vec![ValType::v128()],
+        },
+        // ishape.extmul_half_ishape_sx
+        I::I16x8ExtmulLowI8x16S
+        | I::I16x8ExtmulHighI8x16S
+        | I::I16x8ExtmulLowI8x16U
+        | I::I16x8ExtmulHighI8x16U
+        | I::I32x4ExtmulLowI16x8S
+        | I::I32x4ExtmulHighI16x8S
+        | I::I32x4ExtmulLowI16x8U
+        | I::I32x4ExtmulHighI16x8U
+        | I::I64x2ExtmulLowI32x4S
+        | I::I64x2ExtmulHighI32x4S
+        | I::I64x2ExtmulLowI32x4U
+        | I::I64x2ExtmulHighI32x4U => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+            ],
+            outputs: vec![ValType::v128()],
+        },
+        // ishape.extadd_pairwise_ishape_sx
+        I::I16x8ExtaddPairwiseI8x16S
+        | I::I16x8ExtaddPairwiseI8x16U
+        | I::I32x4ExtaddPairwiseI16x8S
+        | I::I32x4ExtaddPairwiseI16x8U => StackType {
+            inputs: vec![OpdType::Strict(ValType::v128())],
+            outputs: vec![ValType::v128()],
+        },
+        // Parametric instructions
+        I::Drop => StackType {
+            inputs: vec![OpdType::Any],
+            outputs: vec![],
+        },
+        I::Select => {
+            let mut operand_types = vec![];
+            operand_types.append(&mut ValType::get_num_types());
+            operand_types.push(ValType::v128());
 
-        // _ => unimplemented!(),
-        // _ => unimplemented!(),
+            StackType {
+                inputs: vec![OpdType::AnyOf(operand_types)],
+                outputs: vec![ValType::v128()],
+            }
+        }
+        I::SelectVec(val_types_vec) => {
+            if val_types_vec.len() != 1 {
+                return Err(ValidationError::InvalidSelectVecOperandSequence);
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(val_types_vec[0].clone()),
+                    OpdType::Strict(val_types_vec[0].clone()),
+                    OpdType::Strict(ValType::i32()),
+                ],
+                outputs: vec![val_types_vec[0].clone()],
+            }
+        }
+        // Variable Instructions
+        I::LocalGet(local_idx) => {
+            let local_type = ctx
+                .locals
+                .get(local_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::LocalNotFound)?;
+
+            StackType {
+                inputs: vec![],
+                outputs: vec![local_type.clone()],
+            }
+        }
+        I::LocalSet(local_idx) => {
+            let local_type = ctx
+                .locals
+                .get(local_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::LocalNotFound)?;
+
+            StackType {
+                inputs: vec![OpdType::Strict(local_type.clone())],
+                outputs: vec![],
+            }
+        }
+        I::LocalTee(local_idx) => {
+            let local_type = ctx
+                .locals
+                .get(local_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::LocalNotFound)?;
+
+            StackType {
+                inputs: vec![OpdType::Strict(local_type.clone())],
+                outputs: vec![local_type.clone()],
+            }
+        }
+        I::GlobalGet(local_idx) => {
+            let global_type = ctx
+                .globals
+                .get(local_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::GlobalNotFound)?;
+
+            StackType {
+                inputs: vec![],
+                outputs: vec![global_type.val_type.clone()],
+            }
+        }
+        I::GlobalSet(local_idx) => {
+            let global_type = ctx
+                .globals
+                .get(local_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::GlobalNotFound)?;
+
+            if global_type.mut_type != MutType::Var {
+                return Err(ValidationError::UnableToSetToConstGlobal);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(global_type.val_type.clone())],
+                outputs: vec![],
+            }
+        }
+        // Table Instructions
+        I::TableGet(table_idx) => {
+            let table = ctx
+                .tables
+                .get(table_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::TableNotFound)?;
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::RefType(table.element_ref_type.clone())],
+            }
+        }
+        I::TableSet(table_idx) => {
+            let table = ctx
+                .tables
+                .get(table_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::TableNotFound)?;
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::RefType(table.element_ref_type.clone())),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::TableSize(table_idx) => {
+            if ctx.tables.get(table_idx.0 .0 as usize).is_none() {
+                return Err(ValidationError::TableNotFound);
+            }
+
+            StackType {
+                inputs: vec![],
+                outputs: vec![ValType::i32()],
+            }
+        }
+        I::TableGrow(table_idx) => {
+            let table = ctx
+                .tables
+                .get(table_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::TableNotFound)?;
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::RefType(table.element_ref_type.clone())),
+                    OpdType::Strict(ValType::i32()),
+                ],
+                outputs: vec![ValType::i32()],
+            }
+        }
+        I::TableFill(table_idx) => {
+            let table = ctx
+                .tables
+                .get(table_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::TableNotFound)?;
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::RefType(table.element_ref_type.clone())),
+                    OpdType::Strict(ValType::i32()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::TableCopy((table_idx_lhs, table_idx_rhs)) => {
+            let table_lhs = ctx
+                .tables
+                .get(table_idx_lhs.0 .0 as usize)
+                .ok_or_else(|| ValidationError::TableNotFound)?;
+
+            let table_rhs = ctx
+                .tables
+                .get(table_idx_rhs.0 .0 as usize)
+                .ok_or_else(|| ValidationError::TableNotFound)?;
+
+            if table_lhs.element_ref_type != table_rhs.element_ref_type {
+                return Err(ValidationError::UnableToCopyIncosistentTableTypes);
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::TableInit((elem_idx, table_idx)) => {
+            let table = ctx
+                .tables
+                .get(table_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::TableNotFound)?;
+            let table_type = table.element_ref_type.clone();
+
+            let elem = ctx
+                .elems
+                .get(elem_idx.0 .0 as usize)
+                .ok_or_else(|| ValidationError::ElemNotFound)?;
+
+            if *elem != table_type {
+                return Err(ValidationError::WrongElemType);
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::ElemDrop(elem_idx) => {
+            if ctx.elems.get(elem_idx.0 .0 as usize).is_none() {
+                return Err(ValidationError::ElemNotFound);
+            }
+            StackType {
+                inputs: vec![],
+                outputs: vec![],
+            }
+        }
+        I::I32Load((align, _)) => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            if align.0 > 32 / 8 {
+                return Err(ValidationError::MemargAlignTooBig);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::i32()],
+            }
+        }
+        I::I64Load((align, _)) => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            if align.0 > 64 / 8 {
+                return Err(ValidationError::MemargAlignTooBig);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::i64()],
+            }
+        }
+        I::F32Load((align, _)) => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            if align.0 > 32 / 8 {
+                return Err(ValidationError::MemargAlignTooBig);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::f32()],
+            }
+        }
+        I::F64Load((align, _)) => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            if align.0 > 64 / 8 {
+                return Err(ValidationError::MemargAlignTooBig);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::f64()],
+            }
+        }
+        I::I32Load8S((align, _)) | I::I32Load8U((align, _)) => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            if align.0 > 8u32 / 8 {
+                return Err(ValidationError::MemargAlignTooBig);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::i32()],
+            }
+        }
+        I::I32Load16S((align, _)) | I::I32Load16U((align, _)) => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            if align.0 > 16u32 / 8 {
+                return Err(ValidationError::MemargAlignTooBig);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::i32()],
+            }
+        }
+        I::I64Load8S((align, _)) | I::I64Load8U((align, _)) => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            if align.0 > 8u32 / 8 {
+                return Err(ValidationError::MemargAlignTooBig);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::i64()],
+            }
+        }
+        I::I64Load16S((align, _)) | I::I64Load16U((align, _)) => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            if align.0 > 16u32 / 8 {
+                return Err(ValidationError::MemargAlignTooBig);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::i64()],
+            }
+        }
+        I::I64Load32S((align, _)) | I::I64Load32U((align, _)) => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            if align.0 > 32u32 / 8 {
+                return Err(ValidationError::MemargAlignTooBig);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::i64()],
+            }
+        } // _ => unimplemented!(),
     };
 
     Ok(stack_type)
