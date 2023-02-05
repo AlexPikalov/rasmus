@@ -104,29 +104,29 @@ pub fn get_stack_type_for_instruction(
         // t.const c
         I::I32Const(_) => StackType {
             inputs: vec![],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            outputs: vec![ValType::i32()],
         },
         I::I64Const(_) => StackType {
             inputs: vec![],
-            outputs: vec![ValType::NumType(NumType::I64)],
+            outputs: vec![ValType::i64()],
         },
         I::F32Const(_) => StackType {
             inputs: vec![],
-            outputs: vec![ValType::NumType(NumType::F32)],
+            outputs: vec![ValType::f32()],
         },
         I::F64Const(_) => StackType {
             inputs: vec![],
-            outputs: vec![ValType::NumType(NumType::F64)],
+            outputs: vec![ValType::f64()],
         },
 
         // t.unop
         I::I32Clz | I::I32Ctz | I::I32Popcnt => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I32))],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            inputs: vec![OpdType::Strict(ValType::i32())],
+            outputs: vec![ValType::i32()],
         },
         I::I64Clz | I::I64Ctz | I::I64Popcnt => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I64))],
-            outputs: vec![ValType::NumType(NumType::I64)],
+            inputs: vec![OpdType::Strict(ValType::i64())],
+            outputs: vec![ValType::i64()],
         },
         I::F32Abs
         | I::F32Neg
@@ -135,8 +135,8 @@ pub fn get_stack_type_for_instruction(
         | I::F32Trunc
         | I::F32Nearest
         | I::F32Sqrt => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::F32))],
-            outputs: vec![ValType::NumType(NumType::F32)],
+            inputs: vec![OpdType::Strict(ValType::f32())],
+            outputs: vec![ValType::f32()],
         },
         I::F64Abs
         | I::F64Neg
@@ -145,19 +145,19 @@ pub fn get_stack_type_for_instruction(
         | I::F64Trunc
         | I::F64Nearest
         | I::F64Sqrt => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::F64))],
-            outputs: vec![ValType::NumType(NumType::F64)],
+            inputs: vec![OpdType::Strict(ValType::f64())],
+            outputs: vec![ValType::f64()],
         },
         // t.binop
 
         // t.testop
         I::I32Eqz => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I32))],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            inputs: vec![OpdType::Strict(ValType::i32())],
+            outputs: vec![ValType::i32()],
         },
         I::I64Eqz => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I64))],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            inputs: vec![OpdType::Strict(ValType::i64())],
+            outputs: vec![ValType::i32()],
         },
         I::I32Add
         | I::I32Sub
@@ -175,10 +175,10 @@ pub fn get_stack_type_for_instruction(
         | I::I32Rotl
         | I::I32Rotr => StackType {
             inputs: vec![
-                OpdType::Strict(ValType::NumType(NumType::I32)),
-                OpdType::Strict(ValType::NumType(NumType::I32)),
+                OpdType::Strict(ValType::i32()),
+                OpdType::Strict(ValType::i32()),
             ],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            outputs: vec![ValType::i32()],
         },
         I::I64Add
         | I::I64Sub
@@ -196,27 +196,27 @@ pub fn get_stack_type_for_instruction(
         | I::I64Rotl
         | I::I64Rotr => StackType {
             inputs: vec![
-                OpdType::Strict(ValType::NumType(NumType::I64)),
-                OpdType::Strict(ValType::NumType(NumType::I64)),
+                OpdType::Strict(ValType::i64()),
+                OpdType::Strict(ValType::i64()),
             ],
-            outputs: vec![ValType::NumType(NumType::I64)],
+            outputs: vec![ValType::i64()],
         },
         I::F32Add | I::F32Sub | I::F32Mul | I::F32Div | I::F32Min | I::F32Max | I::F32Copysign => {
             StackType {
                 inputs: vec![
-                    OpdType::Strict(ValType::NumType(NumType::F32)),
-                    OpdType::Strict(ValType::NumType(NumType::F32)),
+                    OpdType::Strict(ValType::f32()),
+                    OpdType::Strict(ValType::f32()),
                 ],
-                outputs: vec![ValType::NumType(NumType::F32)],
+                outputs: vec![ValType::f32()],
             }
         }
         I::F64Add | I::F64Sub | I::F64Mul | I::F64Div | I::F64Min | I::F64Max | I::F64Copysign => {
             StackType {
                 inputs: vec![
-                    OpdType::Strict(ValType::NumType(NumType::F64)),
-                    OpdType::Strict(ValType::NumType(NumType::F64)),
+                    OpdType::Strict(ValType::f64()),
+                    OpdType::Strict(ValType::f64()),
                 ],
-                outputs: vec![ValType::NumType(NumType::F64)],
+                outputs: vec![ValType::f64()],
             }
         }
         // t.relop
@@ -231,10 +231,10 @@ pub fn get_stack_type_for_instruction(
         | I::I32GeS
         | I::I32GeU => StackType {
             inputs: vec![
-                OpdType::Strict(ValType::NumType(NumType::I32)),
-                OpdType::Strict(ValType::NumType(NumType::I32)),
+                OpdType::Strict(ValType::i32()),
+                OpdType::Strict(ValType::i32()),
             ],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            outputs: vec![ValType::i32()],
         },
         I::I64Eq
         | I::I64Ne
@@ -247,86 +247,97 @@ pub fn get_stack_type_for_instruction(
         | I::I64GeS
         | I::I64GeU => StackType {
             inputs: vec![
-                OpdType::Strict(ValType::NumType(NumType::I64)),
-                OpdType::Strict(ValType::NumType(NumType::I64)),
+                OpdType::Strict(ValType::i64()),
+                OpdType::Strict(ValType::i64()),
             ],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            outputs: vec![ValType::i32()],
+        },
+        I::F32Eq | I::F32Ne | I::F32Lt | I::F32Gt | I::F32Le | I::F32Ge => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::f32()),
+                OpdType::Strict(ValType::f32()),
+            ],
+            outputs: vec![ValType::i32()],
         },
         I::F64Eq | I::F64Ne | I::F64Lt | I::F64Gt | I::F64Le | I::F64Ge => StackType {
             inputs: vec![
-                OpdType::Strict(ValType::NumType(NumType::F64)),
-                OpdType::Strict(ValType::NumType(NumType::F64)),
+                OpdType::Strict(ValType::f64()),
+                OpdType::Strict(ValType::f64()),
             ],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            outputs: vec![ValType::i32()],
         },
         // t.cvtop
         I::I32WrapI64 => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I32))],
-            outputs: vec![ValType::NumType(NumType::I64)],
+            inputs: vec![OpdType::Strict(ValType::i32())],
+            outputs: vec![ValType::i64()],
         },
         I::I32Extend8S | I::I32Extend16S => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I32))],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            inputs: vec![OpdType::Strict(ValType::i32())],
+            outputs: vec![ValType::i32()],
         },
         I::I64Extend8S | I::I64Extend16S | I::I64Extend32S => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I64))],
-            outputs: vec![ValType::NumType(NumType::I64)],
+            inputs: vec![OpdType::Strict(ValType::i64())],
+            outputs: vec![ValType::i64()],
+        },
+        I::I64ExtendI32S | I::I64ExtendI32U => StackType {
+            inputs: vec![OpdType::Strict(ValType::i32())],
+            outputs: vec![ValType::i32()],
         },
         I::I32TruncF32S | I::I32TruncF32U | I::I32TruncSatF32S | I::I32TruncSatF32U => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::F32))],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            inputs: vec![OpdType::Strict(ValType::f32())],
+            outputs: vec![ValType::i32()],
         },
         I::I32TruncF64S | I::I32TruncF64U | I::I32TruncSatF64S | I::I32TruncSatF64U => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::F64))],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            inputs: vec![OpdType::Strict(ValType::f64())],
+            outputs: vec![ValType::i32()],
         },
         I::I64TruncF32S | I::I64TruncF32U | I::I64TruncSatF32S | I::I64TruncSatF32U => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::F32))],
-            outputs: vec![ValType::NumType(NumType::I64)],
+            inputs: vec![OpdType::Strict(ValType::f32())],
+            outputs: vec![ValType::i64()],
         },
         I::I64TruncF64S | I::I64TruncF64U | I::I64TruncSatF64S | I::I64TruncSatF64U => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::F64))],
-            outputs: vec![ValType::NumType(NumType::I64)],
+            inputs: vec![OpdType::Strict(ValType::f64())],
+            outputs: vec![ValType::i64()],
         },
         I::F32ConvertI32S | I::F32ConvertI32U => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I32))],
-            outputs: vec![ValType::NumType(NumType::F32)],
+            inputs: vec![OpdType::Strict(ValType::i32())],
+            outputs: vec![ValType::f32()],
         },
         I::F32ConvertI64S | I::F32ConvertI64U => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I64))],
-            outputs: vec![ValType::NumType(NumType::F32)],
+            inputs: vec![OpdType::Strict(ValType::i64())],
+            outputs: vec![ValType::f32()],
         },
         I::F64ConvertI32S | I::F64ConvertI32U => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I32))],
-            outputs: vec![ValType::NumType(NumType::F64)],
+            inputs: vec![OpdType::Strict(ValType::i32())],
+            outputs: vec![ValType::f64()],
         },
         I::F64ConvertI64S | I::F64ConvertI64U => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I64))],
-            outputs: vec![ValType::NumType(NumType::F64)],
+            inputs: vec![OpdType::Strict(ValType::i64())],
+            outputs: vec![ValType::f64()],
         },
         I::F32DemoteF64 => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::F64))],
-            outputs: vec![ValType::NumType(NumType::F32)],
+            inputs: vec![OpdType::Strict(ValType::f64())],
+            outputs: vec![ValType::f32()],
         },
         I::F64PromoteF32 => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::F32))],
-            outputs: vec![ValType::NumType(NumType::F64)],
+            inputs: vec![OpdType::Strict(ValType::f32())],
+            outputs: vec![ValType::f64()],
         },
         I::I32ReinterpretF32 => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::F32))],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            inputs: vec![OpdType::Strict(ValType::f32())],
+            outputs: vec![ValType::i32()],
         },
         I::I64ReinterpretF64 => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::F64))],
-            outputs: vec![ValType::NumType(NumType::I64)],
+            inputs: vec![OpdType::Strict(ValType::f64())],
+            outputs: vec![ValType::i64()],
         },
         I::F32ReinterpretI32 => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I32))],
-            outputs: vec![ValType::NumType(NumType::F32)],
+            inputs: vec![OpdType::Strict(ValType::i32())],
+            outputs: vec![ValType::f32()],
         },
         I::F64ReinterpretI64 => StackType {
-            inputs: vec![OpdType::Strict(ValType::NumType(NumType::I64))],
-            outputs: vec![ValType::NumType(NumType::F64)],
+            inputs: vec![OpdType::Strict(ValType::i64())],
+            outputs: vec![ValType::f64()],
         },
         // Ref Instructions
         I::RefNull(ref ref_type) => StackType {
@@ -335,7 +346,7 @@ pub fn get_stack_type_for_instruction(
         },
         I::RefIsNull => StackType {
             inputs: vec![OpdType::AnyOf(ValType::get_ref_types())],
-            outputs: vec![ValType::NumType(NumType::I32)],
+            outputs: vec![ValType::i32()],
         },
         I::RefFunc(ref func_idx) => {
             if ctx.funcs.get(func_idx.0 .0 as usize).is_none()
@@ -466,6 +477,78 @@ pub fn get_stack_type_for_instruction(
         },
         I::F64x2ReplaceLane(lane_idx) => check! {
             replace_lane f64, 2, lane_idx
+        },
+        I::I8x16Eq
+        | I::I8x16Ne
+        | I::I8x16LtS
+        | I::I8x16LtU
+        | I::I8x16GtS
+        | I::I8x16GtU
+        | I::I8x16LeS
+        | I::I8x16LeU
+        | I::I8x16GeS
+        | I::I8x16GeU
+        | I::I16x8Eq
+        | I::I16x8Ne
+        | I::I16x8LtS
+        | I::I16x8LtU
+        | I::I16x8GtS
+        | I::I16x8GtU
+        | I::I16x8LeS
+        | I::I16x8LeU
+        | I::I16x8GeS
+        | I::I16x8GeU
+        | I::I32x4Eq
+        | I::I32x4Ne
+        | I::I32x4LtS
+        | I::I32x4LtU
+        | I::I32x4GtS
+        | I::I32x4GtU
+        | I::I32x4LeS
+        | I::I32x4LeU
+        | I::I32x4GeS
+        | I::I32x4GeU
+        | I::I64x2Eq
+        | I::I64x2Ne
+        | I::I64x2LtS
+        | I::I64x2GtS
+        | I::I64x2LeS
+        | I::I64x2GeS
+        | I::F32x4Eq
+        | I::F32x4Ne
+        | I::F32x4Lt
+        | I::F32x4Gt
+        | I::F32x4Le
+        | I::F32x4Ge
+        | I::F64x2Eq
+        | I::F64x2Ne
+        | I::F64x2Lt
+        | I::F64x2Gt
+        | I::F64x2Le
+        | I::F64x2Ge => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::v128()),
+            ],
+            outputs: vec![ValType::v128()],
+        },
+        I::I8x16Shl
+        | I::I8x16ShrS
+        | I::I8x16ShrU
+        | I::I16x8Shl
+        | I::I16x8ShrS
+        | I::I16x8ShrU
+        | I::I32x4Shl
+        | I::I32x4ShrS
+        | I::I32x4ShrU
+        | I::I64x2Shl
+        | I::I64x2ShrS
+        | I::I64x2ShrU => StackType {
+            inputs: vec![
+                OpdType::Strict(ValType::v128()),
+                OpdType::Strict(ValType::i32()),
+            ],
+            outputs: vec![ValType::v128()],
         },
         I::I8x16Abs
         | I::I8x16Neg
@@ -884,6 +967,16 @@ pub fn get_stack_type_for_instruction(
                 outputs: vec![ValType::f64()],
             }
         }
+        I::V128Load(mem_arg) => {
+            check! {
+                memarg 128, ctx, mem_arg
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::v128()],
+            }
+        }
         I::I32Load8S(mem_arg) | I::I32Load8U(mem_arg) => {
             check! {
                 memarg 8, ctx, mem_arg
@@ -1072,7 +1165,164 @@ pub fn get_stack_type_for_instruction(
         },
         I::V128Load32x2S(mem_arg) | I::V128Load32x2U(mem_arg) => check! {
             memarg_vec_load ctx, mem_arg, 32, 2
-        }, // _ => unimplemented!(),
+        },
+        I::V128Load8Splat(mem_arg) => {
+            check! {
+                memarg 8, ctx, mem_arg
+            }
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::v128()],
+            }
+        }
+        I::V128Load16Splat(mem_arg) => {
+            check! {
+                memarg 16, ctx, mem_arg
+            }
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::v128()],
+            }
+        }
+        I::V128Load32Splat(mem_arg) => {
+            check! {
+                memarg 32, ctx, mem_arg
+            }
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::v128()],
+            }
+        }
+        I::V128Load64Splat(mem_arg) => {
+            check! {
+                memarg 64, ctx, mem_arg
+            }
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::v128()],
+            }
+        }
+        I::V128Load32Zero(mem_arg) => {
+            check! {
+                memarg 32, ctx, mem_arg
+            }
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::v128()],
+            }
+        }
+        I::V128Load64Zero(mem_arg) => {
+            check! {
+                memarg 64, ctx, mem_arg
+            }
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::v128()],
+            }
+        }
+        I::V128Load8Lane((mem_arg, lane_idx)) => check! {
+            memarg_vec_load_lane ctx, mem_arg, lane_idx, 8
+        },
+        I::V128Load16Lane((mem_arg, lane_idx)) => check! {
+            memarg_vec_load_lane ctx, mem_arg, lane_idx, 16
+        },
+        I::V128Load32Lane((mem_arg, lane_idx)) => check! {
+            memarg_vec_load_lane ctx, mem_arg, lane_idx, 32
+        },
+        I::V128Load64Lane((mem_arg, lane_idx)) => check! {
+            memarg_vec_load_lane ctx, mem_arg, lane_idx, 64
+        },
+        I::V128Store8Lane((mem_arg, lane_idx)) => check! {
+            memarg_vec_store_lane ctx, mem_arg, lane_idx, 8
+        },
+        I::V128Store16Lane((mem_arg, lane_idx)) => check! {
+            memarg_vec_store_lane ctx, mem_arg, lane_idx, 16
+        },
+        I::V128Store32Lane((mem_arg, lane_idx)) => check! {
+            memarg_vec_store_lane ctx, mem_arg, lane_idx, 32
+        },
+        I::V128Store64Lane((mem_arg, lane_idx)) => check! {
+            memarg_vec_store_lane ctx, mem_arg, lane_idx, 64
+        },
+        I::MemorySize => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            StackType {
+                inputs: vec![],
+                outputs: vec![ValType::i32()],
+            }
+        }
+        I::MemoryGrow => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            StackType {
+                inputs: vec![OpdType::Strict(ValType::i32())],
+                outputs: vec![ValType::i32()],
+            }
+        }
+        I::MemoryFill | I::MemoryCopy => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::MemoryInit(data_idx) => {
+            if ctx.mems.get(0).is_none() {
+                return Err(ValidationError::MemNotFound);
+            }
+
+            if ctx.datas.get(data_idx.0 .0 as usize).is_none() {
+                return Err(ValidationError::DataNotFound);
+            }
+
+            StackType {
+                inputs: vec![
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                    OpdType::Strict(ValType::i32()),
+                ],
+                outputs: vec![],
+            }
+        }
+        I::DataDrop(data_idx) => {
+            if ctx.datas.get(data_idx.0 .0 as usize).is_none() {
+                return Err(ValidationError::DataNotFound);
+            }
+
+            StackType {
+                inputs: vec![],
+                outputs: vec![],
+            }
+        }
+        I::Nop => StackType {
+            inputs: vec![],
+            outputs: vec![],
+        },
+        I::Unreachable => unimplemented!(),
+        I::Block(_) => unimplemented!(),
+        I::Loop(_) => unimplemented!(),
+        I::IfElse(_) => unimplemented!(),
+        I::Br(_) => unimplemented!(),
+        I::BrIf(_) => unimplemented!(),
+        I::BrTable(_) => unimplemented!(),
+        I::Return => unimplemented!(),
+        I::Call(_) => unimplemented!(),
+        I::CallIndirect(_) => unimplemented!(),
+        // FIXME:
+        // I::End => unimplemented!(),
+        // _ => unimplemented!(),
     };
 
     Ok(stack_type)

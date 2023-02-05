@@ -1,5 +1,6 @@
-use crate::types::*;
+use crate::{module::DataType, types::*};
 
+// TODO: make it like struct ValidationContext(&Module)
 pub struct ValidationContext {
     pub types: Vec<FuncType>,
     pub funcs: Vec<FuncType>,
@@ -7,7 +8,7 @@ pub struct ValidationContext {
     pub mems: Vec<MemType>,
     pub globals: Vec<GlobalType>,
     pub elems: Vec<RefType>,
-    // pub datas: Vec<ValidationResult::Ok> -- always valid
+    pub datas: Vec<DataType>,
     pub locals: Vec<ValType>,
     pub labels: Vec<ResultType>,
     pub maybe_return: Option<ResultType>,

@@ -96,6 +96,7 @@ macro_rules! replace_lane_stack_type {
     };
 }
 
+// TODO: rid of returning StackType, just check
 #[macro_export]
 macro_rules! check {
   (extract_lane $n:ident, $dim:expr, $lane_idx:expr) => {{
@@ -127,7 +128,7 @@ macro_rules! check {
         return Err(ValidationError::MemNotFound);
     }
 
-    if $memarg.0.0 > $bits / 8 {
+    if 2u8.pow($memarg.0.0) > $bits / 8 {
         return Err(ValidationError::MemargAlignTooBig);
     }
   }};
@@ -136,7 +137,7 @@ macro_rules! check {
         return Err(ValidationError::MemNotFound);
     }
 
-    if $memarg.0.0 > $n / 8 * $m {
+    if 2u8.pow($memarg.0.0) > $n / 8 * $m {
         return Err(ValidationError::MemargAlignTooBig);
     }
 
@@ -148,5 +149,30 @@ macro_rules! check {
             ValType::v128()
         ],
     }
-  }}
+  }};
+  (memarg_vec_load_lane $ctx:expr, $memarg:expr, $lane_idx:expr, $n:expr) => {{
+    let max = $n as u8 / 8;
+    if $lane_idx.0 >= max {
+        return Err(ValidationError::LaneIdxTooBix);
+    }
+
+    crate::check!{
+        memarg $n, $ctx, $memarg
+    }
+
+    StackType {
+        inputs: vec![
+            OpdType::Strict(ValType::i32()),
+            OpdType::Strict(ValType::v128()),
+        ],
+        outputs: vec![
+            ValType::v128()
+        ],
+    }
+  }};
+  (memarg_vec_store_lane $ctx:expr, $memarg:expr, $lane_idx:expr, $n:expr) => {
+    crate::check!{
+        memarg_vec_load_lane $ctx, $memarg, $lane_idx, $n
+    }
+  };
 }

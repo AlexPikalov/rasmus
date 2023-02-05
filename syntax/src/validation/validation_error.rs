@@ -21,6 +21,8 @@ pub enum ValidationError {
     // When load a value memarg align should not be bigger than th bit width divided by 8
     MemargAlignTooBig,
     MemNotFound,
+    LaneIdxTooBix,
+    DataNotFound,
 }
 
 pub type ValidationResult<T> = Result<T, ValidationError>;
