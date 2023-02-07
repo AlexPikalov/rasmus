@@ -31,7 +31,7 @@ impl ParseWithNom for ExpressionType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum BlockType {
     Empty,
     ValType(ValType),
@@ -64,7 +64,7 @@ impl ParseWithNom for BlockType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum InstructionType {
     // Control Instructions
     Unreachable,
@@ -1543,7 +1543,7 @@ impl ParseWithNom for InstructionType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct BlockInstructionType {
     pub blocktype: BlockType,
     pub instructions: Vec<InstructionType>,
@@ -1564,7 +1564,7 @@ impl ParseWithNom for BlockInstructionType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LoopInstructionType {
     pub blocktype: BlockType,
     pub instructions: Vec<InstructionType>,
@@ -1585,7 +1585,7 @@ impl ParseWithNom for LoopInstructionType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct IfInstructionType {
     pub blocktype: BlockType,
     pub if_instructions: Vec<InstructionType>,
@@ -1607,7 +1607,7 @@ impl ParseWithNom for IfInstructionType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct IfElseInstructionType {
     pub blocktype: BlockType,
     pub if_instructions: Vec<InstructionType>,

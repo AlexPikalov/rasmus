@@ -87,7 +87,7 @@ impl ParseWithNom for ValType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ResultType(pub Vec<ValType>);
 
 impl ParseWithNom for ResultType {
@@ -154,7 +154,7 @@ impl ParseWithNom for RefType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FuncType {
     pub parameters: Vec<ValType>,
     pub results: Vec<ValType>,
@@ -170,7 +170,7 @@ pub struct Vector<T: std::fmt::Debug> {
     pub elements: Vec<T>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct NameType(pub String);
 
 impl NameType {
@@ -186,7 +186,7 @@ impl NameType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TableType {
     pub limits: LimitsType,
     pub element_ref_type: RefType,
@@ -207,7 +207,7 @@ impl TableType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LimitsType {
     pub min: U32Type,
     pub max: Option<U32Type>,
@@ -246,7 +246,7 @@ impl LimitsType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct MemType {
     pub limits: LimitsType,
 }
@@ -259,7 +259,7 @@ impl MemType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct GlobalType {
     pub mut_type: MutType,
     pub val_type: ValType,
@@ -274,7 +274,7 @@ impl GlobalType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum MutType {
     Const,
     Var,
@@ -297,7 +297,7 @@ impl MutType {
         }
     }
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TypeIdx(pub U32Type);
 
 impl ParseWithNom for TypeIdx {
@@ -309,7 +309,7 @@ impl ParseWithNom for TypeIdx {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FuncIdx(pub U32Type);
 
 impl ParseWithNom for FuncIdx {
@@ -321,7 +321,7 @@ impl ParseWithNom for FuncIdx {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct TableIdx(pub U32Type);
 
 impl ParseWithNom for TableIdx {
@@ -333,7 +333,7 @@ impl ParseWithNom for TableIdx {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct MemIdx(pub U32Type);
 
 impl ParseWithNom for MemIdx {
@@ -345,7 +345,7 @@ impl ParseWithNom for MemIdx {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct GlobalIdx(pub U32Type);
 
 impl ParseWithNom for GlobalIdx {
@@ -357,7 +357,7 @@ impl ParseWithNom for GlobalIdx {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ElemIdx(pub U32Type);
 
 impl ParseWithNom for ElemIdx {
@@ -369,7 +369,7 @@ impl ParseWithNom for ElemIdx {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct DataIdx(pub U32Type);
 
 impl ParseWithNom for DataIdx {
@@ -381,7 +381,7 @@ impl ParseWithNom for DataIdx {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LocalIdx(pub U32Type);
 
 impl ParseWithNom for LocalIdx {
@@ -393,7 +393,7 @@ impl ParseWithNom for LocalIdx {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LabelIdx(U32Type);
 
 impl ParseWithNom for LabelIdx {
@@ -405,7 +405,7 @@ impl ParseWithNom for LabelIdx {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LaneIdx(pub Byte);
 
 impl ParseWithNom for LaneIdx {
@@ -417,7 +417,7 @@ impl ParseWithNom for LaneIdx {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Clone)]
 pub struct U32Type(pub u32);
 
 impl ParseWithNom for U32Type {
@@ -428,7 +428,7 @@ impl ParseWithNom for U32Type {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct S33Type(pub i64);
 
 impl ParseWithNom for S33Type {
@@ -439,7 +439,7 @@ impl ParseWithNom for S33Type {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct I32Type(pub i32);
 
 impl ParseWithNom for I32Type {
@@ -450,7 +450,7 @@ impl ParseWithNom for I32Type {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct I64Type(pub i64);
 
 impl ParseWithNom for I64Type {
@@ -461,7 +461,7 @@ impl ParseWithNom for I64Type {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct F32Type(pub f32);
 
 impl ParseWithNom for F32Type {
@@ -473,7 +473,7 @@ impl ParseWithNom for F32Type {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct F64Type(pub f64);
 
 impl ParseWithNom for F64Type {

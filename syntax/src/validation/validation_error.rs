@@ -3,6 +3,7 @@ use crate::types::LocalIdx;
 // TODO: try to add more debugging information to each option
 #[derive(Debug, PartialEq)]
 pub enum ValidationError {
+    WrongInstructionSequence,
     NoLocalFound(LocalIdx),
     InsufficientOperandStackForInstruction,
     CannotFindRefFuncInValidationContext,
@@ -23,6 +24,8 @@ pub enum ValidationError {
     MemNotFound,
     LaneIdxTooBix,
     DataNotFound,
+    TypeNotFound,
+    InconsistentBlocktype
 }
 
 pub type ValidationResult<T> = Result<T, ValidationError>;

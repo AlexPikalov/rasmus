@@ -1,5 +1,5 @@
 use crate::check;
-use crate::instructions::{InstructionType, InstructionType as I};
+use crate::instructions::{BlockType, InstructionType, InstructionType as I};
 use crate::types::*;
 
 use super::context::ValidationContext;
@@ -15,6 +15,8 @@ const MAX_ALLOWED_LINE_IDX: u8 = 32;
 pub enum OpdType {
     Strict(ValType),
     Any,
+    // test of the stack
+    Rest,
     AnyOf(Vec<ValType>),
 }
 
@@ -22,7 +24,7 @@ impl OpdType {
     pub fn matches(&self, other: ValType) -> bool {
         match self {
             Self::Strict(self_strict) => *self_strict == other,
-            Self::Any => true,
+            Self::Any | Self::Rest => true,
             Self::AnyOf(options) => options.iter().any(|opt| *opt == other),
         }
     }
@@ -52,6 +54,12 @@ impl OperandStack {
 
     // returns true if valid and applied and false if invalid
     pub fn validate_and_apply(&mut self, mut instruction: StackType) -> bool {
+        // this is for stack-polymorphic instructions
+        if let Some(OpdType::Rest) = instruction.inputs.first() {
+            self.stack = instruction.outputs;
+            return true;
+        }
+
         let is_valid = instruction.inputs.iter().all(|operand_type| {
             self.stack
                 .pop()
@@ -76,23 +84,69 @@ pub struct StackType {
     pub outputs: Vec<ValType>,
 }
 
-// TODO: refactor followig method to return ValidationResult type instead of bool
-pub fn is_instr_sequence_valid(
-    sequence: Vec<InstructionType>,
-    ctx: ValidationContext,
-) -> ValidationResult<()> {
-    let mut operand_stack = OperandStack::with_capacity(sequence.len());
+impl From<FuncType> for StackType {
+    fn from(func: FuncType) -> Self {
+        Self {
+            inputs: func
+                .parameters
+                .iter()
+                .map(|val_type| OpdType::Strict(val_type.clone()))
+                .collect(),
+            outputs: func.results,
+        }
+    }
+}
 
-    for ref instr in sequence {
-        let instr_stack_type = get_stack_type_for_instruction(instr, &ctx)?;
-        let is_valid = operand_stack.validate_and_apply(instr_stack_type);
-
-        if !is_valid {
-            return Err(ValidationError::InsufficientOperandStackForInstruction);
+impl StackType {
+    pub fn empty() -> Self {
+        Self {
+            inputs: vec![],
+            outputs: vec![],
         }
     }
 
-    Ok(())
+    /// Works like a function composition in term of funcion types.
+    pub fn compose(self, mut rhs: Self) -> ValidationResult<Self> {
+        let mut result_inputs: Vec<OpdType> = vec![];
+        let mut result_outputs: Vec<ValType> = self.outputs.clone();
+
+        for input in rhs.inputs {
+            match result_outputs.pop() {
+                Some(val_type) => {
+                    if !input.matches(val_type) {
+                        return Err(ValidationError::WrongInstructionSequence);
+                    }
+                }
+                None => {
+                    result_inputs.push(input);
+                }
+            }
+        }
+
+        result_outputs.append(&mut rhs.outputs);
+
+        Ok(Self {
+            inputs: result_inputs,
+            outputs: result_outputs,
+        })
+    }
+}
+
+/// Composes an instruction sequence returning a result `[t1*] -> [t2*]` or an error if sequence is inconsistent
+pub fn copmose_instr_sequence_type(
+    sequence: Vec<InstructionType>,
+    ctx: &ValidationContext,
+) -> ValidationResult<StackType> {
+    let mut res = StackType {
+        inputs: vec![],
+        outputs: vec![],
+    };
+
+    for instr in sequence {
+        res = res.compose(get_stack_type_for_instruction(&instr, ctx)?)?;
+    }
+
+    Ok(res)
 }
 
 pub fn get_stack_type_for_instruction(
@@ -1310,8 +1364,34 @@ pub fn get_stack_type_for_instruction(
             inputs: vec![],
             outputs: vec![],
         },
-        I::Unreachable => unimplemented!(),
-        I::Block(_) => unimplemented!(),
+        // it is handled by is_instr_sequence_valid
+        I::Unreachable => unreachable!(),
+        I::Block(block_instruction_type) => {
+            let blocktype_stack_type = match block_instruction_type.blocktype {
+                BlockType::Empty => StackType::empty(),
+                BlockType::ValType(ref val_type) => StackType {
+                    inputs: vec![],
+                    outputs: vec![val_type.clone()],
+                },
+                BlockType::TypeIndex(ref type_idx) => StackType::from(
+                    ctx.types
+                        .get(type_idx.0 as usize)
+                        .cloned()
+                        .ok_or_else(|| ValidationError::TypeNotFound)?,
+                ),
+            };
+
+            let instructions_stack_type =
+                copmose_instr_sequence_type(block_instruction_type.instructions.clone(), ctx)?;
+
+            if blocktype_stack_type != instructions_stack_type {
+                return Err(ValidationError::InconsistentBlocktype);
+            }
+
+            unimplemented!()
+            // blocktype should match the type produced by block type's instructions
+            // and the instruction sequence itself should be valid in terms of stack types
+        }
         I::Loop(_) => unimplemented!(),
         I::IfElse(_) => unimplemented!(),
         I::Br(_) => unimplemented!(),
