@@ -1388,12 +1388,67 @@ pub fn get_stack_type_for_instruction(
                 return Err(ValidationError::InconsistentBlocktype);
             }
 
-            unimplemented!()
-            // blocktype should match the type produced by block type's instructions
-            // and the instruction sequence itself should be valid in terms of stack types
+            blocktype_stack_type
         }
-        I::Loop(_) => unimplemented!(),
-        I::IfElse(_) => unimplemented!(),
+        I::Loop(loop_instruction_type) => {
+            let loop_stack_type = match loop_instruction_type.blocktype {
+                BlockType::Empty => StackType::empty(),
+                BlockType::ValType(ref val_type) => StackType {
+                    inputs: vec![],
+                    outputs: vec![val_type.clone()],
+                },
+                BlockType::TypeIndex(ref type_idx) => StackType::from(
+                    ctx.types
+                        .get(type_idx.0 as usize)
+                        .cloned()
+                        .ok_or_else(|| ValidationError::TypeNotFound)?,
+                ),
+            };
+
+            let instructions_stack_type =
+                copmose_instr_sequence_type(loop_instruction_type.instructions.clone(), ctx)?;
+
+            if loop_stack_type != instructions_stack_type {
+                return Err(ValidationError::InconsistentBlocktype);
+            }
+
+            loop_stack_type
+        }
+        I::IfElse(if_else_instruction_type) => {
+            let mut loop_stack_type = match if_else_instruction_type.blocktype {
+                BlockType::Empty => StackType::empty(),
+                BlockType::ValType(ref val_type) => StackType {
+                    inputs: vec![],
+                    outputs: vec![val_type.clone()],
+                },
+                BlockType::TypeIndex(ref type_idx) => StackType::from(
+                    ctx.types
+                        .get(type_idx.0 as usize)
+                        .cloned()
+                        .ok_or_else(|| ValidationError::TypeNotFound)?,
+                ),
+            };
+
+            let if_instructions_stack_type =
+                copmose_instr_sequence_type(if_else_instruction_type.if_instructions.clone(), ctx)?;
+
+            if loop_stack_type != if_instructions_stack_type {
+                return Err(ValidationError::InconsistentBlocktype);
+            }
+
+            let else_instructions_stack_type = copmose_instr_sequence_type(
+                if_else_instruction_type.else_instructions.clone(),
+                ctx,
+            )?;
+
+            if loop_stack_type != else_instructions_stack_type {
+                return Err(ValidationError::InconsistentBlocktype);
+            }
+
+            loop_stack_type.inputs.push(OpdType::Strict(ValType::i32()));
+
+            loop_stack_type
+        }
         I::Br(_) => unimplemented!(),
         I::BrIf(_) => unimplemented!(),
         I::BrTable(_) => unimplemented!(),
@@ -1402,7 +1457,6 @@ pub fn get_stack_type_for_instruction(
         I::CallIndirect(_) => unimplemented!(),
         // FIXME:
         // I::End => unimplemented!(),
-        // _ => unimplemented!(),
     };
 
     Ok(stack_type)
