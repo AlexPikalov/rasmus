@@ -2,5 +2,6 @@
 
 members = [
   "code_gen",
+  "rasmus",
   "syntax"
 ]

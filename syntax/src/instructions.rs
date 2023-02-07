@@ -9,7 +9,7 @@ use nom::{
     IResult as NomResult, Slice,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ExpressionType {
     pub instructions: Vec<InstructionType>,
 }

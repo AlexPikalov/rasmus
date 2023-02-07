@@ -4,6 +4,7 @@ use super::types::*;
 
 use nom::{bytes::complete::take, IResult as NomResult};
 
+#[derive(Debug)]
 pub struct Module {
     pub types: Vec<FuncType>,
     pub imports: Vec<ImportType>,
@@ -582,6 +583,7 @@ impl ParseWithNom for LocalsType {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum DataType {
     Active0(Active0DataType),
     Active(ActiveDataType),
@@ -620,7 +622,7 @@ type Active0DataType = GenericDataType<DataModeActive0>;
 type ActiveDataType = GenericDataType<DataModeActive>;
 type PassiveDataType = GenericDataType<DataModePassive>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DataModeActive0 {
     pub offset: ExpressionType,
 }
@@ -631,7 +633,7 @@ impl ParseWithNom for DataModeActive0 {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DataModeActive {
     pub memory: MemIdx,
     pub offset: ExpressionType,
@@ -644,7 +646,7 @@ impl ParseWithNom for DataModeActive {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DataModePassive;
 
 impl ParseWithNom for DataModePassive {
@@ -653,12 +655,13 @@ impl ParseWithNom for DataModePassive {
     }
 }
 
-pub struct GenericDataType<Mode> {
+#[derive(Clone, Debug)]
+pub struct GenericDataType<Mode: ::std::fmt::Debug + Clone> {
     pub mode: Mode,
     pub init: Vec<Byte>,
 }
 
-impl<Mode: ParseWithNom + std::fmt::Debug> GenericDataType<Mode> {
+impl<Mode: ParseWithNom + std::fmt::Debug + Clone> GenericDataType<Mode> {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, mode) = Mode::parse(bytes)?;
         let (bytes, init_len) = U32Type::parse(bytes)?;

@@ -382,12 +382,10 @@ impl ParseBin<Module> for ModuleParser {
 
         while !remainig_bytes.is_empty() {
             let (b, section_id, section_content) = get_section_content!(remainig_bytes);
-            println!("Section found: {:?}", section_id);
-            println!("Section content: {:?}", section_content);
             match section_id {
                 SectionId::Custom => {
                     // custom sections are not a part of the Module structure, so ignore so far
-                    println!("{:?}", Self::parse_custom_section(section_content))
+                    // println!("{:?}", Self::parse_custom_section(section_content))
                 }
                 SectionId::Type => module.types = Self::parse_types_section(section_content)?,
                 SectionId::Code => module.code = Self::parse_code_section(section_content)?,
