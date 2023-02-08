@@ -3,7 +3,8 @@ use syntax::types::*;
 
 use super::export::ExportInst;
 
-pub struct ModuleInstance {
+#[derive(Debug)]
+pub struct ModuleInst {
     pub types: Vec<FuncType>,
     pub funcaddrs: Vec<FuncAddr>,
     pub tableaddrs: Vec<TableAddr>,

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::module::ModuleInstance;
+use super::module::ModuleInst;
 use syntax::{
     instructions::ExpressionType,
     types::{FuncType, TypeIdx, ValType},
@@ -13,7 +13,7 @@ pub enum FuncInst {
 
 pub struct FuncInstLocal {
     pub func_type: FuncType,
-    pub module: Rc<ModuleInstance>,
+    pub module: Rc<ModuleInst>,
     pub code: Func,
 }
 
