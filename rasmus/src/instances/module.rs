@@ -1,4 +1,6 @@
 use crate::address::*;
+use crate::result::RResult;
+use syntax::module::*;
 use syntax::types::*;
 
 use super::export::ExportInst;
@@ -13,4 +15,5 @@ pub struct ModuleInst {
     pub elemaddrs: Vec<ElemAddr>,
     pub dataaddrs: Vec<DataAddr>,
     pub exports: Vec<ExportInst>,
+    start: Option<StartType>,
 }
