@@ -1,7 +1,7 @@
 use crate::address::{ExternAddr, FuncAddr};
 use syntax::types::RefType;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum RefInst {
     Null(RefType),
     Func(FuncAddr),

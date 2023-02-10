@@ -4,11 +4,12 @@ use crate::types::*;
 
 // TODO: refactor following functions to returl ValidationResult instead of bool
 
-pub fn is_limit_type_valid(limit: LimitsType, range: U32Type, ctx: ValidationContext) -> bool {
+pub fn is_limit_type_valid(limit: &LimitsType, range: U32Type) -> bool {
     limit.min <= range
         && limit
             .max
-            .map(|max_value| max_value <= range && limit.min <= max_value)
+            .as_ref()
+            .map(|max_value| max_value <= &range && limit.min <= *max_value)
             .unwrap_or(true)
 }
 
@@ -40,12 +41,12 @@ pub fn is_func_type_valid(_func_type: FuncType, _ctx: ValidationContext) -> bool
     true
 }
 
-pub fn is_table_type_valid(table_type: TableType, ctx: ValidationContext) -> bool {
-    is_limit_type_valid(table_type.limits, U32Type(u32::MAX), ctx)
+pub fn is_table_type_valid(table_type: &TableType) -> bool {
+    is_limit_type_valid(&table_type.limits, U32Type(u32::MAX))
 }
 
-pub fn is_memory_type_valid(memory_type: MemType, ctx: ValidationContext) -> bool {
-    is_limit_type_valid(memory_type.limits, U32Type(2u32.pow(16)), ctx)
+pub fn is_memory_type_valid(memory_type: &MemType) -> bool {
+    is_limit_type_valid(&memory_type.limits, U32Type(2u32.pow(16)))
 }
 
 pub fn is_global_type_valid(_global_type: GlobalType, _ctx: ValidationContext) -> bool {
