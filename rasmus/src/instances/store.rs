@@ -111,16 +111,17 @@ impl Store {
         self.datas.len() - 1 as DataAddr
     }
 
-    // TODO: implement resolve_imports to get extern_vals
+    // TODO: implement resolve_imports to get extern_vals (implement module registry)
+    // TODO: implement resolve_globals to get globals values (according to the spec init of a global must be a single const instruction, take value from there)
     // TODO: implement resolve_elems to get refs vector of module's element segments
     pub fn allocate_module(
         &mut self,
         mut module: Module,
         extern_vals: Vec<ExternVal>,
         mut globals: Vec<Val>,
-        refs: Vec<RefInst>,
+        mut refs: Vec<Vec<RefInst>>,
     ) -> RResult<Rc<ModuleInst>> {
-        let module_inst = ModuleInst {
+        let mut module_inst = ModuleInst {
             types: vec![],
             tableaddrs: vec![],
             globaladdrs: vec![],
@@ -131,15 +132,80 @@ impl Store {
             exports: vec![],
             start: None,
         };
+
+        // table allocations
+        for table_type in &module.tables {
+            if !is_table_type_valid(&table_type) {
+                return Err(Trap);
+            }
+        }
+        for table_type in module.tables {
+            let elem = RefInst::Null(table_type.element_ref_type.clone());
+            module_inst
+                .tableaddrs
+                .push(self.allocate_table(table_type, elem));
+        }
+        module_inst
+            .tableaddrs
+            .extend(extern_vals.iter().filter_map(|v| match v {
+                ExternVal::Table(addr) => Some(addr),
+                _ => None,
+            }));
+
+        // mem allocations
+        for mem_type in &module.mems {
+            if !is_memory_type_valid(&mem_type) {
+                return Err(Trap);
+            }
+        }
+        for mem_type in module.mems {
+            module_inst.memaddrs.push(self.allocate_mem(mem_type));
+        }
+        module_inst
+            .memaddrs
+            .extend(extern_vals.iter().filter_map(|v| match v {
+                ExternVal::Mem(addr) => Some(addr),
+                _ => None,
+            }));
+
+        // global allocations
+        for global_type in module.globals {
+            globals.rotate_left(1);
+            let val = globals.pop().ok_or(Trap)?;
+            module_inst
+                .globaladdrs
+                .push(self.allocate_global(global_type, val));
+        }
+        module_inst
+            .globaladdrs
+            .extend(extern_vals.iter().filter_map(|v| match v {
+                ExternVal::Global(addr) => Some(addr),
+                _ => None,
+            }));
+
+        // elem allocation
+        for element_segment in module.elems {
+            let elem_type = element_segment.get_type();
+            refs.rotate_left(1);
+            let elem = refs.pop().ok_or(Trap)?;
+            self.allocate_elem(elem_type, elem);
+        }
+
+        // data allocation
+        for mut data in module.datas {
+            self.allocate_data(data.clone_data());
+        }
+
         let mut module_inst_rc = Rc::new(module_inst);
 
-        // func allocaions
+        // func allocations
         for (i, type_idx) in module.funcs.iter_mut().enumerate() {
             let code = module.code.get_mut(i).ok_or(Trap)?;
             let locals =
                 code.code
                     .locals
-                    .drain(0..)
+                    .clone()
+                    .iter()
                     .fold(vec![], |mut locals_acc, current_locals| {
                         locals_acc.append(&mut vec![
                             current_locals.val_type.clone();
@@ -148,7 +214,7 @@ impl Store {
                         locals_acc
                     });
             let body = ExpressionType {
-                instructions: code.code.expression.instructions.drain(0..).collect(),
+                instructions: code.code.expression.instructions.clone(),
             };
 
             let func = Func {
@@ -163,52 +229,15 @@ impl Store {
                 None => return Err(Trap),
             }
         }
-
-        // table allocations
-        for table_type in &module.tables {
-            if !is_table_type_valid(&table_type) {
-                return Err(Trap);
-            }
-        }
-        for table_type in module.tables.drain(0..) {
-            match Rc::get_mut(&mut module_inst_rc) {
-                Some(inst) => {
-                    let elem = RefInst::Null(table_type.element_ref_type.clone());
-                    inst.tableaddrs.push(self.allocate_table(table_type, elem))
-                }
-                None => return Err(Trap),
-            }
-        }
-
-        // mem allocations
-        for mem_type in &module.mems {
-            if !is_memory_type_valid(&mem_type) {
-                return Err(Trap);
-            }
-        }
         match Rc::get_mut(&mut module_inst_rc) {
-            Some(inst) => {
-                for mem_type in module.mems.drain(0..) {
-                    inst.memaddrs.push(self.allocate_mem(mem_type));
-                }
-            }
+            Some(inst) => inst
+                .funcaddrs
+                .extend(extern_vals.iter().filter_map(|v| match v {
+                    ExternVal::Func(addr) => Some(addr),
+                    _ => None,
+                })),
             None => return Err(Trap),
         }
-
-        // global allocations
-        match Rc::get_mut(&mut module_inst_rc) {
-            Some(inst) => {
-                for global_type in module.globals.drain(0..) {
-                    globals.rotate_left(1);
-                    let val = globals.pop().ok_or(Trap)?;
-                    inst.globaladdrs
-                        .push(self.allocate_global(global_type, val));
-                }
-            }
-            None => return Err(Trap),
-        }
-
-        
 
         Ok(module_inst_rc)
     }

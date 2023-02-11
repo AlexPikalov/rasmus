@@ -188,6 +188,19 @@ impl ElementSegmentType {
     const BITFIELD_PASSIVE_REF: U32Type = U32Type(5);
     const BITFIELD_ACTIVE_REF: U32Type = U32Type(6);
     const BITFIELD_DECLARATIVE_REF: U32Type = U32Type(7);
+
+    pub fn get_type(&self) -> RefType {
+        match self {
+            Self::Active0Functions(_) => RefType::FuncRef,
+            Self::ElemKindPassiveFunctions(t) => (&t.elem_kind).into(),
+            Self::ElemKindActiveFunctions(t) => (&t.elem_kind).into(),
+            Self::ElemKindDeclarativeFunctions(t) => (&t.elem_kind).into(),
+            Self::Active0Expr(_) => RefType::FuncRef,
+            Self::PassiveRef(t) => t.ref_type.clone(),
+            Self::ActiveRef(t) => t.ref_type.clone(),
+            Self::DeclarativeRef(t) => t.ref_type.clone(),
+        }
+    }
 }
 
 impl ParseWithNom for ElementSegmentType {
@@ -535,6 +548,12 @@ impl ElemKind {
     const ENCODE_BYTE_FUNC_REF: Byte = 0x00;
 }
 
+impl Into<RefType> for &ElemKind {
+    fn into(self) -> RefType {
+        RefType::FuncRef
+    }
+}
+
 impl ParseWithNom for ElemKind {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let (bytes, elem_kind) = take(1usize)(bytes)?;
@@ -555,13 +574,13 @@ pub struct CodeType {
     pub code: FuncCodeType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FuncCodeType {
     pub locals: Vec<LocalsType>,
     pub expression: ExpressionType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LocalsType {
     pub n: U32Type,
     pub val_type: ValType,
@@ -587,6 +606,14 @@ impl DataType {
     const BITFIELD_ACTIVE0: U32Type = U32Type(0);
     const BITFIELD_PASSIVE: U32Type = U32Type(1);
     const BITFIELD_ACTIVE: U32Type = U32Type(2);
+
+    pub fn clone_data(&mut self) -> Vec<Byte> {
+        match self {
+            Self::Active0(t) => t.init.clone(),
+            Self::Active(t) => t.init.clone(),
+            Self::Passive(t) => t.init.clone(),
+        }
+    }
 }
 
 impl ParseWithNom for DataType {
