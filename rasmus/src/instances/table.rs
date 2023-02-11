@@ -12,6 +12,7 @@ pub struct TableInst {
 impl TableInst {
     pub const MAX_TABLE_SIZE: usize = 2usize.pow(32);
 
+    #[inline]
     pub fn grow(&mut self, n_val: &Val, reference: RefInst) -> RResult<()> {
         if let Val::Num(NumInst::I32(n)) = n_val {
             let num = *n as usize;
@@ -35,6 +36,8 @@ impl TableInst {
 
             self.elem.append(&mut vec![reference; num]);
             self.table_type = new_table_type;
+
+            return Ok(());
         }
 
         Err(Trap)
