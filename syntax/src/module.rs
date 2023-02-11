@@ -564,22 +564,15 @@ pub struct FuncCodeType {
 #[derive(Debug, PartialEq)]
 pub struct LocalsType {
     pub n: U32Type,
-    pub val_types: Vec<ValType>,
+    pub val_type: ValType,
 }
 
 impl ParseWithNom for LocalsType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], LocalsType> {
         let (bytes, n) = U32Type::parse(bytes)?;
-        let mut remaining_bytes = bytes;
-        let mut val_types: Vec<ValType> = Vec::with_capacity(n.0 as usize);
+        let (bytes, val_type) = ValType::parse(bytes)?;
 
-        for _ in 0..n.0 {
-            let parsed_val_type = ValType::parse(remaining_bytes)?;
-            remaining_bytes = parsed_val_type.0;
-            val_types.push(parsed_val_type.1);
-        }
-
-        Ok((remaining_bytes, LocalsType { n, val_types }))
+        Ok((bytes, LocalsType { n, val_type }))
     }
 }
 

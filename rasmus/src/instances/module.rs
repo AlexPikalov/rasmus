@@ -15,5 +15,5 @@ pub struct ModuleInst {
     pub elemaddrs: Vec<ElemAddr>,
     pub dataaddrs: Vec<DataAddr>,
     pub exports: Vec<ExportInst>,
-    start: Option<StartType>,
+    pub start: Option<StartType>,
 }

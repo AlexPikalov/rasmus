@@ -20,7 +20,7 @@ pub struct FuncInstLocal {
 pub struct Func {
     pub func_type: TypeIdx,
     pub locals: Vec<ValType>,
-    pub body: Vec<ExpressionType>,
+    pub body: ExpressionType,
 }
 
 pub struct HostFunc {
