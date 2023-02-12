@@ -1,7 +1,9 @@
 mod address;
 mod cli;
+mod execute;
 mod instances;
 mod module;
+mod module_registry;
 mod result;
 
 fn main() {

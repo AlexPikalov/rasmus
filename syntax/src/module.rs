@@ -4,7 +4,7 @@ use super::types::*;
 
 use nom::{bytes::complete::take, IResult as NomResult};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Module {
     pub types: Vec<FuncType>,
     pub imports: Vec<ImportType>,
@@ -12,7 +12,7 @@ pub struct Module {
     pub funcs: Vec<TypeIdx>,
     pub tables: Vec<TableType>,
     pub mems: Vec<MemType>,
-    pub globals: Vec<GlobalType>,
+    pub globals: Vec<Global>,
     pub exports: Vec<ExportType>,
     pub start: Option<StartType>,
     pub elems: Vec<ElementSegmentType>,
@@ -23,23 +23,42 @@ pub struct Module {
 impl Module {
     pub const MAGIC: [u8; 4] = [0x00, 0x61, 0x73, 0x6D];
     pub const VERSION: [u8; 4] = [0x01, 0x00, 0x00, 0x00];
-}
 
-impl Default for Module {
-    fn default() -> Self {
-        Module {
-            types: vec![],
-            imports: vec![],
-            funcs: vec![],
-            tables: vec![],
-            mems: vec![],
-            globals: vec![],
-            exports: vec![],
-            start: None,
-            elems: vec![],
-            code: vec![],
-            datas: vec![],
+    pub fn is_valid(&self) -> bool {
+        // TODO:
+        true
+    }
+
+    pub fn get_funcs(&self) -> Option<Vec<Func>> {
+        let num = self.funcs.len();
+        let mut funcs = Vec::with_capacity(num);
+        for i in 0..num {
+            let type_idx = self.funcs.get(i)?;
+            let code = self.code.get(i)?;
+            let locals =
+                code.code
+                    .locals
+                    .clone()
+                    .iter()
+                    .fold(vec![], |mut locals_acc, current_locals| {
+                        locals_acc.append(&mut vec![
+                            current_locals.val_type.clone();
+                            current_locals.n.0 as usize
+                        ]);
+                        locals_acc
+                    });
+            let body = ExpressionType {
+                instructions: code.code.expression.instructions.clone(),
+            };
+
+            funcs.push(Func {
+                func_type: type_idx.clone(),
+                locals,
+                body,
+            });
         }
+
+        Some(funcs)
     }
 }
 
@@ -164,6 +183,21 @@ pub struct StartType {
 impl ParseWithNom for StartType {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         U32Type::parse(bytes).map(|(b, val)| (b, StartType { func: FuncIdx(val) }))
+    }
+}
+
+#[derive(Debug)]
+pub struct Global {
+    pub global_type: GlobalType,
+    pub init: ExpressionType,
+}
+
+impl ParseWithNom for Global {
+    fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
+        let (bytes, global_type) = GlobalType::parse(bytes)?;
+        let (bytes, init) = ExpressionType::parse(bytes)?;
+
+        Ok((bytes, Global { global_type, init }))
     }
 }
 
@@ -607,7 +641,7 @@ impl DataType {
     const BITFIELD_PASSIVE: U32Type = U32Type(1);
     const BITFIELD_ACTIVE: U32Type = U32Type(2);
 
-    pub fn clone_data(&mut self) -> Vec<Byte> {
+    pub fn clone_data(&self) -> Vec<Byte> {
         match self {
             Self::Active0(t) => t.init.clone(),
             Self::Active(t) => t.init.clone(),

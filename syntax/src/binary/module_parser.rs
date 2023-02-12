@@ -256,16 +256,16 @@ impl ModuleParser {
         Ok(mem_types)
     }
 
-    fn parse_globals_section(bytes: &[Byte]) -> ParseResult<Vec<GlobalType>> {
+    fn parse_globals_section(bytes: &[Byte]) -> ParseResult<Vec<Global>> {
         let mut remaining_bytes = bytes;
         let vector_len_parsed = U32Type::parse(remaining_bytes)
             .map_err(|_| SyntaxError::InvalidGlobalsModuleSection)?;
         remaining_bytes = vector_len_parsed.0;
         let vector_len = vector_len_parsed.1 .0 as usize;
-        let mut global_types: Vec<GlobalType> = Vec::with_capacity(vector_len);
+        let mut global_types: Vec<Global> = Vec::with_capacity(vector_len);
 
         for _ in 0..vector_len {
-            let global_type_parsed = GlobalType::parse(remaining_bytes)
+            let global_type_parsed = Global::parse(remaining_bytes)
                 .map_err(|_| SyntaxError::InvalidGlobalsModuleSection)?;
 
             remaining_bytes = global_type_parsed.0;

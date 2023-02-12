@@ -17,4 +17,8 @@ impl Stack {
     pub fn new() -> Self {
         Stack { stack: vec![] }
     }
+
+    pub fn push_entry(&mut self, entry: StackEntry) {
+        self.stack.push(entry);
+    }
 }

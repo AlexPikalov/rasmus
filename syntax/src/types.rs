@@ -2,6 +2,7 @@ use super::binary::parse_trait::ParseWithNom;
 use super::binary::parser_helpers::{
     parse as nom_parse, read_i32_leb128, read_i64_leb128, read_s33_leb128, read_u32_leb128,
 };
+use super::instructions::ExpressionType;
 use nom::error::ParseError as NomParseError;
 use nom::{
     bytes::complete::take,
@@ -483,6 +484,12 @@ impl ParseWithNom for F64Type {
     {
         le_f64(bytes).map(|(b, v)| (b, Self(v)))
     }
+}
+
+pub struct Func {
+    pub func_type: TypeIdx,
+    pub locals: Vec<ValType>,
+    pub body: ExpressionType,
 }
 
 pub type ParseResult<T> = Result<T, SyntaxError>;
