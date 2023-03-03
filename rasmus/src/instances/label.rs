@@ -1,7 +1,9 @@
+use std::rc::Rc;
+
 use super::instruction::InstructionInst;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LabelInst {
     pub arity: usize,
-    pub instructions: Vec<InstructionInst>,
+    pub instructions: Rc<Vec<InstructionInst>>,
 }

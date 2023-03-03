@@ -423,13 +423,15 @@ mod test {
     #[test]
     fn test_complete_module() {
         let wasm = std::fs::read(format!(
-            "{}/wasm_files/complete_module.wasm",
+            "{}/wasm_files/table.wasm",
             std::env::var("CARGO_MANIFEST_DIR").unwrap()
         ))
         .unwrap();
         let (remaining_bytes, module) = ModuleParser::parse(&wasm).unwrap();
 
         assert!(remaining_bytes.is_empty(), "should consume all bytes");
+
+        println!("{:#?}", module);
 
         assert_eq!(
             module.types,

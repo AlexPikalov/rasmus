@@ -314,7 +314,7 @@ impl Store {
         }
 
         // data allocation
-        for mut data in &module.datas {
+        for data in &module.datas {
             self.allocate_data(data.clone_data());
         }
 

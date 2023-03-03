@@ -235,6 +235,10 @@ impl ElementSegmentType {
             Self::DeclarativeRef(t) => t.ref_type.clone(),
         }
     }
+
+    pub fn get_init(&self) -> &Vec<ExpressionType> {
+        unimplemented!()
+    }
 }
 
 impl ParseWithNom for ElementSegmentType {
