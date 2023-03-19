@@ -16,6 +16,10 @@ pub struct ExpressionType {
 
 impl ExpressionType {
     const OP_CODE_END: Byte = 0x0B;
+
+    pub fn new(instructions: Vec<InstructionType>) -> Self {
+        ExpressionType { instructions }
+    }
 }
 
 impl ParseWithNom for ExpressionType {

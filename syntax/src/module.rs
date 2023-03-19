@@ -25,7 +25,8 @@ impl Module {
     pub const VERSION: [u8; 4] = [0x01, 0x00, 0x00, 0x00];
 
     pub fn is_valid(&self) -> bool {
-        // TODO:
+        // TODO: validate according to
+        // so it is guarated that element expression list always reduces to a reference value
         true
     }
 

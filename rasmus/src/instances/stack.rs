@@ -59,4 +59,16 @@ impl Stack {
             None => None,
         }
     }
+
+    pub fn pop_frame(&mut self) -> Option<Frame> {
+        if let Some(stack_entry) = self.stack.last() {
+            if stack_entry.is_frame() {
+                if let Some(StackEntry::Frame(frame)) = self.stack.pop() {
+                    return Some(frame);
+                }
+            }
+        }
+
+        None
+    }
 }

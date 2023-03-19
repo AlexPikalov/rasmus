@@ -9,6 +9,7 @@ use syntax::module::*;
 use syntax::types::*;
 
 use super::export::{ExportInst, ExternVal};
+use super::value::Val;
 
 #[derive(Debug, Default)]
 pub struct ModuleInst {
@@ -38,7 +39,7 @@ impl ModuleInst {
 
         let mut aux_module = Rc::new(ModuleInst {
             globaladdrs: externals
-                .into_iter()
+                .iter()
                 .filter_map(|external| match external.value {
                     ExternVal::Global(a) => Some(a),
                     _ => None,
@@ -74,42 +75,78 @@ impl ModuleInst {
 
         let mut refs_refs = Vec::with_capacity(module.elems.len());
         for elem in &module.elems {
-            let init = Self::resolve_element_segment_init(elem, store, stack, aux_module.clone());
+            let init = Self::resolve_element_segment_init(elem);
 
             let mut refs = Vec::with_capacity(init.len());
 
             for init_expr in init {
-                refs.push(execute_expression(&init_expr, stack, store)?);
+                let ref_instr = match execute_expression(&init_expr, stack, store)? {
+                    Val::Ref(ref_instr) => ref_instr,
+                    _ => {
+                        // unreachable due to validation
+                        return Err(Trap);
+                    }
+                };
+                refs.push(ref_instr);
             }
 
             refs_refs.push(refs);
         }
 
+        if stack.pop_frame().is_none() {
+            return Err(Trap);
+        }
+
+        let globals = externals
+            .iter()
+            .map(|export_inst| export_inst.value.clone())
+            .collect();
+
+        let module_inst_rc = store.allocate_module(module, globals, vals, refs_refs)?;
+
         unimplemented!()
     }
 
-    fn resolve_element_segment_init(
-        elem: &ElementSegmentType,
-        store: &mut Store,
-        stack: &mut Stack,
-        module: Rc<ModuleInst>,
-    ) -> Vec<ExpressionType> {
+    fn resolve_element_segment_init<'a>(elem: &ElementSegmentType) -> Vec<ExpressionType> {
         match elem {
-            // TODO:
-            ElementSegmentType::Active0Expr(active0_expr) => todo!(),
-            ElementSegmentType::Active0Functions(active0_funcs) => todo!(),
-            ElementSegmentType::ActiveRef(active0_ref) => todo!(),
-            ElementSegmentType::DeclarativeRef(declarative_ref) => todo!(),
+            ElementSegmentType::Active0Expr(active0_expr) => active0_expr.init.clone(),
+            ElementSegmentType::Active0Functions(active0_funcs) => active0_funcs
+                .init
+                .iter()
+                .map(|func_idx| {
+                    ExpressionType::new(vec![InstructionType::RefFunc(func_idx.clone())])
+                })
+                .collect(),
+            ElementSegmentType::ActiveRef(active0_ref) => active0_ref.init.clone(),
+            ElementSegmentType::DeclarativeRef(declarative_ref) => declarative_ref.init.clone(),
             ElementSegmentType::ElemKindActiveFunctions(elemkind_active_funcs) => {
-                todo!()
+                elemkind_active_funcs
+                    .init
+                    .iter()
+                    .map(|func_idx| {
+                        ExpressionType::new(vec![InstructionType::RefFunc(func_idx.clone())])
+                    })
+                    .collect()
             }
             ElementSegmentType::ElemKindDeclarativeFunctions(elemkind_declarative_funcs) => {
-                todo!()
+                elemkind_declarative_funcs
+                    .init
+                    .iter()
+                    .map(|func_idx| {
+                        ExpressionType::new(vec![InstructionType::RefFunc(func_idx.clone())])
+                    })
+                    .collect()
             }
             ElementSegmentType::ElemKindPassiveFunctions(elemkind_passive_funcs) => {
-                todo!()
+                elemkind_passive_funcs
+                    .init
+                    .iter()
+                    .map(|func_idx| {
+                        ExpressionType::new(vec![InstructionType::RefFunc(func_idx.clone())])
+                    })
+                    .collect()
             }
-            ElementSegmentType::PassiveRef(passive_ref) => todo!(),
+            ElementSegmentType::PassiveRef(passive_ref) => passive_ref.init.clone(),
         }
     }
 }
