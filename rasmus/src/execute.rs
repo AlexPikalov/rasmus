@@ -17,7 +17,7 @@ pub fn execute_expression(
     };
 
     for ref instr in &expr.instructions {
-        execute_instruction(instr, stack, store, &frame)?;
+        execute_instruction(instr, stack, store)?;
     }
 
     stack.pop_value().ok_or(Trap)
@@ -27,7 +27,7 @@ pub fn execute_instruction(
     instr: &InstructionType,
     stack: &mut Stack,
     store: &mut Store,
-    frame_ref: &Frame,
+    // frame_ref: &Frame,
 ) -> RResult<()> {
     unimplemented!()
 }

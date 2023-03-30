@@ -236,7 +236,7 @@ impl Store {
     // TODO: implement resolve_elems to get refs vector of module's element segments
     pub fn allocate_module(
         &mut self,
-        module: Module,
+        module: &Module,
         extern_vals: Vec<ExternVal>,
         mut globals: Vec<Val>,
         mut refs: Vec<Vec<RefInst>>,
@@ -340,10 +340,10 @@ impl Store {
         }
 
         // exports instantiation
-        for export_declaration in module.exports {
+        for export_declaration in &module.exports {
             let export_inst = ExportInst {
                 name: export_declaration.name.clone(),
-                value: match export_declaration.desc {
+                value: match &export_declaration.desc {
                     ExportDescription::Func(type_idx) => {
                         let funcaddr = module_inst_rc
                             .funcaddrs

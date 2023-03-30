@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use crate::address::*;
-use crate::execute::execute_expression;
+use crate::execute::{execute_expression, execute_instruction};
 use crate::instances::{frame::Frame, stack::Stack, stack::StackEntry, store::Store};
 use crate::module_registry::ModuleRegistry;
 use crate::result::{RResult, Trap};
@@ -28,9 +28,9 @@ impl ModuleInst {
     pub fn instantiate(
         store: &mut Store,
         stack: &mut Stack,
-        module: Module,
+        module: &Module,
         module_registry: &Box<ModuleRegistry>,
-    ) -> RResult<Self> {
+    ) -> RResult<Rc<Self>> {
         if !module.is_valid() {
             return Err(Trap);
         }
@@ -102,9 +102,22 @@ impl ModuleInst {
             .map(|export_inst| export_inst.value.clone())
             .collect();
 
-        let module_inst_rc = store.allocate_module(module, globals, vals, refs_refs)?;
+        let module_inst_rc = store.allocate_module(&module, globals, vals, refs_refs)?;
 
-        unimplemented!()
+        stack.push_entry(StackEntry::Frame(Frame {
+            module: module_inst_rc.clone(),
+            locals: Rc::new(vec![]),
+        }));
+
+        Self::apply_elems(module, stack, store)?;
+        Self::apply_active_datas(module, stack, store)?;
+        Self::execute_module_start_fn(module, stack, store)?;
+
+        if stack.pop_frame().is_none() {
+            return Err(Trap);
+        }
+
+        return Ok(module_inst_rc);
     }
 
     fn resolve_element_segment_init<'a>(elem: &ElementSegmentType) -> Vec<ExpressionType> {
@@ -148,5 +161,153 @@ impl ModuleInst {
             }
             ElementSegmentType::PassiveRef(passive_ref) => passive_ref.init.clone(),
         }
+    }
+
+    fn apply_elems(module: &Module, stack: &mut Stack, store: &mut Store) -> RResult<()> {
+        for (i, elem) in module.elems.iter().enumerate() {
+            let init_len = elem.get_init().len() as i32;
+            match elem {
+                ElementSegmentType::Active0Expr(segment_type) => {
+                    let offset_instructions = &segment_type.mode.offset;
+                    let table_idx = TableIdx(U32Type(0));
+                    Self::apply_active_element_segment(
+                        init_len,
+                        i as u32,
+                        offset_instructions,
+                        table_idx,
+                        stack,
+                        store,
+                    )?;
+                }
+                ElementSegmentType::Active0Functions(segment_type) => {
+                    let offset_instructions = &segment_type.mode.offset;
+                    let table_idx = TableIdx(U32Type(0));
+                    Self::apply_active_element_segment(
+                        init_len,
+                        i as u32,
+                        offset_instructions,
+                        table_idx,
+                        stack,
+                        store,
+                    )?;
+                }
+                ElementSegmentType::ActiveRef(segment_type) => {
+                    let offset_instructions = &segment_type.mode.offset;
+                    let table_idx = segment_type.mode.table_idx.clone();
+                    Self::apply_active_element_segment(
+                        init_len,
+                        i as u32,
+                        offset_instructions,
+                        table_idx,
+                        stack,
+                        store,
+                    )?;
+                }
+                ElementSegmentType::ElemKindActiveFunctions(segment_type) => {
+                    let offset_instructions = &segment_type.mode.offset;
+                    let table_idx = segment_type.mode.table_idx.clone();
+                    Self::apply_active_element_segment(
+                        init_len,
+                        i as u32,
+                        offset_instructions,
+                        table_idx,
+                        stack,
+                        store,
+                    )?;
+                }
+                ElementSegmentType::DeclarativeRef(_)
+                | ElementSegmentType::ElemKindDeclarativeFunctions(_) => {
+                    Self::apply_declarative_element_segment(i as u32, stack, store)?;
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
+    fn apply_active_element_segment(
+        n: i32,
+        i: u32,
+        offset_instructions: &ExpressionType,
+        table_idx: TableIdx,
+        stack: &mut Stack,
+        store: &mut Store,
+    ) -> RResult<()> {
+        execute_expression(offset_instructions, stack, store)?;
+        execute_instruction(&InstructionType::I32Const(I32Type(0)), stack, store)?;
+        execute_instruction(&InstructionType::I32Const(I32Type(n)), stack, store)?;
+        execute_instruction(
+            &InstructionType::TableInit((table_idx, ElemIdx(U32Type(i)))),
+            stack,
+            store,
+        )?;
+        execute_instruction(
+            &InstructionType::ElemDrop(ElemIdx(U32Type(i))),
+            stack,
+            store,
+        )?;
+
+        Ok(())
+    }
+
+    fn apply_declarative_element_segment(
+        i: u32,
+        stack: &mut Stack,
+        store: &mut Store,
+    ) -> RResult<()> {
+        execute_instruction(
+            &InstructionType::ElemDrop(ElemIdx(U32Type(i))),
+            stack,
+            store,
+        )?;
+
+        Ok(())
+    }
+
+    fn apply_active_datas(module: &Module, stack: &mut Stack, store: &mut Store) -> RResult<()> {
+        for (i, data) in module.datas.iter().enumerate() {
+            match data {
+                DataType::Active0(data_active) => {
+                    let n = data_active.init.len() as i32;
+                    execute_expression(&data_active.mode.offset, stack, store)?;
+                    execute_instruction(&InstructionType::I32Const(I32Type(0)), stack, store)?;
+                    execute_instruction(&InstructionType::I32Const(I32Type(n)), stack, store)?;
+                    execute_instruction(
+                        &InstructionType::MemoryInit(DataIdx(U32Type(i as u32))),
+                        stack,
+                        store,
+                    )?;
+                }
+                DataType::Active(data_active) => {
+                    if data_active.mode.memory.0 .0 != 0 {
+                        return Err(Trap);
+                    }
+                    let n = data_active.init.len() as i32;
+                    execute_expression(&data_active.mode.offset, stack, store)?;
+                    execute_instruction(&InstructionType::I32Const(I32Type(0)), stack, store)?;
+                    execute_instruction(&InstructionType::I32Const(I32Type(n)), stack, store)?;
+                    execute_instruction(
+                        &InstructionType::MemoryInit(DataIdx(U32Type(i as u32))),
+                        stack,
+                        store,
+                    )?;
+                }
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
+    fn execute_module_start_fn(
+        module: &Module,
+        stack: &mut Stack,
+        store: &mut Store,
+    ) -> RResult<()> {
+        if let Some(ref start_fn) = module.start {
+            execute_instruction(&InstructionType::Call(start_fn.func.clone()), stack, store)?;
+        }
+        Ok(())
     }
 }

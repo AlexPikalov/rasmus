@@ -103,7 +103,7 @@ pub enum InstructionType {
     // Table Instructions
     TableGet(TableIdx),
     TableSet(TableIdx),
-    TableInit((ElemIdx, TableIdx)),
+    TableInit((TableIdx, ElemIdx)),
     ElemDrop(ElemIdx),
     TableCopy((TableIdx, TableIdx)),
     TableGrow(TableIdx),

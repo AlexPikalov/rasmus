@@ -238,6 +238,15 @@ impl ElementSegmentType {
     }
 
     pub fn get_init(&self) -> &Vec<ExpressionType> {
+        // TODO:
+        unimplemented!()
+    }
+
+    pub fn get_offset(&self) -> &ExpressionType {
+        unimplemented!()
+    }
+
+    pub fn get_table_idx(&self) -> TableIdx {
         unimplemented!()
     }
 }
