@@ -165,7 +165,7 @@ impl ModuleInst {
 
     fn apply_elems(module: &Module, stack: &mut Stack, store: &mut Store) -> RResult<()> {
         for (i, elem) in module.elems.iter().enumerate() {
-            let init_len = elem.get_init().len() as i32;
+            let init_len = elem.get_init().len() as u32;
             match elem {
                 ElementSegmentType::Active0Expr(segment_type) => {
                     let offset_instructions = &segment_type.mode.offset;
@@ -227,7 +227,7 @@ impl ModuleInst {
     }
 
     fn apply_active_element_segment(
-        n: i32,
+        n: u32,
         i: u32,
         offset_instructions: &ExpressionType,
         table_idx: TableIdx,
@@ -269,7 +269,7 @@ impl ModuleInst {
         for (i, data) in module.datas.iter().enumerate() {
             match data {
                 DataType::Active0(data_active) => {
-                    let n = data_active.init.len() as i32;
+                    let n = data_active.init.len() as u32;
                     execute_expression(&data_active.mode.offset, stack, store)?;
                     execute_instruction(&InstructionType::I32Const(I32Type(0)), stack, store)?;
                     execute_instruction(&InstructionType::I32Const(I32Type(n)), stack, store)?;
@@ -283,7 +283,7 @@ impl ModuleInst {
                     if data_active.mode.memory.0 .0 != 0 {
                         return Err(Trap);
                     }
-                    let n = data_active.init.len() as i32;
+                    let n = data_active.init.len() as u32;
                     execute_expression(&data_active.mode.offset, stack, store)?;
                     execute_instruction(&InstructionType::I32Const(I32Type(0)), stack, store)?;
                     execute_instruction(&InstructionType::I32Const(I32Type(n)), stack, store)?;

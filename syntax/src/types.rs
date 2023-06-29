@@ -1,6 +1,6 @@
 use super::binary::parse_trait::ParseWithNom;
 use super::binary::parser_helpers::{
-    parse as nom_parse, read_i32_leb128, read_i64_leb128, read_s33_leb128, read_u32_leb128,
+    parse as nom_parse, read_s33_leb128, read_u32_leb128, read_u64_leb128,
 };
 use super::instructions::ExpressionType;
 use nom::error::ParseError as NomParseError;
@@ -441,23 +441,23 @@ impl ParseWithNom for S33Type {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct I32Type(pub i32);
+pub struct I32Type(pub u32);
 
 impl ParseWithNom for I32Type {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let mut pos = 0usize;
-        let val = read_i32_leb128(bytes, &mut pos);
+        let val = read_u32_leb128(bytes, &mut pos);
         Ok((bytes.slice(pos..), Self(val)))
     }
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct I64Type(pub i64);
+pub struct I64Type(pub u64);
 
 impl ParseWithNom for I64Type {
     fn parse(bytes: &[Byte]) -> NomResult<&[Byte], Self> {
         let mut pos = 0usize;
-        let val = read_i64_leb128(bytes, &mut pos);
+        let val = read_u64_leb128(bytes, &mut pos);
         Ok((bytes.slice(pos..), Self(val)))
     }
 }

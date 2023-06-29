@@ -335,7 +335,7 @@ pub fn get_stack_type_for_instruction(
         },
         I::I64ExtendI32S | I::I64ExtendI32U => StackType {
             inputs: vec![OpdType::Strict(ValType::i32())],
-            outputs: vec![ValType::i32()],
+            outputs: vec![ValType::i64()],
         },
         I::I32TruncF32S | I::I32TruncF32U | I::I32TruncSatF32S | I::I32TruncSatF32U => StackType {
             inputs: vec![OpdType::Strict(ValType::f32())],

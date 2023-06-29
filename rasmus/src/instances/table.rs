@@ -1,5 +1,5 @@
 use super::ref_inst::RefInst;
-use super::value::{NumInst, Val};
+use super::value::Val;
 use crate::result::{RResult, Trap};
 use syntax::types::{LimitsType, TableType, U32Type};
 use syntax::validation::types_validation::is_table_type_valid;
@@ -14,7 +14,7 @@ impl TableInst {
 
     #[inline]
     pub fn grow(&mut self, n_val: &Val, reference: RefInst) -> RResult<()> {
-        if let Val::Num(NumInst::I32(n)) = n_val {
+        if let Val::I32(n) = n_val {
             let num = *n as usize;
             let len = num + self.elem.len();
             if len > Self::MAX_TABLE_SIZE {
