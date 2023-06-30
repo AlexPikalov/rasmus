@@ -1,10 +1,11 @@
-use std::ops::Neg;
+use std::ops::{Add, Neg};
 
 use crate::result::{RResult, Trap};
 
 use crate::instances::instruction::{
     iadd_32, iadd_64, iand, idiv_32_s, idiv_32_u, idiv_64_s, idiv_64_u, imul_32, imul_64, ior,
-    irem_32_s, irem_32_u, irem_64_s, irem_64_u, isub_32, isub_64, ixor,
+    irem_32_s, irem_32_u, irem_64_s, irem_64_u, irotl_32, irotl_64, irotr_32, irotr_64, ishl_32,
+    ishl_64, ishr_s_32, ishr_s_64, ishr_u_32, ishr_u_64, isub_32, isub_64, ixor,
 };
 use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
@@ -140,6 +141,73 @@ pub fn execute_instruction(
         }
         InstructionType::I64Xor => {
             binop!(stack, Val::I64, Val::I64, Val::I64, ixor)
+        }
+        InstructionType::I32Shl => {
+            binop!(stack, Val::I32, Val::I32, Val::I32, ishl_32)
+        }
+        InstructionType::I64Shl => {
+            binop!(stack, Val::I64, Val::I64, Val::I64, ishl_64)
+        }
+        InstructionType::I32ShrU => {
+            binop!(stack, Val::I32, Val::I32, Val::I32, ishr_u_32)
+        }
+        InstructionType::I64ShrU => {
+            binop!(stack, Val::I64, Val::I64, Val::I64, ishr_u_64)
+        }
+        InstructionType::I32ShrS => {
+            binop!(stack, Val::I32, Val::I32, Val::I32, ishr_s_32)
+        }
+        InstructionType::I64ShrS => {
+            binop!(stack, Val::I64, Val::I64, Val::I64, ishr_s_64)
+        }
+        InstructionType::I32Rotl => {
+            binop!(stack, Val::I32, Val::I32, Val::I32, irotl_32)
+        }
+        InstructionType::I64Rotl => {
+            binop!(stack, Val::I64, Val::I64, Val::I64, irotl_64)
+        }
+        InstructionType::I32Rotr => {
+            binop!(stack, Val::I32, Val::I32, Val::I32, irotr_32)
+        }
+        InstructionType::I64Rotr => {
+            binop!(stack, Val::I64, Val::I64, Val::I64, irotr_64)
+        }
+        // fbinop
+        InstructionType::F32Add => {
+            binop!(
+                stack,
+                Val::F32,
+                Val::F32,
+                Val::F32,
+                |lhs: f32, rhs: f32| Ok(lhs + rhs)
+            )
+        }
+        InstructionType::F64Add => {
+            binop!(
+                stack,
+                Val::F64,
+                Val::F64,
+                Val::F64,
+                |lhs: f64, rhs: f64| Ok(lhs + rhs)
+            )
+        }
+        InstructionType::F32Sub => {
+            binop!(
+                stack,
+                Val::F32,
+                Val::F32,
+                Val::F32,
+                |lhs: f32, rhs: f32| Ok(lhs - rhs)
+            )
+        }
+        InstructionType::F64Sub => {
+            binop!(
+                stack,
+                Val::F64,
+                Val::F64,
+                Val::F64,
+                |lhs: f64, rhs: f64| Ok(lhs - rhs)
+            )
         } // _ => unimplemented!(),
     }
 
