@@ -208,6 +208,84 @@ pub fn execute_instruction(
                 Val::F64,
                 |lhs: f64, rhs: f64| Ok(lhs - rhs)
             )
+        }
+        InstructionType::F32Mul => {
+            binop!(
+                stack,
+                Val::F32,
+                Val::F32,
+                Val::F32,
+                |lhs: f32, rhs: f32| Ok(lhs * rhs)
+            )
+        }
+        InstructionType::F64Mul => {
+            binop!(
+                stack,
+                Val::F64,
+                Val::F64,
+                Val::F64,
+                |lhs: f64, rhs: f64| Ok(lhs * rhs)
+            )
+        }
+        InstructionType::F32Div => {
+            binop!(
+                stack,
+                Val::F32,
+                Val::F32,
+                Val::F32,
+                |lhs: f32, rhs: f32| Ok(lhs / rhs)
+            )
+        }
+        InstructionType::F64Div => {
+            binop!(
+                stack,
+                Val::F64,
+                Val::F64,
+                Val::F64,
+                |lhs: f64, rhs: f64| Ok(lhs / rhs)
+            )
+        }
+        InstructionType::F32Min => {
+            binop!(stack, Val::F32, Val::F32, Val::F32, |lhs: f32, rhs: f32| {
+                if lhs == f32::NAN || rhs == f32::NAN {
+                    return Ok(f32::NAN);
+                }
+                Ok(lhs.min(rhs))
+            })
+        }
+        InstructionType::F64Min => {
+            binop!(stack, Val::F64, Val::F64, Val::F64, |lhs: f64, rhs: f64| {
+                if lhs == f64::NAN || rhs == f64::NAN {
+                    return Ok(f64::NAN);
+                }
+                Ok(lhs.min(rhs))
+            })
+        }
+        InstructionType::F32Max => {
+            binop!(stack, Val::F32, Val::F32, Val::F32, |lhs: f32, rhs: f32| {
+                if lhs == f32::NAN || rhs == f32::NAN {
+                    return Ok(f32::NAN);
+                }
+                Ok(lhs.max(rhs))
+            })
+        }
+        InstructionType::F64Max => {
+            binop!(stack, Val::F64, Val::F64, Val::F64, |lhs: f64, rhs: f64| {
+                if lhs == f64::NAN || rhs == f64::NAN {
+                    return Ok(f64::NAN);
+                }
+                Ok(lhs.max(rhs))
+            })
+        }
+        InstructionType::F32Copysign => {
+            binop!(stack, Val::F32, Val::F32, Val::F32, |lhs: f32, rhs: f32| {
+                Ok(lhs.copysign(rhs))
+            })
+        }
+        InstructionType::F64Copysign => {
+            binop!(stack, Val::F64, Val::F64, Val::F64, |lhs: f64, rhs: f64| {
+                Ok(lhs.copysign(rhs))
+            })
         } // _ => unimplemented!(),
     }
 
