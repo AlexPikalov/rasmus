@@ -286,6 +286,18 @@ pub fn irotr_64(lhs: u64, rhs: u64) -> RResult<u64> {
     Ok(lhs.rotate_right(k))
 }
 
+#[macro_export]
+macro_rules! testop {
+    ($stack: expr, $first_type: path, $ret: path, $($op: tt)*) => {
+        if let Some($first_type(first)) = $stack.pop_value() {
+            let result = ($($op)*)(first)?;
+            $stack.push_entry(StackEntry::Value($ret(result)));
+        } else {
+            return Err(Trap);
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
 
