@@ -288,10 +288,26 @@ pub fn irotr_64(lhs: u64, rhs: u64) -> RResult<u64> {
 
 #[macro_export]
 macro_rules! testop {
-    ($stack: expr, $first_type: path, $ret: path, $($op: tt)*) => {
+    ($stack: expr, $first_type: path, $($op: tt)*) => {
         if let Some($first_type(first)) = $stack.pop_value() {
             let result = ($($op)*)(first)?;
-            $stack.push_entry(StackEntry::Value($ret(result)));
+            $stack.push_entry(StackEntry::Value(crate::instances::value::Val::I32(result)));
+        } else {
+            return Err(Trap);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! relop {
+    ($stack: expr, $arg_type: path, $($op: tt)*) => {
+        if let Some($arg_type(first)) = $stack.pop_value() {
+            if let Some($arg_type(second)) = $stack.pop_value() {
+                let result = ($($op)*)(first, second)?;
+                $stack.push_entry(StackEntry::Value(crate::instances::value::Val::I32(result)));
+            } else {
+                return Err(Trap);
+            }
         } else {
             return Err(Trap);
         }

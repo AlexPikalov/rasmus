@@ -1,4 +1,4 @@
-use std::ops::{Add, Neg};
+use std::ops::Neg;
 
 use crate::result::{RResult, Trap};
 
@@ -10,7 +10,7 @@ use crate::instances::instruction::{
 use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
-use crate::{binop, iextend, nearest};
+use crate::{binop, iextend, nearest, relop, testop};
 use syntax::instructions::{ExpressionType, InstructionType};
 use syntax::types::{Byte, F32Type, F64Type, I32Type, I64Type};
 
@@ -285,6 +285,179 @@ pub fn execute_instruction(
         InstructionType::F64Copysign => {
             binop!(stack, Val::F64, Val::F64, Val::F64, |lhs: f64, rhs: f64| {
                 Ok(lhs.copysign(rhs))
+            })
+        }
+        // testop
+        InstructionType::I32Eqz => {
+            testop!(stack, Val::I32, |val: u32| {
+                Ok(if val == 0 { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64Eqz => {
+            testop!(stack, Val::I64, |val: u64| {
+                Ok(if val == 0 { 1 } else { 0 })
+            })
+        }
+        // relop
+        InstructionType::I32Eq => {
+            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
+                Ok(if lhs == rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64Eq => {
+            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
+                Ok(if lhs == rhs { 1 } else { 0 })
+            })
+        }
+        // relop
+        InstructionType::I32Ne => {
+            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
+                Ok(if lhs != rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64Ne => {
+            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
+                Ok(if lhs != rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::I32LtS => {
+            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
+                Ok(if (lhs as i32) < (rhs as i32) { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64LtS => {
+            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
+                Ok(if (lhs as i64) < (rhs as i64) { 1 } else { 0 })
+            })
+        }
+        InstructionType::I32LtU => {
+            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
+                Ok(if lhs < rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64LtU => {
+            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
+                Ok(if lhs < rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::I32GtS => {
+            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
+                Ok(if (lhs as i32) > (rhs as i32) { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64GtS => {
+            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
+                Ok(if (lhs as i64) > (rhs as i64) { 1 } else { 0 })
+            })
+        }
+        InstructionType::I32GtU => {
+            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
+                Ok(if lhs > rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64GtU => {
+            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
+                Ok(if lhs > rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::I32LeS => {
+            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
+                Ok(if (lhs as i32) <= (rhs as i32) { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64LeS => {
+            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
+                Ok(if (lhs as i64) <= (rhs as i64) { 1 } else { 0 })
+            })
+        }
+        InstructionType::I32LeU => {
+            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
+                Ok(if lhs <= rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64LeU => {
+            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
+                Ok(if lhs <= rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::I32GeS => {
+            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
+                Ok(if (lhs as i32) >= (rhs as i32) { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64GeS => {
+            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
+                Ok(if (lhs as i64) >= (rhs as i64) { 1 } else { 0 })
+            })
+        }
+        InstructionType::I32GeU => {
+            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
+                Ok(if lhs >= rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::I64GeU => {
+            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
+                Ok(if lhs >= rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F32Eq => {
+            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
+                Ok(if lhs == rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F64Eq => {
+            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
+                Ok(if lhs == rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F32Ne => {
+            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
+                Ok(if lhs != rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F64Ne => {
+            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
+                Ok(if lhs != rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F32Lt => {
+            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
+                Ok(if lhs < rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F64Lt => {
+            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
+                Ok(if lhs < rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F32Gt => {
+            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
+                Ok(if lhs > rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F64Gt => {
+            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
+                Ok(if lhs > rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F32Le => {
+            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
+                Ok(if lhs <= rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F64Le => {
+            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
+                Ok(if lhs <= rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F32Ge => {
+            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
+                Ok(if lhs >= rhs { 1 } else { 0 })
+            })
+        }
+        InstructionType::F64Ge => {
+            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
+                Ok(if lhs >= rhs { 1 } else { 0 })
             })
         } // _ => unimplemented!(),
     }
