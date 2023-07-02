@@ -314,6 +314,100 @@ macro_rules! relop {
     };
 }
 
+#[macro_export]
+macro_rules! cvtop {
+    ($stack: expr, $arg_type: path, $ret_type: path, $($op: tt)*) => {
+        if let Some($arg_type(arg)) = $stack.pop_value() {
+            let result = ($($op)*)(arg)?;
+            $stack.push_entry(StackEntry::Value($ret_type(result)));
+        } else {
+            return Err(Trap);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! trunc_u {
+    ($arg_type: ty, $ret_type: ty) => {
+        |arg: $arg_type| {
+            if arg == <$arg_type>::NAN || arg == <$arg_type>::INFINITY {
+                return Err(Trap);
+            }
+
+            let trunked = arg.trunc() as u128;
+            <$ret_type>::try_from(trunked).map_err(|_| Trap)
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! trunc_s {
+    ($arg_type: ty, $aux_type: ty, $ret_type: ty) => {
+        |arg: $arg_type| {
+            if arg == <$arg_type>::NAN || arg == <$arg_type>::INFINITY {
+                return Err(Trap);
+            }
+
+            let trunked = arg.trunc() as u128;
+            <$aux_type>::try_from(trunked)
+                .map_err(|_| Trap)
+                .map(|v| v as $ret_type)
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! trunc_sat_u {
+    ($arg_type: ty, $ret_type: ty) => {
+        |arg: $arg_type| {
+            if arg == <$arg_type>::NAN {
+                return Err(Trap);
+            }
+
+            if arg == <$arg_type>::NEG_INFINITY {
+                return Ok(0);
+            }
+
+            if arg == <$arg_type>::INFINITY {
+                return Ok(<$ret_type>::MAX);
+            }
+
+            <$ret_type>::try_from(arg.trunc() as u128).or_else(|_| Ok(<$ret_type>::MAX))
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! trunc_sat_s {
+    ($arg_type: ty, $aux_type: ty, $ret_type: ty) => {
+        |arg: $arg_type| {
+            if arg == <$arg_type>::NAN {
+                return Err(Trap);
+            }
+
+            if arg == <$arg_type>::NEG_INFINITY {
+                return Ok(<$aux_type>::MIN as $ret_type);
+            }
+
+            if arg == <$arg_type>::INFINITY {
+                return Ok(<$aux_type>::MAX as $ret_type);
+            }
+
+            let trunced = arg.trunc() as i128;
+
+            if trunced > (<$aux_type>::MAX as i128) {
+                return Ok(<$aux_type>::MAX as $ret_type);
+            }
+
+            if trunced < (<$aux_type>::MIN as i128) {
+                return Ok(<$aux_type>::MIN as $ret_type);
+            }
+
+            Ok(trunced as $ret_type)
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
 

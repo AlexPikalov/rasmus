@@ -10,7 +10,9 @@ use crate::instances::instruction::{
 use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
-use crate::{binop, iextend, nearest, relop, testop};
+use crate::{
+    binop, cvtop, iextend, nearest, relop, testop, trunc_s, trunc_sat_s, trunc_sat_u, trunc_u,
+};
 use syntax::instructions::{ExpressionType, InstructionType};
 use syntax::types::{Byte, F32Type, F64Type, I32Type, I64Type};
 
@@ -459,6 +461,60 @@ pub fn execute_instruction(
             relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
                 Ok(if lhs >= rhs { 1 } else { 0 })
             })
+        }
+        // cvtop
+        InstructionType::I32WrapI64 => {
+            cvtop!(stack, Val::I64, Val::I32, |arg: u64| {
+                Ok((arg as u128).rem_euclid(2u128).pow(32) as u32)
+            })
+        }
+        InstructionType::I32TruncF32U => {
+            cvtop!(stack, Val::F32, Val::I32, trunc_u!(f32, u32))
+        }
+        InstructionType::I32TruncF64U => {
+            cvtop!(stack, Val::F64, Val::I32, trunc_u!(f64, u32))
+        }
+        InstructionType::I32TruncF32S => {
+            cvtop!(stack, Val::F32, Val::I32, trunc_s!(f32, i32, u32))
+        }
+        InstructionType::I32TruncF64S => {
+            cvtop!(stack, Val::F64, Val::I32, trunc_s!(f64, i32, u32))
+        }
+        InstructionType::I64TruncF32U => {
+            cvtop!(stack, Val::F32, Val::I64, trunc_u!(f32, u64))
+        }
+        InstructionType::I64TruncF64U => {
+            cvtop!(stack, Val::F64, Val::I64, trunc_u!(f64, u64))
+        }
+        InstructionType::I64TruncF32S => {
+            cvtop!(stack, Val::F32, Val::I64, trunc_s!(f32, i64, u64))
+        }
+        InstructionType::I64TruncF64S => {
+            cvtop!(stack, Val::F64, Val::I64, trunc_s!(f64, i64, u64))
+        }
+        InstructionType::I32TruncSatF32U => {
+            cvtop!(stack, Val::F32, Val::I32, trunc_sat_u!(f32, u32))
+        }
+        InstructionType::I32TruncSatF64U => {
+            cvtop!(stack, Val::F64, Val::I32, trunc_sat_u!(f64, u32))
+        }
+        InstructionType::I32TruncSatF32S => {
+            cvtop!(stack, Val::F32, Val::I32, trunc_sat_s!(f32, i32, u32))
+        }
+        InstructionType::I32TruncSatF64S => {
+            cvtop!(stack, Val::F64, Val::I32, trunc_sat_s!(f64, i32, u32))
+        }
+        InstructionType::I64TruncSatF32U => {
+            cvtop!(stack, Val::F32, Val::I64, trunc_sat_u!(f32, u64))
+        }
+        InstructionType::I64TruncSatF64U => {
+            cvtop!(stack, Val::F64, Val::I64, trunc_sat_u!(f64, u64))
+        }
+        InstructionType::I64TruncSatF32S => {
+            cvtop!(stack, Val::F32, Val::I64, trunc_sat_s!(f32, i64, u64))
+        }
+        InstructionType::I64TruncSatF64S => {
+            cvtop!(stack, Val::F64, Val::I64, trunc_sat_s!(f64, i64, u64))
         } // _ => unimplemented!(),
     }
 
