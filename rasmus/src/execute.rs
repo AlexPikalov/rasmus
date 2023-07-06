@@ -7,15 +7,16 @@ use crate::instances::instruction::{
     irem_32_s, irem_32_u, irem_64_s, irem_64_u, irotl_32, irotl_64, irotr_32, irotr_64, ishl_32,
     ishl_64, ishr_s_32, ishr_s_64, ishr_u_32, ishr_u_64, isub_32, isub_64, ixor,
 };
+use crate::instances::ref_inst::RefInst;
 use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
 use crate::{
-    binop, cvtop, demote, float_s, float_u, iextend, nearest, promote, reinterpret, relop, testop,
-    trunc_s, trunc_sat_s, trunc_sat_u, trunc_u,
+    binop, cvtop, demote, float_s, float_u, iextend, is_ref_null, nearest, promote, ref_func,
+    reinterpret, relop, testop, trunc_s, trunc_sat_s, trunc_sat_u, trunc_u,
 };
 use syntax::instructions::{ExpressionType, InstructionType};
-use syntax::types::{Byte, F32Type, F64Type, I32Type, I64Type};
+use syntax::types::{Byte, F32Type, F64Type, FuncIdx, I32Type, I64Type, U32Type};
 
 pub fn execute_expression(
     expr: &ExpressionType,
@@ -552,6 +553,16 @@ pub fn execute_instruction(
         }
         InstructionType::F64ReinterpretI64 => {
             cvtop!(stack, Val::F64, Val::I64, reinterpret!(f64, u64))
+        }
+        // reference instructions
+        InstructionType::RefNull(ref_type) => {
+            stack.push_entry(StackEntry::Value(Val::Ref(RefInst::Null(ref_type.clone()))))
+        }
+        InstructionType::RefIsNull => {
+            is_ref_null!(stack);
+        }
+        InstructionType::RefFunc(FuncIdx(U32Type(func_idx))) => {
+            ref_func!(stack, *func_idx as usize);
         } // _ => unimplemented!(),
     }
 

@@ -457,6 +457,40 @@ macro_rules! reinterpret {
     };
 }
 
+#[macro_export]
+macro_rules! is_ref_null {
+    ($stack: expr) => {
+        if let Some($crate::instances::value::Val::Ref(reference)) = $stack.pop_value() {
+            let is_null = match reference {
+                $crate::instances::ref_inst::RefInst::Null(_) => 1u32,
+                _ => 0u32,
+            };
+            $stack.push_entry(StackEntry::Value(Val::I32(is_null)));
+        } else {
+            return Err(Trap);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! ref_func {
+    ($stack: expr, $func_idx: expr) => {
+        match $stack.current_frame() {
+            Some(frame) => match frame.module.funcaddrs.get($func_idx) {
+                Some(funcaddr) => $stack.push_entry(StackEntry::Value(Val::Ref(
+                    $crate::instances::ref_inst::RefInst::Func(funcaddr.clone()),
+                ))),
+                None => {
+                    return Err(Trap);
+                }
+            },
+            None => {
+                return Err(Trap);
+            }
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
 
