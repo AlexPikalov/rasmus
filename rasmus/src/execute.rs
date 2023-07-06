@@ -11,7 +11,8 @@ use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
 use crate::{
-    binop, cvtop, iextend, nearest, relop, testop, trunc_s, trunc_sat_s, trunc_sat_u, trunc_u,
+    binop, cvtop, demote, float_s, float_u, iextend, nearest, promote, reinterpret, relop, testop,
+    trunc_s, trunc_sat_s, trunc_sat_u, trunc_u,
 };
 use syntax::instructions::{ExpressionType, InstructionType};
 use syntax::types::{Byte, F32Type, F64Type, I32Type, I64Type};
@@ -515,6 +516,42 @@ pub fn execute_instruction(
         }
         InstructionType::I64TruncSatF64S => {
             cvtop!(stack, Val::F64, Val::I64, trunc_sat_s!(f64, i64, u64))
+        }
+        InstructionType::F32ConvertI32S => {
+            cvtop!(stack, Val::F32, Val::I32, float_s!(f32, i32, u32))
+        }
+        InstructionType::F32ConvertI32U => {
+            cvtop!(stack, Val::F32, Val::I32, float_u!(f32, u32))
+        }
+        InstructionType::F32ConvertI64S => {
+            cvtop!(stack, Val::F32, Val::I64, float_s!(f32, i64, u64))
+        }
+        InstructionType::F32ConvertI64U => {
+            cvtop!(stack, Val::F32, Val::I64, float_u!(f32, u64))
+        }
+        InstructionType::F64ConvertI32S => {
+            cvtop!(stack, Val::F64, Val::I32, float_s!(f64, i32, u32))
+        }
+        InstructionType::F64ConvertI32U => {
+            cvtop!(stack, Val::F64, Val::I32, float_u!(f64, u32))
+        }
+        InstructionType::F64ConvertI64S => {
+            cvtop!(stack, Val::F64, Val::I64, float_s!(f64, i64, u64))
+        }
+        InstructionType::F64ConvertI64U => {
+            cvtop!(stack, Val::F64, Val::I64, float_u!(f64, u64))
+        }
+        InstructionType::F32DemoteF64 => {
+            cvtop!(stack, Val::F64, Val::F32, demote!(f64, f32))
+        }
+        InstructionType::F64PromoteF32 => {
+            cvtop!(stack, Val::F32, Val::F64, promote!(f32, f64))
+        }
+        InstructionType::F32ReinterpretI32 => {
+            cvtop!(stack, Val::F32, Val::I32, reinterpret!(f32, u32))
+        }
+        InstructionType::F64ReinterpretI64 => {
+            cvtop!(stack, Val::F64, Val::I64, reinterpret!(f64, u64))
         } // _ => unimplemented!(),
     }
 

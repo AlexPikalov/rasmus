@@ -4,11 +4,10 @@ use super::parse_trait::ParseWithNom;
 
 use nom::{bytes::complete::take_till, IResult as NomResult, Slice};
 
-// Copied from https://doc.rust-lang.org/stable/nightly-rustc/src/rustc_serialize/leb128.rs.html
-macro_rules! impl_read_unsigned_leb128 {
-    ($fn_name:ident, $int_ty:ty) => {
-        #[inline]
-        pub fn $fn_name(slice: &[u8], position: &mut usize) -> $int_ty {
+#[macro_export]
+macro_rules! read_unsigned_leb128 {
+    ($int_ty:ty) => {
+        |slice: &[u8], position: &mut usize| -> $int_ty {
             // The first iteration of this loop is unpeeled. This is a
             // performance win because this code is hot and integer values less
             // than 128 are very common, typically occurring 50-80% or more of
@@ -31,6 +30,16 @@ macro_rules! impl_read_unsigned_leb128 {
                 }
                 shift += 7;
             }
+        }
+    };
+}
+
+// Copied from https://doc.rust-lang.org/stable/nightly-rustc/src/rustc_serialize/leb128.rs.html
+macro_rules! impl_read_unsigned_leb128 {
+    ($fn_name:ident, $int_ty:ty) => {
+        #[inline]
+        pub fn $fn_name(slice: &[u8], position: &mut usize) -> $int_ty {
+            $crate::read_unsigned_leb128!($int_ty)(slice, position)
         }
     };
 }
@@ -124,4 +133,42 @@ where
     T: ParseWithNom,
 {
     T::parse(bytes)
+}
+
+const fn max_leb128_len<T>() -> usize {
+    // The longest LEB128 encoding for an integer uses 7 bits per byte.
+    (std::mem::size_of::<T>() * 8 + 6) / 7
+}
+
+#[macro_export]
+macro_rules! impl_write_unsigned_leb128 {
+    ($fn_name:ident, $int_ty:ty) => {
+        #[inline]
+        pub fn $fn_name(
+            out: &mut [::std::mem::MaybeUninit<u8>; max_leb128_len::<$int_ty>()],
+            mut value: $int_ty,
+        ) -> &[u8] {
+            let mut i = 0;
+
+            loop {
+                if value < 0x80 {
+                    unsafe {
+                        *out.get_unchecked_mut(i).as_mut_ptr() = value as u8;
+                    }
+
+                    i += 1;
+                    break;
+                } else {
+                    unsafe {
+                        *out.get_unchecked_mut(i).as_mut_ptr() = ((value & 0x7f) | 0x80) as u8;
+                    }
+
+                    value >>= 7;
+                    i += 1;
+                }
+            }
+
+            unsafe { ::std::mem::MaybeUninit::slice_assume_init_ref(&out.get_unchecked(..i)) }
+        }
+    };
 }

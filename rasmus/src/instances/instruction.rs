@@ -408,6 +408,55 @@ macro_rules! trunc_sat_s {
     };
 }
 
+// Rust float is already defined in IEEE 754 standard, so using `as`.
+#[macro_export]
+macro_rules! float {
+    ($arg_type: ty, $ret_type: ty) => {
+        |arg: $arg_type| arg as $ret_type
+    };
+}
+
+#[macro_export]
+macro_rules! float_u {
+    ($arg_type: ty, $ret_type: ty) => {
+        |arg: $arg_type| Ok($crate::float!($arg_type, $ret_type)(arg))
+    };
+}
+
+#[macro_export]
+macro_rules! float_s {
+    ($arg_type: ty, $aux_type: ty, $ret_type: ty) => {
+        |arg: $arg_type| Ok($crate::float!($aux_type, $ret_type)(arg as $aux_type))
+    };
+}
+
+#[macro_export]
+macro_rules! demote {
+    ($arg_type: ty, $ret_type: ty) => {
+        |arg: $arg_type| Ok(arg as $ret_type)
+    };
+}
+
+#[macro_export]
+macro_rules! promote {
+    ($arg_type: ty, $ret_type: ty) => {
+        |arg: $arg_type| Ok(arg as $ret_type)
+    };
+}
+
+#[macro_export]
+macro_rules! reinterpret {
+    ($arg_type: ty, $ret_type: ty) => {
+        |arg: $arg_type| -> RResult<$ret_type> {
+            let mut bytes = arg.to_le_bytes();
+            Ok(::syntax::read_unsigned_leb128!($ret_type)(
+                &mut bytes,
+                &mut 0usize,
+            ))
+        }
+    };
+}
+
 #[cfg(test)]
 mod test {
 
@@ -420,6 +469,23 @@ mod test {
         assert_eq!(
             iextend!(i32, 8)(0b01110000).to_be_bytes(),
             [0u8, 0u8, 0u8, 0b01110000u8]
+        );
+    }
+
+    #[test]
+    fn test_float_f32_from_u32() {
+        let make_float = float!(u32, f32);
+
+        assert_eq!(make_float(0), 0.0f32, "should properly convert zero");
+        assert_eq!(
+            make_float(1),
+            1.0f32,
+            "should properly convert exact number"
+        );
+        assert_eq!(
+            make_float(1),
+            1.0f32,
+            "should properly convert exact number"
         );
     }
 }
