@@ -179,7 +179,7 @@ pub fn irem_32_u(a: u32, b: u32) -> RResult<u32> {
         return Err(Trap);
     }
 
-    Ok(a.rem_euclid(b))
+    Ok(a - b * (a / b))
 }
 
 pub fn irem_32_s(a: u32, b: u32) -> RResult<u32> {
@@ -189,7 +189,7 @@ pub fn irem_32_s(a: u32, b: u32) -> RResult<u32> {
         return Err(Trap);
     }
 
-    Ok(a_s.rem_euclid(b_s) as u32)
+    Ok((a_s - b_s * (a_s / b_s)) as u32)
 }
 
 pub fn irem_64_u(a: u64, b: u64) -> RResult<u64> {
@@ -197,7 +197,7 @@ pub fn irem_64_u(a: u64, b: u64) -> RResult<u64> {
         return Err(Trap);
     }
 
-    Ok(a.rem_euclid(b))
+    Ok(a - b * (a / b))
 }
 
 pub fn irem_64_s(a: u64, b: u64) -> RResult<u64> {
@@ -207,7 +207,7 @@ pub fn irem_64_s(a: u64, b: u64) -> RResult<u64> {
         return Err(Trap);
     }
 
-    Ok(a_s.rem_euclid(b_s) as u64)
+    Ok((a_s - b_s * (a_s / b_s)) as u64)
 }
 
 pub fn iand<T>(lhs: T, rhs: T) -> RResult<T>

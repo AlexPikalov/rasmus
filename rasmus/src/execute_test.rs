@@ -372,3 +372,183 @@ test_instruction!(
     InstructionType::I64DivS,
     Val::I64(-3i64 as u64)
 );
+
+test_instruction!(
+    i32_rem_u,
+    vec![
+        InstructionType::I32Const(I32Type(7)),
+        InstructionType::I32Const(I32Type(2))
+    ],
+    InstructionType::I32RemU,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i32_rem_s_with_overflow,
+    vec![
+        InstructionType::I32Const(I32Type(u32::MAX)),
+        InstructionType::I32Const(I32Type(2))
+    ],
+    InstructionType::I32RemS,
+    Val::I32(-1i32 as u32)
+);
+
+test_instruction!(
+    i32_rem_s_no_overflow,
+    vec![
+        InstructionType::I32Const(I32Type(9)),
+        InstructionType::I32Const(I32Type(7))
+    ],
+    InstructionType::I32RemS,
+    Val::I32(2)
+);
+
+test_instruction!(
+    i64_rem_u,
+    vec![
+        InstructionType::I64Const(I64Type(7)),
+        InstructionType::I64Const(I64Type(2))
+    ],
+    InstructionType::I64RemU,
+    Val::I64(1)
+);
+
+test_instruction!(
+    i64_rem_s_with_overflow,
+    vec![
+        InstructionType::I64Const(I64Type(18446744073709551605)),
+        InstructionType::I64Const(I64Type(2))
+    ],
+    InstructionType::I64RemS,
+    Val::I64(-1i64 as u64)
+);
+
+test_instruction!(
+    i64_rem_s_no_overflow,
+    vec![
+        InstructionType::I64Const(I64Type(9)),
+        InstructionType::I64Const(I64Type(7))
+    ],
+    InstructionType::I64RemS,
+    Val::I64(2)
+);
+
+test_instruction!(
+    i32_and_zero,
+    vec![
+        InstructionType::I32Const(I32Type(5)),
+        InstructionType::I32Const(I32Type(2))
+    ],
+    InstructionType::I32And,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i32_and_not_zero,
+    vec![
+        InstructionType::I32Const(I32Type(5)),
+        InstructionType::I32Const(I32Type(3))
+    ],
+    InstructionType::I32And,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i64_and_zero,
+    vec![
+        InstructionType::I64Const(I64Type(5)),
+        InstructionType::I64Const(I64Type(2))
+    ],
+    InstructionType::I64And,
+    Val::I64(0)
+);
+
+test_instruction!(
+    i64_and_not_zero,
+    vec![
+        InstructionType::I64Const(I64Type(5)),
+        InstructionType::I64Const(I64Type(3))
+    ],
+    InstructionType::I64And,
+    Val::I64(1)
+);
+
+test_instruction!(
+    i32_or_zero,
+    vec![
+        InstructionType::I32Const(I32Type(0)),
+        InstructionType::I32Const(I32Type(0))
+    ],
+    InstructionType::I32Or,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i32_or_not_zero,
+    vec![
+        InstructionType::I32Const(I32Type(5)),
+        InstructionType::I32Const(I32Type(3))
+    ],
+    InstructionType::I32Or,
+    Val::I32(7)
+);
+
+test_instruction!(
+    i64_or_zero,
+    vec![
+        InstructionType::I64Const(I64Type(0)),
+        InstructionType::I64Const(I64Type(0))
+    ],
+    InstructionType::I64Or,
+    Val::I64(0)
+);
+
+test_instruction!(
+    i64_or_not_zero,
+    vec![
+        InstructionType::I64Const(I64Type(5)),
+        InstructionType::I64Const(I64Type(3))
+    ],
+    InstructionType::I64Or,
+    Val::I64(7)
+);
+
+test_instruction!(
+    i32_xor_zero,
+    vec![
+        InstructionType::I32Const(I32Type(2)),
+        InstructionType::I32Const(I32Type(2))
+    ],
+    InstructionType::I32Xor,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i32_xor_not_zero,
+    vec![
+        InstructionType::I32Const(I32Type(5)),
+        InstructionType::I32Const(I32Type(3))
+    ],
+    InstructionType::I32Xor,
+    Val::I32(6)
+);
+
+test_instruction!(
+    i64_xor_zero,
+    vec![
+        InstructionType::I64Const(I64Type(2)),
+        InstructionType::I64Const(I64Type(2))
+    ],
+    InstructionType::I64Xor,
+    Val::I64(0)
+);
+
+test_instruction!(
+    i64_xor_not_zero,
+    vec![
+        InstructionType::I64Const(I64Type(5)),
+        InstructionType::I64Const(I64Type(3))
+    ],
+    InstructionType::I64Xor,
+    Val::I64(6)
+);
