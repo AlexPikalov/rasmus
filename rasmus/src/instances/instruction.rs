@@ -1,5 +1,10 @@
-use super::frame::Frame;
+use syntax::types::FuncIdx;
+
 use super::label::LabelInst;
+use super::ref_inst::RefInst;
+use super::stack::StackEntry;
+use super::value::Val;
+use super::{frame::Frame, stack::Stack};
 use crate::{
     address::{ExternAddr, FuncAddr},
     result::{RResult, Trap},
@@ -17,23 +22,9 @@ pub enum InstructionInst {
 }
 
 #[macro_export]
-macro_rules! iextend {
-    ($itype: ty, $base: expr) => {
-        |v: $itype| {
-            let mut val_bytes = v.to_le_bytes();
-            let base_num_bytes = $base / 8;
-            let trailing_byte = if val_bytes[base_num_bytes - 1].leading_ones() > 0 {
-                255u8
-            } else {
-                0u8
-            };
-            for byte in 0..v.to_le_bytes().len() {
-                if byte >= base_num_bytes {
-                    val_bytes[byte] = trailing_byte
-                }
-            }
-            <$itype>::from_le_bytes(val_bytes)
-        }
+macro_rules! iextend_s {
+    ($from_type: ty, $signed_type: ty) => {
+        |val: $from_type| -> $from_type { (val as $signed_type) as $from_type }
     };
 }
 
@@ -67,8 +58,8 @@ macro_rules! nearest {
 #[macro_export]
 macro_rules! binop {
     ($stack: expr, $first_type: path, $second_type: path, $ret: path, $($op: tt)*) => {
-        if let Some($first_type(first)) = $stack.pop_value() {
-            if let Some($second_type(second)) = $stack.pop_value() {
+        if let Some($first_type(second)) = $stack.pop_value() {
+            if let Some($second_type(first)) = $stack.pop_value() {
                 let result = ($($op)*)(first, second)?;
                 $stack.push_entry(StackEntry::Value($ret(result)));
             } else {
@@ -78,7 +69,45 @@ macro_rules! binop {
             return Err(Trap);
         }
     };
+    ($stack: expr, $type: path, $($op: tt)*) => {
+        if let Some($type(second)) = $stack.pop_value() {
+            if let Some($type(first)) = $stack.pop_value() {
+                let result = ($($op)*)(first, second)?;
+                $stack.push_entry(StackEntry::Value($type(result)));
+            } else {
+                return Err(Trap);
+            }
+        } else {
+            return Err(Trap);
+        }
+    };
 }
+
+#[macro_export]
+macro_rules! binop_with_value {
+    ($stack: expr, $type: path, $val: expr, $($op: tt)*) => {
+        if let Some($type(second)) = $stack.pop_value() {
+            if let Some($type(first)) = $stack.pop_value() {
+                let result = ($($op)*)(first, second, $val)?;
+                $stack.push_entry(StackEntry::Value($type(result)));
+            } else {
+                return Err(Trap);
+            }
+        } else {
+            return Err(Trap);
+        }
+    };
+}
+
+macro_rules! impl_iadd {
+    ($name: ident, $arg_type: ty) => {
+        pub fn $name(left: $arg_type, right: $arg_type) -> RResult<$arg_type> {
+            Ok(left.wrapping_add(right))
+        }
+    };
+}
+
+// impl_iadd(iadd_32, u32);
 
 pub fn iadd_32(a: u32, b: u32) -> RResult<u32> {
     Ok(((a as u128) + (b as u128)).rem_euclid(2u128.pow(32)) as u32)
@@ -89,11 +118,11 @@ pub fn iadd_64(a: u64, b: u64) -> RResult<u64> {
 
 pub fn isub_32(a: u32, b: u32) -> RResult<u32> {
     let base = 2u128.pow(32);
-    Ok(((a as u128) + (b as u128) + base).rem_euclid(base) as u32)
+    Ok(((a as u128) + base - (b as u128)).rem_euclid(base) as u32)
 }
 pub fn isub_64(a: u64, b: u64) -> RResult<u64> {
     let base = 2u128.pow(64);
-    Ok(((a as u128) - (b as u128) + base).rem_euclid(base) as u64)
+    Ok(((a as u128) + base - (b as u128)).rem_euclid(base) as u64)
 }
 
 pub fn imul_32(a: u32, b: u32) -> RResult<u32> {
@@ -119,7 +148,7 @@ pub fn idiv_32_s(a: u32, b: u32) -> RResult<u32> {
         return Err(Trap);
     }
     let div = a_s.div_euclid(b_s);
-    if div == 2i32.pow(31) {
+    if div == 2u32.pow(31) as i32 {
         return Err(Trap);
     }
     Ok(div as u32)
@@ -138,8 +167,8 @@ pub fn idiv_64_s(a: u64, b: u64) -> RResult<u64> {
     if b_s == 0 {
         return Err(Trap);
     }
-    let div = a_s.div_euclid(b_s);
-    if div == 2i64.pow(63) {
+    let div = a_s / b_s;
+    if div == 2u64.pow(63) as i64 {
         return Err(Trap);
     }
     Ok(div as u64)
@@ -188,6 +217,13 @@ where
     Ok(lhs & rhs)
 }
 
+pub fn iandnot<T>(lhs: T, rhs: T) -> RResult<T>
+where
+    T: std::ops::BitAnd<Output = T> + std::ops::Not<Output = T>,
+{
+    Ok(lhs & !rhs)
+}
+
 pub fn ior<T>(lhs: T, rhs: T) -> RResult<T>
 where
     T: std::ops::BitOr<Output = T>,
@@ -200,6 +236,16 @@ where
     T: std::ops::BitXor<Output = T>,
 {
     Ok(lhs ^ rhs)
+}
+
+pub fn bitselect<T>(first: T, second: T, third: T) -> RResult<T>
+where
+    T: ::std::ops::Not<Output = T>
+        + ::std::ops::BitAnd<Output = T>
+        + ::std::ops::BitOr<Output = T>
+        + ::std::marker::Copy,
+{
+    Ok((first & third) | (second & !third))
 }
 
 pub fn ishl_32(lhs: u32, rhs: u32) -> RResult<u32> {
@@ -286,6 +332,38 @@ pub fn irotr_64(lhs: u64, rhs: u64) -> RResult<u64> {
     Ok(lhs.rotate_right(k))
 }
 
+pub fn ref_func(stack: &mut Stack, func_idx: usize) -> RResult<()> {
+    match stack.current_frame() {
+        Some(frame) => match frame.module.funcaddrs.get(func_idx) {
+            Some(funcaddr) => {
+                stack.push_entry(StackEntry::Value(Val::Ref(RefInst::Func(funcaddr.clone()))))
+            }
+            None => {
+                return Err(Trap);
+            }
+        },
+        None => {
+            return Err(Trap);
+        }
+    }
+
+    Ok(())
+}
+
+pub fn is_ref_null(stack: &mut Stack) -> RResult<()> {
+    if let Some(Val::Ref(reference)) = stack.pop_value() {
+        let is_null = match reference {
+            RefInst::Null(_) => 1u32,
+            _ => 0u32,
+        };
+        stack.push_entry(StackEntry::Value(Val::I32(is_null)));
+    } else {
+        return Err(Trap);
+    }
+
+    Ok(())
+}
+
 #[macro_export]
 macro_rules! testop {
     ($stack: expr, $first_type: path, $($op: tt)*) => {
@@ -301,8 +379,8 @@ macro_rules! testop {
 #[macro_export]
 macro_rules! relop {
     ($stack: expr, $arg_type: path, $($op: tt)*) => {
-        if let Some($arg_type(first)) = $stack.pop_value() {
-            if let Some($arg_type(second)) = $stack.pop_value() {
+        if let Some($arg_type(second)) = $stack.pop_value() {
+            if let Some($arg_type(first)) = $stack.pop_value() {
                 let result = ($($op)*)(first, second)?;
                 $stack.push_entry(StackEntry::Value(crate::instances::value::Val::I32(result)));
             } else {
@@ -473,7 +551,7 @@ macro_rules! is_ref_null {
 }
 
 #[macro_export]
-macro_rules! ref_func {
+macro_rules! ref_func_m {
     ($stack: expr, $func_idx: expr) => {
         match $stack.current_frame() {
             Some(frame) => match frame.module.funcaddrs.get($func_idx) {
@@ -493,18 +571,6 @@ macro_rules! ref_func {
 
 #[cfg(test)]
 mod test {
-
-    #[test]
-    fn test_iextend() {
-        assert_eq!(
-            iextend!(i32, 8)(0b11110000).to_be_bytes(),
-            [255u8, 255u8, 255u8, 0b11110000u8]
-        );
-        assert_eq!(
-            iextend!(i32, 8)(0b01110000).to_be_bytes(),
-            [0u8, 0u8, 0u8, 0b01110000u8]
-        );
-    }
 
     #[test]
     fn test_float_f32_from_u32() {

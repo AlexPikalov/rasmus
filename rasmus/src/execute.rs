@@ -1,22 +1,25 @@
 use std::ops::Neg;
 
+use crate::instances::instruction_vec::{shuffle_i8x16, swizzle_i8x16, vternop, vvunop};
 use crate::result::{RResult, Trap};
 
 use crate::instances::instruction::{
-    iadd_32, iadd_64, iand, idiv_32_s, idiv_32_u, idiv_64_s, idiv_64_u, imul_32, imul_64, ior,
-    irem_32_s, irem_32_u, irem_64_s, irem_64_u, irotl_32, irotl_64, irotr_32, irotr_64, ishl_32,
-    ishl_64, ishr_s_32, ishr_s_64, ishr_u_32, ishr_u_64, isub_32, isub_64, ixor,
+    bitselect, iadd_32, iadd_64, iand, iandnot, idiv_32_s, idiv_32_u, idiv_64_s, idiv_64_u,
+    imul_32, imul_64, ior, irem_32_s, irem_32_u, irem_64_s, irem_64_u, irotl_32, irotl_64,
+    irotr_32, irotr_64, is_ref_null, ishl_32, ishl_64, ishr_s_32, ishr_s_64, ishr_u_32, ishr_u_64,
+    isub_32, isub_64, ixor, ref_func,
 };
 use crate::instances::ref_inst::RefInst;
 use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
 use crate::{
-    binop, cvtop, demote, float_s, float_u, iextend, is_ref_null, nearest, promote, ref_func,
-    reinterpret, relop, testop, trunc_s, trunc_sat_s, trunc_sat_u, trunc_u,
+    binop, binop_with_value, cvtop, demote, extract_lane_signed, float_s, float_u, iextend_s,
+    nearest, promote, reinterpret, relop, shape_splat_float, shape_splat_integer, testop, trunc_s,
+    trunc_sat_s, trunc_sat_u, trunc_u,
 };
 use syntax::instructions::{ExpressionType, InstructionType};
-use syntax::types::{Byte, F32Type, F64Type, FuncIdx, I32Type, I64Type, U32Type};
+use syntax::types::{Byte, F32Type, F64Type, FuncIdx, I32Type, I64Type, LaneIdx, U32Type};
 
 pub fn execute_expression(
     expr: &ExpressionType,
@@ -55,7 +58,7 @@ pub fn execute_instruction(
             stack.push_entry(StackEntry::Value(Val::F64(*num_val)))
         }
         InstructionType::V128Const(v128) => {
-            stack.push_entry(StackEntry::Value(Val::Vec(i128_from_vec(v128)?)))
+            stack.push_entry(StackEntry::Value(Val::Vec(v128_from_vec(v128)?)))
         }
         // iunop
         InstructionType::I32Clz => i32_unop(|v: u32| v.leading_zeros() as u32, stack)?,
@@ -80,177 +83,129 @@ pub fn execute_instruction(
         InstructionType::F32Nearest => f32_unop(nearest!(f32), stack)?,
         InstructionType::F64Nearest => f64_unop(nearest!(f64), stack)?,
         // extendN_s
-        InstructionType::I32Extend8S => i32_unop(iextend!(u32, 8usize), stack)?,
-        InstructionType::I32Extend16S => i32_unop(iextend!(u32, 16usize), stack)?,
-        InstructionType::I64Extend8S => i64_unop(iextend!(u64, 8usize), stack)?,
-        InstructionType::I64Extend16S => i64_unop(iextend!(u64, 16usize), stack)?,
-        InstructionType::I64Extend32S => i64_unop(iextend!(u64, 32usize), stack)?,
+        InstructionType::I32Extend8S => i32_unop(iextend_s!(u32, i8), stack)?,
+        InstructionType::I32Extend16S => i32_unop(iextend_s!(u32, i16), stack)?,
+        InstructionType::I64Extend8S => i64_unop(iextend_s!(u64, i8), stack)?,
+        InstructionType::I64Extend16S => i64_unop(iextend_s!(u64, i16), stack)?,
+        InstructionType::I64Extend32S => i64_unop(iextend_s!(u64, i32), stack)?,
         // binop
         InstructionType::I32Add => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, iadd_32)
+            binop!(stack, Val::I32, iadd_32)
         }
         InstructionType::I64Add => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, iadd_64)
+            binop!(stack, Val::I64, iadd_64)
         }
         InstructionType::I32Sub => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, isub_32)
+            binop!(stack, Val::I32, isub_32)
         }
         InstructionType::I64Sub => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, isub_64)
+            binop!(stack, Val::I64, isub_64)
         }
         InstructionType::I32Mul => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, imul_32)
+            binop!(stack, Val::I32, imul_32)
         }
         InstructionType::I64Mul => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, imul_64)
+            binop!(stack, Val::I64, imul_64)
         }
         InstructionType::I32DivU => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, idiv_32_u)
+            binop!(stack, Val::I32, idiv_32_u)
         }
         InstructionType::I32DivS => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, idiv_32_s)
+            binop!(stack, Val::I32, idiv_32_s)
         }
         InstructionType::I64DivU => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, idiv_64_u)
+            binop!(stack, Val::I64, idiv_64_u)
         }
         InstructionType::I64DivS => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, idiv_64_s)
+            binop!(stack, Val::I64, idiv_64_s)
         }
         InstructionType::I32RemU => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, irem_32_u)
+            binop!(stack, Val::I32, irem_32_u)
         }
         InstructionType::I32RemS => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, irem_32_s)
+            binop!(stack, Val::I32, irem_32_s)
         }
         InstructionType::I64RemU => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, irem_64_u)
+            binop!(stack, Val::I64, irem_64_u)
         }
         InstructionType::I64RemS => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, irem_64_s)
+            binop!(stack, Val::I64, irem_64_s)
         }
         InstructionType::I32And => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, iand)
+            binop!(stack, Val::I32, iand)
         }
         InstructionType::I64And => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, iand)
+            binop!(stack, Val::I64, iand)
         }
         InstructionType::I32Or => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, ior)
+            binop!(stack, Val::I32, ior)
         }
         InstructionType::I64Or => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, ior)
+            binop!(stack, Val::I64, ior)
         }
         InstructionType::I32Xor => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, ixor)
+            binop!(stack, Val::I32, ixor)
         }
         InstructionType::I64Xor => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, ixor)
+            binop!(stack, Val::I64, ixor)
         }
         InstructionType::I32Shl => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, ishl_32)
+            binop!(stack, Val::I32, ishl_32)
         }
         InstructionType::I64Shl => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, ishl_64)
+            binop!(stack, Val::I64, ishl_64)
         }
         InstructionType::I32ShrU => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, ishr_u_32)
+            binop!(stack, Val::I32, ishr_u_32)
         }
         InstructionType::I64ShrU => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, ishr_u_64)
+            binop!(stack, Val::I64, ishr_u_64)
         }
         InstructionType::I32ShrS => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, ishr_s_32)
+            binop!(stack, Val::I32, ishr_s_32)
         }
         InstructionType::I64ShrS => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, ishr_s_64)
+            binop!(stack, Val::I64, ishr_s_64)
         }
         InstructionType::I32Rotl => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, irotl_32)
+            binop!(stack, Val::I32, irotl_32)
         }
         InstructionType::I64Rotl => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, irotl_64)
+            binop!(stack, Val::I64, irotl_64)
         }
         InstructionType::I32Rotr => {
-            binop!(stack, Val::I32, Val::I32, Val::I32, irotr_32)
+            binop!(stack, Val::I32, irotr_32)
         }
         InstructionType::I64Rotr => {
-            binop!(stack, Val::I64, Val::I64, Val::I64, irotr_64)
+            binop!(stack, Val::I64, irotr_64)
         }
         // fbinop
         InstructionType::F32Add => {
-            binop!(
-                stack,
-                Val::F32,
-                Val::F32,
-                Val::F32,
-                |lhs: f32, rhs: f32| Ok(lhs + rhs)
-            )
+            binop!(stack, Val::F32, |lhs: f32, rhs: f32| Ok(lhs + rhs))
         }
         InstructionType::F64Add => {
-            binop!(
-                stack,
-                Val::F64,
-                Val::F64,
-                Val::F64,
-                |lhs: f64, rhs: f64| Ok(lhs + rhs)
-            )
+            binop!(stack, Val::F64, |lhs: f64, rhs: f64| Ok(lhs + rhs))
         }
         InstructionType::F32Sub => {
-            binop!(
-                stack,
-                Val::F32,
-                Val::F32,
-                Val::F32,
-                |lhs: f32, rhs: f32| Ok(lhs - rhs)
-            )
+            binop!(stack, Val::F32, |lhs: f32, rhs: f32| Ok(lhs - rhs))
         }
         InstructionType::F64Sub => {
-            binop!(
-                stack,
-                Val::F64,
-                Val::F64,
-                Val::F64,
-                |lhs: f64, rhs: f64| Ok(lhs - rhs)
-            )
+            binop!(stack, Val::F64, |lhs: f64, rhs: f64| Ok(lhs - rhs))
         }
         InstructionType::F32Mul => {
-            binop!(
-                stack,
-                Val::F32,
-                Val::F32,
-                Val::F32,
-                |lhs: f32, rhs: f32| Ok(lhs * rhs)
-            )
+            binop!(stack, Val::F32, |lhs: f32, rhs: f32| Ok(lhs * rhs))
         }
         InstructionType::F64Mul => {
-            binop!(
-                stack,
-                Val::F64,
-                Val::F64,
-                Val::F64,
-                |lhs: f64, rhs: f64| Ok(lhs * rhs)
-            )
+            binop!(stack, Val::F64, |lhs: f64, rhs: f64| Ok(lhs * rhs))
         }
         InstructionType::F32Div => {
-            binop!(
-                stack,
-                Val::F32,
-                Val::F32,
-                Val::F32,
-                |lhs: f32, rhs: f32| Ok(lhs / rhs)
-            )
+            binop!(stack, Val::F32, |lhs: f32, rhs: f32| Ok(lhs / rhs))
         }
         InstructionType::F64Div => {
-            binop!(
-                stack,
-                Val::F64,
-                Val::F64,
-                Val::F64,
-                |lhs: f64, rhs: f64| Ok(lhs / rhs)
-            )
+            binop!(stack, Val::F64, |lhs: f64, rhs: f64| Ok(lhs / rhs))
         }
         InstructionType::F32Min => {
-            binop!(stack, Val::F32, Val::F32, Val::F32, |lhs: f32, rhs: f32| {
+            binop!(stack, Val::F32, |lhs: f32, rhs: f32| {
                 if lhs == f32::NAN || rhs == f32::NAN {
                     return Ok(f32::NAN);
                 }
@@ -258,7 +213,7 @@ pub fn execute_instruction(
             })
         }
         InstructionType::F64Min => {
-            binop!(stack, Val::F64, Val::F64, Val::F64, |lhs: f64, rhs: f64| {
+            binop!(stack, Val::F64, |lhs: f64, rhs: f64| {
                 if lhs == f64::NAN || rhs == f64::NAN {
                     return Ok(f64::NAN);
                 }
@@ -266,7 +221,7 @@ pub fn execute_instruction(
             })
         }
         InstructionType::F32Max => {
-            binop!(stack, Val::F32, Val::F32, Val::F32, |lhs: f32, rhs: f32| {
+            binop!(stack, Val::F32, |lhs: f32, rhs: f32| {
                 if lhs == f32::NAN || rhs == f32::NAN {
                     return Ok(f32::NAN);
                 }
@@ -274,7 +229,7 @@ pub fn execute_instruction(
             })
         }
         InstructionType::F64Max => {
-            binop!(stack, Val::F64, Val::F64, Val::F64, |lhs: f64, rhs: f64| {
+            binop!(stack, Val::F64, |lhs: f64, rhs: f64| {
                 if lhs == f64::NAN || rhs == f64::NAN {
                     return Ok(f64::NAN);
                 }
@@ -282,12 +237,12 @@ pub fn execute_instruction(
             })
         }
         InstructionType::F32Copysign => {
-            binop!(stack, Val::F32, Val::F32, Val::F32, |lhs: f32, rhs: f32| {
+            binop!(stack, Val::F32, |lhs: f32, rhs: f32| {
                 Ok(lhs.copysign(rhs))
             })
         }
         InstructionType::F64Copysign => {
-            binop!(stack, Val::F64, Val::F64, Val::F64, |lhs: f64, rhs: f64| {
+            binop!(stack, Val::F64, |lhs: f64, rhs: f64| {
                 Ok(lhs.copysign(rhs))
             })
         }
@@ -559,11 +514,55 @@ pub fn execute_instruction(
             stack.push_entry(StackEntry::Value(Val::Ref(RefInst::Null(ref_type.clone()))))
         }
         InstructionType::RefIsNull => {
-            is_ref_null!(stack);
+            is_ref_null(stack)?;
         }
         InstructionType::RefFunc(FuncIdx(U32Type(func_idx))) => {
-            ref_func!(stack, *func_idx as usize);
-        } // _ => unimplemented!(),
+            ref_func(stack, *func_idx as usize)?;
+        }
+        // vector instructions
+        InstructionType::V128Not => {
+            vvunop(stack, ::std::ops::Not::not)?;
+        }
+        InstructionType::V128And => {
+            binop!(stack, Val::Vec, iand);
+        }
+        InstructionType::V128AndNot => {
+            binop!(stack, Val::Vec, iandnot);
+        }
+        InstructionType::V128Or => {
+            binop!(stack, Val::Vec, ior);
+        }
+        InstructionType::V128Xor => {
+            binop!(stack, Val::Vec, ixor);
+        }
+        InstructionType::V128Bitselect => {
+            vternop(stack, bitselect)?;
+        }
+        InstructionType::I8x16Swizzle => {
+            binop!(stack, Val::Vec, swizzle_i8x16)
+        }
+        InstructionType::I8x16Shuffle(lane_idx) => {
+            binop_with_value!(stack, Val::Vec, lane_idx, shuffle_i8x16)
+        }
+        InstructionType::I8x16Splat => {
+            shape_splat_integer!(stack, Val::I32, u8, 16usize);
+        }
+        InstructionType::I32x4Splat => {
+            shape_splat_integer!(stack, Val::I32, u32, 4usize);
+        }
+        InstructionType::I64x2Splat => {
+            shape_splat_integer!(stack, Val::I64, u64, 2usize);
+        }
+        InstructionType::F32x4Splat => {
+            shape_splat_float!(stack, Val::F32, u32, 4usize)
+        }
+        InstructionType::F64x2Splat => {
+            shape_splat_float!(stack, Val::F64, u64, 2usize)
+        }
+        InstructionType::I8x16ExtractLaneS(LaneIdx(lane_idx)) => {
+            extract_lane_signed!(stack, u32, Val::I32, 16u8, *lane_idx);
+        }
+        _ => unimplemented!(),
     }
 
     Ok(())
@@ -609,124 +608,9 @@ fn f64_unop(exec_fn: impl FnOnce(f64) -> f64, stack: &mut Stack) -> RResult<()> 
     }
 }
 
-fn i128_from_vec(v: &Vec<Byte>) -> RResult<i128> {
+pub(super) fn v128_from_vec(v: &Vec<Byte>) -> RResult<u128> {
     let slice: &[u8] = v.as_ref();
     let bytes: [u8; 16] = slice.try_into().map_err(|_| Trap)?;
 
-    Ok(i128::from_le_bytes(bytes))
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn instruction_i32_const() {
-        let mut store = Store::new();
-        let mut stack = Stack::new();
-        assert!(execute_instruction(
-            &InstructionType::I32Const(I32Type(1)),
-            &mut stack,
-            &mut store
-        )
-        .is_ok());
-        if let Some(val) = stack.pop_value() {
-            assert_eq!(val, Val::I32(1));
-        } else {
-            assert!(false, "stack should contain value");
-        }
-    }
-
-    #[test]
-    fn instruction_i64_const() {
-        let mut store = Store::new();
-        let mut stack = Stack::new();
-        assert!(execute_instruction(
-            &InstructionType::I64Const(I64Type(1)),
-            &mut stack,
-            &mut store
-        )
-        .is_ok());
-        if let Some(val) = stack.pop_value() {
-            assert_eq!(val, Val::I64(1));
-        } else {
-            assert!(false, "stack should contain value");
-        }
-    }
-
-    #[test]
-    fn instruction_f32_const() {
-        let mut store = Store::new();
-        let mut stack = Stack::new();
-        assert!(execute_instruction(
-            &InstructionType::F32Const(F32Type(1.0)),
-            &mut stack,
-            &mut store
-        )
-        .is_ok());
-        if let Some(val) = stack.pop_value() {
-            assert_eq!(val, Val::F32(1.0));
-        } else {
-            assert!(false, "stack should contain value");
-        }
-    }
-
-    #[test]
-    fn instruction_f64_const() {
-        let mut store = Store::new();
-        let mut stack = Stack::new();
-        assert!(execute_instruction(
-            &InstructionType::F64Const(F64Type(1.0)),
-            &mut stack,
-            &mut store
-        )
-        .is_ok());
-        if let Some(val) = stack.pop_value() {
-            assert_eq!(val, Val::F64(1.0));
-        } else {
-            assert!(false, "stack should contain value");
-        }
-    }
-
-    #[test]
-    fn instruction_v128_const() {
-        let mut store = Store::new();
-        let mut stack = Stack::new();
-        let v128 = vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-        let v128_as_num = i128_from_vec(&v128).unwrap();
-        assert!(
-            execute_instruction(&InstructionType::V128Const(v128), &mut stack, &mut store).is_ok()
-        );
-        if let Some(val) = stack.pop_value() {
-            assert_eq!(val, Val::Vec(v128_as_num));
-        } else {
-            assert!(false, "stack should contain value");
-        }
-    }
-
-    #[test]
-    fn instruction_i32_add() {
-        let mut store = Store::new();
-        let mut stack = Stack::new();
-        execute_instruction(
-            &InstructionType::I32Const(I32Type(1)),
-            &mut stack,
-            &mut store,
-        )
-        .expect("should be able to put I32 const on stack");
-        execute_instruction(
-            &InstructionType::I32Const(I32Type(2)),
-            &mut stack,
-            &mut store,
-        )
-        .expect("should be able to put I32 const on stack");
-
-        execute_instruction(&InstructionType::I32Add, &mut stack, &mut store)
-            .expect("should be able to add two I32 numbers");
-        if let Some(val) = stack.pop_value() {
-            assert_eq!(val, Val::I32(3));
-        } else {
-            assert!(false, "stack should contain a proper value");
-        }
-    }
+    Ok(u128::from_le_bytes(bytes))
 }

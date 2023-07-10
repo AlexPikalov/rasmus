@@ -6,6 +6,9 @@ mod module;
 mod module_registry;
 mod result;
 
+#[cfg(test)]
+mod execute_test;
+
 fn main() {
     println!("Hello, world!");
     let user_input = cli::UserInput::parse_args();
