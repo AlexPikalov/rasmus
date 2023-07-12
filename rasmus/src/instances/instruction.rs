@@ -250,13 +250,13 @@ where
 
 pub fn ishl_32(lhs: u32, rhs: u32) -> RResult<u32> {
     let k = rhs.rem_euclid(32);
-    let shifted = lhs >> k;
+    let shifted = lhs << k;
     Ok((shifted as u128).rem_euclid((2u128).pow(32)) as u32)
 }
 
 pub fn ishl_64(lhs: u64, rhs: u64) -> RResult<u64> {
     let k = rhs.rem_euclid(64);
-    let shifted = lhs >> k;
+    let shifted = lhs << k;
     Ok((shifted as u128).rem_euclid((2u128).pow(64)) as u64)
 }
 
@@ -273,7 +273,7 @@ pub fn ishr_u_32(lhs: u32, rhs: u32) -> RResult<u32> {
 
 pub fn ishr_u_64(lhs: u64, rhs: u64) -> RResult<u64> {
     let k = rhs.rem_euclid(64);
-    let bit = 0b11111111111111111111111111111110;
+    let bit = 0b1111111111111111111111111111111111111111111111111111111111111110;
     let mut res = lhs;
     for _ in 0..k {
         res = (res & bit).rotate_right(1);
@@ -284,32 +284,33 @@ pub fn ishr_u_64(lhs: u64, rhs: u64) -> RResult<u64> {
 
 pub fn ishr_s_32(lhs: u32, rhs: u32) -> RResult<u32> {
     let k = rhs.rem_euclid(32);
-    let most_significant_bit = if lhs.leading_ones() > 0 {
-        0b11111111111111111111111111111111
-    } else {
-        0b11111111111111111111111111111110
-    };
-    let mut res = lhs;
-    for _ in 0..k {
-        res = (res | most_significant_bit).rotate_right(1);
-    }
+    if lhs.leading_ones() > 0 {
+        let most_significant_bit = 0b10000000000000000000000000000000u32;
+        let mut res = lhs;
+        for _ in 0..k {
+            res = res.rotate_right(1) | most_significant_bit;
+        }
 
-    Ok(res)
+        Ok(res)
+    } else {
+        ishr_u_32(lhs, rhs)
+    }
 }
 
 pub fn ishr_s_64(lhs: u64, rhs: u64) -> RResult<u64> {
     let k = rhs.rem_euclid(64);
-    let most_significant_bit = if lhs.leading_ones() > 0 {
-        0b11111111111111111111111111111111
-    } else {
-        0b11111111111111111111111111111110
-    };
-    let mut res = lhs;
-    for _ in 0..k {
-        res = (res | most_significant_bit).rotate_right(1);
-    }
+    if lhs.leading_ones() > 0 {
+        let most_significant_bit =
+            0b1000000000000000000000000000000000000000000000000000000000000000u64;
+        let mut res = lhs;
+        for _ in 0..k {
+            res = res.rotate_right(1) | most_significant_bit;
+        }
 
-    Ok(res)
+        Ok(res)
+    } else {
+        ishr_u_64(lhs, rhs)
+    }
 }
 
 pub fn irotl_32(lhs: u32, rhs: u32) -> RResult<u32> {
