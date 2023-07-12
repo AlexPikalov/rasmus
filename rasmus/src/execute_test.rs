@@ -552,3 +552,219 @@ test_instruction!(
     InstructionType::I64Xor,
     Val::I64(6)
 );
+
+test_instruction!(
+    ishl_32_no_overflow,
+    vec![
+        InstructionType::I32Const(I32Type(10)),
+        InstructionType::I32Const(I32Type(3)),
+    ],
+    InstructionType::I32Shl,
+    Val::I32(80)
+);
+
+test_instruction!(
+    ishl_32_rot_overflow,
+    vec![
+        InstructionType::I32Const(I32Type(10)),
+        InstructionType::I32Const(I32Type(32)),
+    ],
+    InstructionType::I32Shl,
+    Val::I32(10)
+);
+
+test_instruction!(
+    ishl_32_base_overflow,
+    vec![
+        InstructionType::I32Const(I32Type(0b10000000000000000000000000000001u32)),
+        InstructionType::I32Const(I32Type(1))
+    ],
+    InstructionType::I32Shl,
+    Val::I32(0b10u32)
+);
+
+test_instruction!(
+    ishl_64_no_overflow,
+    vec![
+        InstructionType::I64Const(I64Type(10)),
+        InstructionType::I64Const(I64Type(3)),
+    ],
+    InstructionType::I64Shl,
+    Val::I64(80)
+);
+
+test_instruction!(
+    ishl_64_rot_overflow,
+    vec![
+        InstructionType::I64Const(I64Type(10)),
+        InstructionType::I64Const(I64Type(64)),
+    ],
+    InstructionType::I64Shl,
+    Val::I64(10)
+);
+
+test_instruction!(
+    ishl_64_base_overflow,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1000000000000000000000000000000000000000000000000000000000000001u64
+        )),
+        InstructionType::I64Const(I64Type(1))
+    ],
+    InstructionType::I64Shl,
+    Val::I64(0b10u64)
+);
+
+test_instruction!(
+    ishr_u_32_not_overflow,
+    vec![
+        InstructionType::I32Const(I32Type(0b10000000000000000000000000000001u32)),
+        InstructionType::I32Const(I32Type(1))
+    ],
+    InstructionType::I32ShrU,
+    Val::I32(0b01000000000000000000000000000000u32)
+);
+
+test_instruction!(
+    ishr_u_32_rot_overflow,
+    vec![
+        InstructionType::I32Const(I32Type(0b10000000000000000000000000000001u32)),
+        InstructionType::I32Const(I32Type(32))
+    ],
+    InstructionType::I32ShrU,
+    Val::I32(0b10000000000000000000000000000001u32)
+);
+
+test_instruction!(
+    ishr_u_64_no_overflow,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1000000000000000000000000000000000000000000000000000000000000001u64
+        )),
+        InstructionType::I64Const(I64Type(1))
+    ],
+    InstructionType::I64ShrU,
+    Val::I64(0b0100000000000000000000000000000000000000000000000000000000000000u64)
+);
+
+test_instruction!(
+    ishr_u_64_rot_overflow,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1000000000000000000000000000000000000000000000000000000000000001u64
+        )),
+        InstructionType::I64Const(I64Type(64))
+    ],
+    InstructionType::I64ShrU,
+    Val::I64(0b1000000000000000000000000000000000000000000000000000000000000001u64)
+);
+
+test_instruction!(
+    ishr_s_32_no_overflow_zero,
+    vec![
+        InstructionType::I32Const(I32Type(0b00000000000000000000000000000010u32)),
+        InstructionType::I32Const(I32Type(1))
+    ],
+    InstructionType::I32ShrS,
+    Val::I32(0b0000000000000000000000000000001u32)
+);
+
+test_instruction!(
+    ishr_s_32_no_overflow_one,
+    vec![
+        InstructionType::I32Const(I32Type(0b10000000000000000000000000001000u32)),
+        InstructionType::I32Const(I32Type(3))
+    ],
+    InstructionType::I32ShrS,
+    Val::I32(0b11110000000000000000000000000001u32)
+);
+
+test_instruction!(
+    ishr_s_32_overflow_rot,
+    vec![
+        InstructionType::I32Const(I32Type(0b10000000000000000000000000001000u32)),
+        InstructionType::I32Const(I32Type(32))
+    ],
+    InstructionType::I32ShrS,
+    Val::I32(0b10000000000000000000000000001000u32)
+);
+
+test_instruction!(
+    ishr_s_64_no_overflow_zero,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b0000000000000000000000000000000000000000000000000000000000000010u64
+        )),
+        InstructionType::I64Const(I64Type(1))
+    ],
+    InstructionType::I64ShrS,
+    Val::I64(0b000000000000000000000000000000000000000000000000000000000000001u64)
+);
+
+test_instruction!(
+    ishr_s_64_no_overflow_one,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1000000000000000000000000000000000000000000000000000000000001000u64
+        )),
+        InstructionType::I64Const(I64Type(3))
+    ],
+    InstructionType::I64ShrS,
+    Val::I64(0b1111000000000000000000000000000000000000000000000000000000000001u64)
+);
+
+test_instruction!(
+    ishr_s_64_overflow_rot,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1000000000000000000000000000000000000000000000000000000000001000u64
+        )),
+        InstructionType::I64Const(I64Type(64))
+    ],
+    InstructionType::I64ShrS,
+    Val::I64(0b1000000000000000000000000000000000000000000000000000000000001000u64)
+);
+
+test_instruction!(
+    irotl_32_no_overflow,
+    vec![
+        InstructionType::I32Const(I32Type(0b10000000000000000000000000000001u32)),
+        InstructionType::I32Const(I32Type(1))
+    ],
+    InstructionType::I32Rotl,
+    Val::I32(3)
+);
+
+test_instruction!(
+    irotl_32_rot_overflow,
+    vec![
+        InstructionType::I32Const(I32Type(0b10000000000000000000000000000001u32)),
+        InstructionType::I32Const(I32Type(32))
+    ],
+    InstructionType::I32Rotl,
+    Val::I32(0b10000000000000000000000000000001u32)
+);
+
+test_instruction!(
+    irotl_64_no_overflow,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1000000000000000000000000000000000000000000000000000000000000001u64
+        )),
+        InstructionType::I64Const(I64Type(1))
+    ],
+    InstructionType::I64Rotl,
+    Val::I64(3)
+);
+
+test_instruction!(
+    irotl_64_rot_overflow,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1000000000000000000000000000000000000000000000000000000000000001u64
+        )),
+        InstructionType::I64Const(I64Type(64))
+    ],
+    InstructionType::I64Rotl,
+    Val::I64(0b1000000000000000000000000000000000000000000000000000000000000001u64)
+);
