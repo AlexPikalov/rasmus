@@ -45,6 +45,28 @@ macro_rules! test_instruction {
     };
 }
 
+macro_rules! test_instruction_assert {
+    ($test_name: ident, $before_instructions: expr, $instruction: expr, $assert: expr) => {
+        #[test]
+        fn $test_name() {
+            let mut store = Store::new();
+            let mut stack = Stack::new();
+
+            for ref before in $before_instructions {
+                assert!(execute_instruction(before, &mut stack, &mut store).is_ok());
+            }
+
+            assert!(execute_instruction(&$instruction, &mut stack, &mut store).is_ok());
+
+            if let Some(val) = stack.pop_value() {
+                $assert(val);
+            } else {
+                assert!(false, "stack should contain value");
+            }
+        }
+    };
+}
+
 test_instruction!(
     i32_const,
     InstructionType::I32Const(I32Type(1)),
@@ -767,4 +789,454 @@ test_instruction!(
     ],
     InstructionType::I64Rotl,
     Val::I64(0b1000000000000000000000000000000000000000000000000000000000000001u64)
+);
+
+test_instruction!(
+    f32_add_no_overflow,
+    vec![
+        InstructionType::F32Const(F32Type(0.9)),
+        InstructionType::F32Const(F32Type(0.1))
+    ],
+    InstructionType::F32Add,
+    Val::F32(1.0)
+);
+
+test_instruction!(
+    f64_add_no_overflow,
+    vec![
+        InstructionType::F64Const(F64Type(0.9)),
+        InstructionType::F64Const(F64Type(0.1))
+    ],
+    InstructionType::F64Add,
+    Val::F64(1.0)
+);
+
+test_instruction!(
+    f32_sub_no_overflow,
+    vec![
+        InstructionType::F32Const(F32Type(0.1)),
+        InstructionType::F32Const(F32Type(0.4))
+    ],
+    InstructionType::F32Sub,
+    Val::F32(-0.3)
+);
+
+test_instruction!(
+    f64_sub_no_overflow,
+    vec![
+        InstructionType::F64Const(F64Type(0.11)),
+        InstructionType::F64Const(F64Type(0.3))
+    ],
+    InstructionType::F64Sub,
+    Val::F64(-0.19)
+);
+
+test_instruction!(
+    f32_mul_inverse_sign,
+    vec![
+        InstructionType::F32Const(F32Type(-1.0)),
+        InstructionType::F32Const(F32Type(0.3))
+    ],
+    InstructionType::F32Mul,
+    Val::F32(-0.3)
+);
+
+test_instruction!(
+    f32_mul_no_overflow,
+    vec![
+        InstructionType::F32Const(F32Type(1.0)),
+        InstructionType::F32Const(F32Type(0.3))
+    ],
+    InstructionType::F32Mul,
+    Val::F32(0.3)
+);
+
+test_instruction!(
+    f64_mul_no_overflow,
+    vec![
+        InstructionType::F64Const(F64Type(1.0)),
+        InstructionType::F64Const(F64Type(0.3))
+    ],
+    InstructionType::F64Mul,
+    Val::F64(0.3)
+);
+
+test_instruction!(
+    f32_div_no_overflow,
+    vec![
+        InstructionType::F32Const(F32Type(1.0)),
+        InstructionType::F32Const(F32Type(0.2))
+    ],
+    InstructionType::F32Div,
+    Val::F32(5.0)
+);
+
+test_instruction!(
+    f32_div_neg_infinity,
+    vec![
+        InstructionType::F32Const(F32Type(1.0)),
+        InstructionType::F32Const(F32Type(-0.0))
+    ],
+    InstructionType::F32Div,
+    Val::F32(f32::NEG_INFINITY)
+);
+
+test_instruction!(
+    f32_div_pos_infinity,
+    vec![
+        InstructionType::F32Const(F32Type(1.0)),
+        InstructionType::F32Const(F32Type(0.0))
+    ],
+    InstructionType::F32Div,
+    Val::F32(f32::INFINITY)
+);
+
+test_instruction!(
+    f64_div_no_overflow,
+    vec![
+        InstructionType::F64Const(F64Type(1.0)),
+        InstructionType::F64Const(F64Type(0.2))
+    ],
+    InstructionType::F64Div,
+    Val::F64(5.0)
+);
+
+test_instruction!(
+    f64_div_neg_infinity,
+    vec![
+        InstructionType::F64Const(F64Type(1.0)),
+        InstructionType::F64Const(F64Type(-0.0))
+    ],
+    InstructionType::F64Div,
+    Val::F64(f64::NEG_INFINITY)
+);
+
+test_instruction!(
+    f64_div_pos_infinity,
+    vec![
+        InstructionType::F64Const(F64Type(1.0)),
+        InstructionType::F64Const(F64Type(0.0))
+    ],
+    InstructionType::F64Div,
+    Val::F64(f64::INFINITY)
+);
+
+test_instruction_assert!(
+    f32_min_nan_1,
+    vec![
+        InstructionType::F32Const(F32Type(f32::NAN)),
+        InstructionType::F32Const(F32Type(0.0))
+    ],
+    InstructionType::F32Min,
+    |val: Val| {
+        match val {
+            Val::F32(val_32) => {
+                assert!(val_32.is_nan());
+            }
+            other => {
+                assert!(false, "unexpected value type {other:?}, F32 is expected");
+            }
+        }
+    }
+);
+
+test_instruction_assert!(
+    f32_min_nan_2,
+    vec![
+        InstructionType::F32Const(F32Type(0.0)),
+        InstructionType::F32Const(F32Type(f32::NAN))
+    ],
+    InstructionType::F32Min,
+    |val: Val| {
+        match val {
+            Val::F32(val_32) => {
+                assert!(val_32.is_nan());
+            }
+            other => {
+                assert!(false, "unexpected value type {other:?}, F32 is expected");
+            }
+        }
+    }
+);
+
+test_instruction!(
+    f32_min,
+    vec![
+        InstructionType::F32Const(F32Type(0.0)),
+        InstructionType::F32Const(F32Type(-0.0))
+    ],
+    InstructionType::F32Min,
+    Val::F32(-0.0)
+);
+
+test_instruction_assert!(
+    f64_min_nan_1,
+    vec![
+        InstructionType::F64Const(F64Type(f64::NAN)),
+        InstructionType::F64Const(F64Type(0.0))
+    ],
+    InstructionType::F64Min,
+    |val: Val| {
+        match val {
+            Val::F64(val_64) => {
+                assert!(val_64.is_nan());
+            }
+            other => {
+                assert!(false, "unexpected value type {other:?}, F64 is expected");
+            }
+        }
+    }
+);
+
+test_instruction_assert!(
+    f64_min_nan_2,
+    vec![
+        InstructionType::F64Const(F64Type(0.0)),
+        InstructionType::F64Const(F64Type(f64::NAN))
+    ],
+    InstructionType::F64Min,
+    |val: Val| {
+        match val {
+            Val::F64(val_64) => {
+                assert!(val_64.is_nan());
+            }
+            other => {
+                assert!(false, "unexpected value type {other:?}, F64 is expected");
+            }
+        }
+    }
+);
+
+test_instruction!(
+    f64_min,
+    vec![
+        InstructionType::F64Const(F64Type(0.0)),
+        InstructionType::F64Const(F64Type(-0.0))
+    ],
+    InstructionType::F64Min,
+    Val::F64(-0.0)
+);
+
+test_instruction_assert!(
+    f32_max_nan_1,
+    vec![
+        InstructionType::F32Const(F32Type(f32::NAN)),
+        InstructionType::F32Const(F32Type(0.0))
+    ],
+    InstructionType::F32Max,
+    |val: Val| {
+        match val {
+            Val::F32(val_32) => {
+                assert!(val_32.is_nan());
+            }
+            other => {
+                assert!(false, "unexpected value type {other:?}, F32 is expected");
+            }
+        }
+    }
+);
+
+test_instruction_assert!(
+    f32_max_nan_2,
+    vec![
+        InstructionType::F32Const(F32Type(0.0)),
+        InstructionType::F32Const(F32Type(f32::NAN))
+    ],
+    InstructionType::F32Max,
+    |val: Val| {
+        match val {
+            Val::F32(val_32) => {
+                assert!(val_32.is_nan());
+            }
+            other => {
+                assert!(false, "unexpected value type {other:?}, F32 is expected");
+            }
+        }
+    }
+);
+
+test_instruction!(
+    f32_max,
+    vec![
+        InstructionType::F32Const(F32Type(0.0)),
+        InstructionType::F32Const(F32Type(-0.0))
+    ],
+    InstructionType::F32Max,
+    Val::F32(0.0)
+);
+
+test_instruction_assert!(
+    f64_max_nan_1,
+    vec![
+        InstructionType::F64Const(F64Type(f64::NAN)),
+        InstructionType::F64Const(F64Type(0.0))
+    ],
+    InstructionType::F64Max,
+    |val: Val| {
+        match val {
+            Val::F64(val_64) => {
+                assert!(val_64.is_nan());
+            }
+            other => {
+                assert!(false, "unexpected value type {other:?}, F64 is expected");
+            }
+        }
+    }
+);
+
+test_instruction_assert!(
+    f64_max_nan_2,
+    vec![
+        InstructionType::F64Const(F64Type(0.0)),
+        InstructionType::F64Const(F64Type(f64::NAN))
+    ],
+    InstructionType::F64Max,
+    |val: Val| {
+        match val {
+            Val::F64(val_64) => {
+                assert!(val_64.is_nan());
+            }
+            other => {
+                assert!(false, "unexpected value type {other:?}, F64 is expected");
+            }
+        }
+    }
+);
+
+test_instruction!(
+    f64_max,
+    vec![
+        InstructionType::F64Const(F64Type(0.0)),
+        InstructionType::F64Const(F64Type(-0.0))
+    ],
+    InstructionType::F64Max,
+    Val::F64(0.0)
+);
+
+test_instruction!(
+    f32_copy_sign_positive_to_negative,
+    vec![
+        InstructionType::F32Const(F32Type(-1.0)),
+        InstructionType::F32Const(F32Type(2.0))
+    ],
+    InstructionType::F32Copysign,
+    Val::F32(1.0)
+);
+
+test_instruction!(
+    f64_copy_sign_positive_to_negative,
+    vec![
+        InstructionType::F64Const(F64Type(-1.0)),
+        InstructionType::F64Const(F64Type(2.0))
+    ],
+    InstructionType::F64Copysign,
+    Val::F64(1.0)
+);
+
+test_instruction!(
+    i32_eqz_true,
+    vec![InstructionType::I32Const(I32Type(0))],
+    InstructionType::I32Eqz,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i32_eqz_false,
+    vec![InstructionType::I32Const(I32Type(1))],
+    InstructionType::I32Eqz,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i64_eqz_true,
+    vec![InstructionType::I64Const(I64Type(0))],
+    InstructionType::I64Eqz,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i64_eqz_false,
+    vec![InstructionType::I64Const(I64Type(1))],
+    InstructionType::I64Eqz,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i32_eq_true,
+    vec![
+        InstructionType::I32Const(I32Type(0)),
+        InstructionType::I32Const(I32Type(0))
+    ],
+    InstructionType::I32Eq,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i32_eq_false,
+    vec![
+        InstructionType::I32Const(I32Type(1)),
+        InstructionType::I32Const(I32Type(0))
+    ],
+    InstructionType::I32Eq,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i64_eq_true,
+    vec![
+        InstructionType::I64Const(I64Type(0)),
+        InstructionType::I64Const(I64Type(0))
+    ],
+    InstructionType::I64Eq,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i64_eq_false,
+    vec![
+        InstructionType::I64Const(I64Type(1)),
+        InstructionType::I64Const(I64Type(0))
+    ],
+    InstructionType::I64Eq,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i32_ne_false,
+    vec![
+        InstructionType::I32Const(I32Type(0)),
+        InstructionType::I32Const(I32Type(0))
+    ],
+    InstructionType::I32Ne,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i32_ne_true,
+    vec![
+        InstructionType::I32Const(I32Type(1)),
+        InstructionType::I32Const(I32Type(0))
+    ],
+    InstructionType::I32Ne,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i64_ne_false,
+    vec![
+        InstructionType::I64Const(I64Type(0)),
+        InstructionType::I64Const(I64Type(0))
+    ],
+    InstructionType::I64Ne,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i64_ne_true,
+    vec![
+        InstructionType::I64Const(I64Type(1)),
+        InstructionType::I64Const(I64Type(0))
+    ],
+    InstructionType::I64Ne,
+    Val::I32(1)
 );

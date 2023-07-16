@@ -206,7 +206,7 @@ pub fn execute_instruction(
         }
         InstructionType::F32Min => {
             binop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                if lhs == f32::NAN || rhs == f32::NAN {
+                if lhs.is_nan() || rhs.is_nan() {
                     return Ok(f32::NAN);
                 }
                 Ok(lhs.min(rhs))
@@ -214,7 +214,7 @@ pub fn execute_instruction(
         }
         InstructionType::F64Min => {
             binop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                if lhs == f64::NAN || rhs == f64::NAN {
+                if lhs.is_nan() || rhs.is_nan() {
                     return Ok(f64::NAN);
                 }
                 Ok(lhs.min(rhs))
@@ -222,7 +222,7 @@ pub fn execute_instruction(
         }
         InstructionType::F32Max => {
             binop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                if lhs == f32::NAN || rhs == f32::NAN {
+                if lhs.is_nan() || rhs.is_nan() {
                     return Ok(f32::NAN);
                 }
                 Ok(lhs.max(rhs))
@@ -230,7 +230,7 @@ pub fn execute_instruction(
         }
         InstructionType::F64Max => {
             binop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                if lhs == f64::NAN || rhs == f64::NAN {
+                if lhs.is_nan() || rhs.is_nan() {
                     return Ok(f64::NAN);
                 }
                 Ok(lhs.max(rhs))
