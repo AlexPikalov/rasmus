@@ -15,7 +15,8 @@ macro_rules! test_instruction {
             let mut store = Store::new();
             let mut stack = Stack::new();
 
-            assert!(execute_instruction(&$instruction, &mut stack, &mut store).is_ok());
+            execute_instruction(&$instruction, &mut stack, &mut store)
+                .expect("should execute without errors");
 
             if let Some(val) = stack.pop_value() {
                 assert_eq!(val, $expected_val);
@@ -31,10 +32,12 @@ macro_rules! test_instruction {
             let mut stack = Stack::new();
 
             for ref before in $before_instructions {
-                assert!(execute_instruction(before, &mut stack, &mut store).is_ok());
+                execute_instruction(before, &mut stack, &mut store)
+                    .expect("shouold execute before instruction wihtout errors");
             }
 
-            assert!(execute_instruction(&$instruction, &mut stack, &mut store).is_ok());
+            execute_instruction(&$instruction, &mut stack, &mut store)
+                .expect("should execute instruction without errors");
 
             if let Some(val) = stack.pop_value() {
                 assert_eq!(val, $expected_val);
@@ -1239,4 +1242,140 @@ test_instruction!(
     ],
     InstructionType::I64Ne,
     Val::I32(1)
+);
+
+test_instruction!(
+    i32_lts_true_positive,
+    vec![
+        InstructionType::I32Const(I32Type(1)),
+        InstructionType::I32Const(I32Type(2))
+    ],
+    InstructionType::I32LtS,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i32_lts_true_negative,
+    vec![
+        InstructionType::I32Const(I32Type(0b11111111111111111111111111111110u32)),
+        InstructionType::I32Const(I32Type(0b11111111111111111111111111111111u32)),
+    ],
+    InstructionType::I32LtS,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i32_lts_false_positive,
+    vec![
+        InstructionType::I32Const(I32Type(2)),
+        InstructionType::I32Const(I32Type(1)),
+    ],
+    InstructionType::I32LtS,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i32_lts_false_negative,
+    vec![
+        InstructionType::I32Const(I32Type(0b11111111111111111111111111111111u32)),
+        InstructionType::I32Const(I32Type(0b11111111111111111111111111111110u32)),
+    ],
+    InstructionType::I32LtS,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i64_lts_true_positive,
+    vec![
+        InstructionType::I64Const(I64Type(1)),
+        InstructionType::I64Const(I64Type(2))
+    ],
+    InstructionType::I64LtS,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i64_lts_true_negative,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1111111111111111111111111111111111111111111111111111111111111110u64
+        )),
+        InstructionType::I64Const(I64Type(
+            0b1111111111111111111111111111111111111111111111111111111111111111u64
+        )),
+    ],
+    InstructionType::I64LtS,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i64_lts_false_positive,
+    vec![
+        InstructionType::I64Const(I64Type(2)),
+        InstructionType::I64Const(I64Type(1)),
+    ],
+    InstructionType::I64LtS,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i64_lts_false_negative,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1111111111111111111111111111111111111111111111111111111111111111u64
+        )),
+        InstructionType::I64Const(I64Type(
+            0b1111111111111111111111111111111111111111111111111111111111111110u64
+        )),
+    ],
+    InstructionType::I64LtS,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i64_lts_true_positive,
+    vec![
+        InstructionType::I64Const(I64Type(1)),
+        InstructionType::I64Const(I64Type(2))
+    ],
+    InstructionType::I64LtS,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i64_lts_true_negative,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1111111111111111111111111111111111111111111111111111111111111110u64
+        )),
+        InstructionType::I64Const(I64Type(
+            0b1111111111111111111111111111111111111111111111111111111111111111u64
+        )),
+    ],
+    InstructionType::I64LtS,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i64_lts_false_positive,
+    vec![
+        InstructionType::I64Const(I64Type(2)),
+        InstructionType::I64Const(I64Type(1)),
+    ],
+    InstructionType::I64LtS,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i64_lts_false_negative,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1111111111111111111111111111111111111111111111111111111111111111u64
+        )),
+        InstructionType::I64Const(I64Type(
+            0b1111111111111111111111111111111111111111111111111111111111111110u64
+        )),
+    ],
+    InstructionType::I64LtS,
+    Val::I32(0)
 );
