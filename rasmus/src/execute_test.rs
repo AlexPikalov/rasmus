@@ -1333,41 +1333,81 @@ test_instruction!(
 );
 
 test_instruction!(
-    i64_lts_true_positive,
+    i32_ltu_true_positive,
     vec![
-        InstructionType::I64Const(I64Type(1)),
-        InstructionType::I64Const(I64Type(2))
+        InstructionType::I32Const(I32Type(1)),
+        InstructionType::I32Const(I32Type(2))
     ],
-    InstructionType::I64LtS,
+    InstructionType::I32LtU,
     Val::I32(1)
 );
 
 test_instruction!(
-    i64_lts_true_negative,
+    i32_ltu_true_negative,
     vec![
-        InstructionType::I64Const(I64Type(
-            0b1111111111111111111111111111111111111111111111111111111111111110u64
-        )),
-        InstructionType::I64Const(I64Type(
-            0b1111111111111111111111111111111111111111111111111111111111111111u64
-        )),
+        InstructionType::I32Const(I32Type(0b11111111111111111111111111111110u32)),
+        InstructionType::I32Const(I32Type(0b11111111111111111111111111111111u32)),
     ],
-    InstructionType::I64LtS,
+    InstructionType::I32LtU,
     Val::I32(1)
 );
 
 test_instruction!(
-    i64_lts_false_positive,
+    i32_ltu_false_positive,
     vec![
-        InstructionType::I64Const(I64Type(2)),
-        InstructionType::I64Const(I64Type(1)),
+        InstructionType::I32Const(I32Type(2)),
+        InstructionType::I32Const(I32Type(1)),
     ],
-    InstructionType::I64LtS,
+    InstructionType::I32LtU,
     Val::I32(0)
 );
 
 test_instruction!(
-    i64_lts_false_negative,
+    i32_ltu_false_negative,
+    vec![
+        InstructionType::I32Const(I32Type(0b11111111111111111111111111111111u32)),
+        InstructionType::I32Const(I32Type(0b11111111111111111111111111111110u32)),
+    ],
+    InstructionType::I32LtU,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i64_ltu_true_positive,
+    vec![
+        InstructionType::I64Const(I64Type(1)),
+        InstructionType::I64Const(I64Type(2))
+    ],
+    InstructionType::I64LtU,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i64_ltu_true_negative,
+    vec![
+        InstructionType::I64Const(I64Type(
+            0b1111111111111111111111111111111111111111111111111111111111111110u64
+        )),
+        InstructionType::I64Const(I64Type(
+            0b1111111111111111111111111111111111111111111111111111111111111111u64
+        )),
+    ],
+    InstructionType::I64LtU,
+    Val::I32(1)
+);
+
+test_instruction!(
+    i64_ltu_false_positive,
+    vec![
+        InstructionType::I64Const(I64Type(2)),
+        InstructionType::I64Const(I64Type(1)),
+    ],
+    InstructionType::I64LtU,
+    Val::I32(0)
+);
+
+test_instruction!(
+    i64_ltu_false_negative,
     vec![
         InstructionType::I64Const(I64Type(
             0b1111111111111111111111111111111111111111111111111111111111111111u64
@@ -1376,6 +1416,6 @@ test_instruction!(
             0b1111111111111111111111111111111111111111111111111111111111111110u64
         )),
     ],
-    InstructionType::I64LtS,
+    InstructionType::I64LtU,
     Val::I32(0)
 );
