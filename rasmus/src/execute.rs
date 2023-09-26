@@ -4,19 +4,21 @@ use crate::instances::instruction_vec::{shuffle_i8x16, swizzle_i8x16, vternop, v
 use crate::result::{RResult, Trap};
 
 use crate::instances::instruction::{
-    bitselect, iadd_32, iadd_64, iand, iandnot, idiv_32_s, idiv_32_u, idiv_64_s, idiv_64_u,
-    imul_32, imul_64, ior, irem_32_s, irem_32_u, irem_64_s, irem_64_u, irotl_32, irotl_64,
-    irotr_32, irotr_64, is_ref_null, ishl_32, ishl_64, ishr_s_32, ishr_s_64, ishr_u_32, ishr_u_64,
-    isub_32, isub_64, ixor, ref_func,
+    bitselect, eq, eqz, fadd, fdiv, fmul, fsub, ges, geu, gts, gtu, iadd_32, iadd_64, iand,
+    iandnot, idiv_32_s, idiv_32_u, idiv_64_s, idiv_64_u, imul_32, imul_64, ior, irem_32_s,
+    irem_32_u, irem_64_s, irem_64_u, irotl_32, irotl_64, irotr_32, irotr_64, is_ref_null, ishl_32,
+    ishl_64, ishr_s_32, ishr_s_64, ishr_u_32, ishr_u_64, isub_32, isub_64, ixor, les, leu, lts,
+    ltu, max, min, neq, ref_func,
 };
 use crate::instances::ref_inst::RefInst;
 use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
 use crate::{
-    binop, binop_with_value, cvtop, demote, extract_lane_signed, float_s, float_u, iextend_s,
-    nearest, promote, reinterpret, relop, shape_splat_float, shape_splat_integer, testop, trunc_s,
-    trunc_sat_s, trunc_sat_u, trunc_u,
+    binop, binop_impl, binop_with_value, cvtop, demote, extract_lane_signed, fcopysign, float_s,
+    float_u, fmax, fmin, iextend_s, nearest, promote, reinterpret, relop, relop_impl,
+    shape_splat_float, shape_splat_integer, testop_impl, trunc_s, trunc_sat_s, trunc_sat_u,
+    trunc_u,
 };
 use syntax::instructions::{ExpressionType, InstructionType};
 use syntax::types::{Byte, F32Type, F64Type, FuncIdx, I32Type, I64Type, LaneIdx, U32Type};
@@ -89,336 +91,87 @@ pub fn execute_instruction(
         InstructionType::I64Extend16S => i64_unop(iextend_s!(u64, i16), stack)?,
         InstructionType::I64Extend32S => i64_unop(iextend_s!(u64, i32), stack)?,
         // binop
-        InstructionType::I32Add => {
-            binop!(stack, Val::I32, iadd_32)
-        }
-        InstructionType::I64Add => {
-            binop!(stack, Val::I64, iadd_64)
-        }
-        InstructionType::I32Sub => {
-            binop!(stack, Val::I32, isub_32)
-        }
-        InstructionType::I64Sub => {
-            binop!(stack, Val::I64, isub_64)
-        }
-        InstructionType::I32Mul => {
-            binop!(stack, Val::I32, imul_32)
-        }
-        InstructionType::I64Mul => {
-            binop!(stack, Val::I64, imul_64)
-        }
-        InstructionType::I32DivU => {
-            binop!(stack, Val::I32, idiv_32_u)
-        }
-        InstructionType::I32DivS => {
-            binop!(stack, Val::I32, idiv_32_s)
-        }
-        InstructionType::I64DivU => {
-            binop!(stack, Val::I64, idiv_64_u)
-        }
-        InstructionType::I64DivS => {
-            binop!(stack, Val::I64, idiv_64_s)
-        }
-        InstructionType::I32RemU => {
-            binop!(stack, Val::I32, irem_32_u)
-        }
-        InstructionType::I32RemS => {
-            binop!(stack, Val::I32, irem_32_s)
-        }
-        InstructionType::I64RemU => {
-            binop!(stack, Val::I64, irem_64_u)
-        }
-        InstructionType::I64RemS => {
-            binop!(stack, Val::I64, irem_64_s)
-        }
-        InstructionType::I32And => {
-            binop!(stack, Val::I32, iand)
-        }
-        InstructionType::I64And => {
-            binop!(stack, Val::I64, iand)
-        }
-        InstructionType::I32Or => {
-            binop!(stack, Val::I32, ior)
-        }
-        InstructionType::I64Or => {
-            binop!(stack, Val::I64, ior)
-        }
-        InstructionType::I32Xor => {
-            binop!(stack, Val::I32, ixor)
-        }
-        InstructionType::I64Xor => {
-            binop!(stack, Val::I64, ixor)
-        }
-        InstructionType::I32Shl => {
-            binop!(stack, Val::I32, ishl_32)
-        }
-        InstructionType::I64Shl => {
-            binop!(stack, Val::I64, ishl_64)
-        }
-        InstructionType::I32ShrU => {
-            binop!(stack, Val::I32, ishr_u_32)
-        }
-        InstructionType::I64ShrU => {
-            binop!(stack, Val::I64, ishr_u_64)
-        }
-        InstructionType::I32ShrS => {
-            binop!(stack, Val::I32, ishr_s_32)
-        }
-        InstructionType::I64ShrS => {
-            binop!(stack, Val::I64, ishr_s_64)
-        }
-        InstructionType::I32Rotl => {
-            binop!(stack, Val::I32, irotl_32)
-        }
-        InstructionType::I64Rotl => {
-            binop!(stack, Val::I64, irotl_64)
-        }
-        InstructionType::I32Rotr => {
-            binop!(stack, Val::I32, irotr_32)
-        }
-        InstructionType::I64Rotr => {
-            binop!(stack, Val::I64, irotr_64)
-        }
+        InstructionType::I32Add => i32_binop(iadd_32, stack)?,
+        InstructionType::I64Add => i64_binop(iadd_64, stack)?,
+        InstructionType::I32Sub => i32_binop(isub_32, stack)?,
+        InstructionType::I64Sub => i64_binop(isub_64, stack)?,
+        InstructionType::I32Mul => i32_binop(imul_32, stack)?,
+        InstructionType::I64Mul => i64_binop(imul_64, stack)?,
+        InstructionType::I32DivU => i32_binop(idiv_32_u, stack)?,
+        InstructionType::I32DivS => i32_binop(idiv_32_s, stack)?,
+        InstructionType::I64DivU => i64_binop(idiv_64_u, stack)?,
+        InstructionType::I64DivS => i64_binop(idiv_64_s, stack)?,
+        InstructionType::I32RemU => i32_binop(irem_32_u, stack)?,
+        InstructionType::I32RemS => i32_binop(irem_32_s, stack)?,
+        InstructionType::I64RemU => i64_binop(irem_64_u, stack)?,
+        InstructionType::I64RemS => i64_binop(irem_64_s, stack)?,
+        InstructionType::I32And => i32_binop(iand, stack)?,
+        InstructionType::I64And => i64_binop(iand, stack)?,
+        InstructionType::I32Or => i32_binop(ior, stack)?,
+        InstructionType::I64Or => i64_binop(ior, stack)?,
+        InstructionType::I32Xor => i32_binop(ixor, stack)?,
+        InstructionType::I64Xor => i64_binop(ixor, stack)?,
+        InstructionType::I32Shl => i32_binop(ishl_32, stack)?,
+        InstructionType::I64Shl => i64_binop(ishl_64, stack)?,
+        InstructionType::I32ShrU => i32_binop(ishr_u_32, stack)?,
+        InstructionType::I64ShrU => i64_binop(ishr_u_64, stack)?,
+        InstructionType::I32ShrS => i32_binop(ishr_s_32, stack)?,
+        InstructionType::I64ShrS => i64_binop(ishr_s_64, stack)?,
+        InstructionType::I32Rotl => i32_binop(irotl_32, stack)?,
+        InstructionType::I64Rotl => i64_binop(irotl_64, stack)?,
+        InstructionType::I32Rotr => i32_binop(irotr_32, stack)?,
+        InstructionType::I64Rotr => i64_binop(irotr_64, stack)?,
         // fbinop
-        InstructionType::F32Add => {
-            binop!(stack, Val::F32, |lhs: f32, rhs: f32| Ok(lhs + rhs))
-        }
-        InstructionType::F64Add => {
-            binop!(stack, Val::F64, |lhs: f64, rhs: f64| Ok(lhs + rhs))
-        }
-        InstructionType::F32Sub => {
-            binop!(stack, Val::F32, |lhs: f32, rhs: f32| Ok(lhs - rhs))
-        }
-        InstructionType::F64Sub => {
-            binop!(stack, Val::F64, |lhs: f64, rhs: f64| Ok(lhs - rhs))
-        }
-        InstructionType::F32Mul => {
-            binop!(stack, Val::F32, |lhs: f32, rhs: f32| Ok(lhs * rhs))
-        }
-        InstructionType::F64Mul => {
-            binop!(stack, Val::F64, |lhs: f64, rhs: f64| Ok(lhs * rhs))
-        }
-        InstructionType::F32Div => {
-            binop!(stack, Val::F32, |lhs: f32, rhs: f32| Ok(lhs / rhs))
-        }
-        InstructionType::F64Div => {
-            binop!(stack, Val::F64, |lhs: f64, rhs: f64| Ok(lhs / rhs))
-        }
-        InstructionType::F32Min => {
-            binop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                if lhs.is_nan() || rhs.is_nan() {
-                    return Ok(f32::NAN);
-                }
-                Ok(lhs.min(rhs))
-            })
-        }
-        InstructionType::F64Min => {
-            binop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                if lhs.is_nan() || rhs.is_nan() {
-                    return Ok(f64::NAN);
-                }
-                Ok(lhs.min(rhs))
-            })
-        }
-        InstructionType::F32Max => {
-            binop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                if lhs.is_nan() || rhs.is_nan() {
-                    return Ok(f32::NAN);
-                }
-                Ok(lhs.max(rhs))
-            })
-        }
-        InstructionType::F64Max => {
-            binop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                if lhs.is_nan() || rhs.is_nan() {
-                    return Ok(f64::NAN);
-                }
-                Ok(lhs.max(rhs))
-            })
-        }
-        InstructionType::F32Copysign => {
-            binop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                Ok(lhs.copysign(rhs))
-            })
-        }
-        InstructionType::F64Copysign => {
-            binop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                Ok(lhs.copysign(rhs))
-            })
-        }
+        InstructionType::F32Add => f32_binop(fadd, stack)?,
+        InstructionType::F64Add => f64_binop(fadd, stack)?,
+        InstructionType::F32Sub => f32_binop(fsub, stack)?,
+        InstructionType::F64Sub => f64_binop(fsub, stack)?,
+        InstructionType::F32Mul => f32_binop(fmul, stack)?,
+        InstructionType::F64Mul => f64_binop(fmul, stack)?,
+        InstructionType::F32Div => f32_binop(fdiv, stack)?,
+        InstructionType::F64Div => f64_binop(fdiv, stack)?,
+        InstructionType::F32Min => f32_binop(min, stack)?,
+        InstructionType::F64Min => f64_binop(min, stack)?,
+        InstructionType::F32Max => f32_binop(max, stack)?,
+        InstructionType::F64Max => f64_binop(max, stack)?,
+        InstructionType::F32Copysign => f32_binop(fcopysign!(f32), stack)?,
+        InstructionType::F64Copysign => f64_binop(fcopysign!(f64), stack)?,
         // testop
-        InstructionType::I32Eqz => {
-            testop!(stack, Val::I32, |val: u32| {
-                Ok(if val == 0 { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64Eqz => {
-            testop!(stack, Val::I64, |val: u64| {
-                Ok(if val == 0 { 1 } else { 0 })
-            })
-        }
+        InstructionType::I32Eqz => i32_testop(eqz, stack)?,
+        InstructionType::I64Eqz => i64_testop(eqz, stack)?,
         // relop
-        InstructionType::I32Eq => {
-            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
-                Ok(if lhs == rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64Eq => {
-            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
-                Ok(if lhs == rhs { 1 } else { 0 })
-            })
-        }
-        // relop
-        InstructionType::I32Ne => {
-            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
-                Ok(if lhs != rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64Ne => {
-            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
-                Ok(if lhs != rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::I32LtS => {
-            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
-                Ok(if (lhs as i32) < (rhs as i32) { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64LtS => {
-            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
-                Ok(if (lhs as i64) < (rhs as i64) { 1 } else { 0 })
-            })
-        }
-        InstructionType::I32LtU => {
-            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
-                Ok(if lhs < rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64LtU => {
-            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
-                Ok(if lhs < rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::I32GtS => {
-            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
-                Ok(if (lhs as i32) > (rhs as i32) { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64GtS => {
-            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
-                Ok(if (lhs as i64) > (rhs as i64) { 1 } else { 0 })
-            })
-        }
-        InstructionType::I32GtU => {
-            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
-                Ok(if lhs > rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64GtU => {
-            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
-                Ok(if lhs > rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::I32LeS => {
-            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
-                Ok(if (lhs as i32) <= (rhs as i32) { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64LeS => {
-            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
-                Ok(if (lhs as i64) <= (rhs as i64) { 1 } else { 0 })
-            })
-        }
-        InstructionType::I32LeU => {
-            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
-                Ok(if lhs <= rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64LeU => {
-            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
-                Ok(if lhs <= rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::I32GeS => {
-            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
-                Ok(if (lhs as i32) >= (rhs as i32) { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64GeS => {
-            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
-                Ok(if (lhs as i64) >= (rhs as i64) { 1 } else { 0 })
-            })
-        }
-        InstructionType::I32GeU => {
-            relop!(stack, Val::I32, |lhs: u32, rhs: u32| {
-                Ok(if lhs >= rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::I64GeU => {
-            relop!(stack, Val::I64, |lhs: u64, rhs: u64| {
-                Ok(if lhs >= rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F32Eq => {
-            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                Ok(if lhs == rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F64Eq => {
-            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                Ok(if lhs == rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F32Ne => {
-            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                Ok(if lhs != rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F64Ne => {
-            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                Ok(if lhs != rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F32Lt => {
-            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                Ok(if lhs < rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F64Lt => {
-            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                Ok(if lhs < rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F32Gt => {
-            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                Ok(if lhs > rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F64Gt => {
-            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                Ok(if lhs > rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F32Le => {
-            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                Ok(if lhs <= rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F64Le => {
-            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                Ok(if lhs <= rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F32Ge => {
-            relop!(stack, Val::F32, |lhs: f32, rhs: f32| {
-                Ok(if lhs >= rhs { 1 } else { 0 })
-            })
-        }
-        InstructionType::F64Ge => {
-            relop!(stack, Val::F64, |lhs: f64, rhs: f64| {
-                Ok(if lhs >= rhs { 1 } else { 0 })
-            })
-        }
+        InstructionType::I32Eq => i32_relop(eq, stack)?,
+        InstructionType::I64Eq => i64_relop(eq, stack)?,
+        InstructionType::I32Ne => i32_relop(neq, stack)?,
+        InstructionType::I64Ne => i64_relop(neq, stack)?,
+        InstructionType::I32LtS => i32_relop(lts, stack)?,
+        InstructionType::I64LtS => i64_relop(lts, stack)?,
+        InstructionType::I32LtU => i32_relop(ltu, stack)?,
+        InstructionType::I64LtU => i64_relop(ltu, stack)?,
+        InstructionType::I32GtS => i32_relop(gts, stack)?,
+        InstructionType::I64GtS => i64_relop(gts, stack)?,
+        InstructionType::I32GtU => i32_relop(gtu, stack)?,
+        InstructionType::I64GtU => i64_relop(gtu, stack)?,
+        InstructionType::I32LeS => i32_relop(les, stack)?,
+        InstructionType::I64LeS => i64_relop(les, stack)?,
+        InstructionType::I32LeU => i32_relop(leu, stack)?,
+        InstructionType::I64LeU => i64_relop(leu, stack)?,
+        InstructionType::I32GeS => i32_relop(ges, stack)?,
+        InstructionType::I64GeS => i64_relop(ges, stack)?,
+        InstructionType::I32GeU => i32_relop(geu, stack)?,
+        InstructionType::I64GeU => i64_relop(geu, stack)?,
+        InstructionType::F32Eq => f32_relop(eq, stack)?,
+        InstructionType::F64Eq => f64_relop(eq, stack)?,
+        InstructionType::F32Ne => f32_relop(neq, stack)?,
+        InstructionType::F64Ne => f64_relop(neq, stack)?,
+        InstructionType::F32Lt => f32_relop(ltu, stack)?,
+        InstructionType::F64Lt => f64_relop(ltu, stack)?,
+        InstructionType::F32Gt => f32_relop(gtu, stack)?,
+        InstructionType::F64Gt => f64_relop(gtu, stack)?,
+        InstructionType::F32Le => f32_relop(leu, stack)?,
+        InstructionType::F64Le => f64_relop(leu, stack)?,
+        InstructionType::F32Ge => f32_relop(geu, stack)?,
+        InstructionType::F64Ge => f64_relop(geu, stack)?,
         // cvtop
         InstructionType::I32WrapI64 => {
             cvtop!(stack, Val::I64, Val::I32, |arg: u64| {
@@ -607,6 +360,19 @@ fn f64_unop(exec_fn: impl FnOnce(f64) -> f64, stack: &mut Stack) -> RResult<()> 
         return Err(Trap);
     }
 }
+
+binop_impl!(i32_binop, Val::I32, u32);
+binop_impl!(i64_binop, Val::I64, u64);
+binop_impl!(f32_binop, Val::F32, f32);
+binop_impl!(f64_binop, Val::F64, f64);
+
+testop_impl!(i32_testop, Val::I32, u32);
+testop_impl!(i64_testop, Val::I64, u64);
+
+relop_impl!(i32_relop, Val::I32, u32);
+relop_impl!(i64_relop, Val::I64, u64);
+relop_impl!(f32_relop, Val::F32, f32);
+relop_impl!(f64_relop, Val::F64, f64);
 
 pub(super) fn v128_from_vec(v: &Vec<Byte>) -> RResult<u128> {
     let slice: &[u8] = v.as_ref();

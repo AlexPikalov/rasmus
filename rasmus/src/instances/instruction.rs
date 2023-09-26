@@ -1,3 +1,4 @@
+use syntax::traits::{AsSigned, Max, Min};
 use syntax::types::FuncIdx;
 
 use super::label::LabelInst;
@@ -98,16 +99,6 @@ macro_rules! binop_with_value {
         }
     };
 }
-
-macro_rules! impl_iadd {
-    ($name: ident, $arg_type: ty) => {
-        pub fn $name(left: $arg_type, right: $arg_type) -> RResult<$arg_type> {
-            Ok(left.wrapping_add(right))
-        }
-    };
-}
-
-// impl_iadd(iadd_32, u32);
 
 pub fn iadd_32(a: u32, b: u32) -> RResult<u32> {
     Ok(((a as u128) + (b as u128)).rem_euclid(2u128.pow(32)) as u32)
@@ -333,6 +324,145 @@ pub fn irotr_64(lhs: u64, rhs: u64) -> RResult<u64> {
     Ok(lhs.rotate_right(k))
 }
 
+pub fn fadd<T>(lhs: T, rhs: T) -> RResult<T>
+where
+    T: ::std::ops::Add<Output = T>,
+{
+    Ok(lhs + rhs)
+}
+
+pub fn fsub<T>(lhs: T, rhs: T) -> RResult<T>
+where
+    T: ::std::ops::Sub<Output = T>,
+{
+    Ok(lhs - rhs)
+}
+
+pub fn fmul<T>(lhs: T, rhs: T) -> RResult<T>
+where
+    T: ::std::ops::Mul<Output = T>,
+{
+    Ok(lhs * rhs)
+}
+
+pub fn fdiv<T>(lhs: T, rhs: T) -> RResult<T>
+where
+    T: ::std::ops::Div<Output = T>,
+{
+    Ok(lhs / rhs)
+}
+
+pub fn eq<L, R>(lhs: L, rhs: R) -> RResult<u32>
+where
+    L: ::std::cmp::PartialEq<R>,
+{
+    Ok(if lhs == rhs { 1 } else { 0 })
+}
+
+pub fn neq<L, R>(lhs: L, rhs: R) -> RResult<u32>
+where
+    L: ::std::cmp::PartialEq<R>,
+{
+    Ok(if lhs != rhs { 1 } else { 0 })
+}
+
+pub fn eqz<T>(lhs: T) -> RResult<u32>
+where
+    T: Into<u64>,
+{
+    Ok(if lhs.into() == 0u64 { 1 } else { 0 })
+}
+
+pub fn lts<T, O>(lhs: T, rhs: T) -> RResult<u32>
+where
+    T: AsSigned<Output = O>,
+    O: ::std::cmp::PartialOrd,
+{
+    Ok(if (lhs.as_signed()) < (rhs.as_signed()) {
+        1
+    } else {
+        0
+    })
+}
+
+pub fn ltu<T>(lhs: T, rhs: T) -> RResult<u32>
+where
+    T: ::std::cmp::PartialOrd,
+{
+    Ok(if lhs < rhs { 1 } else { 0 })
+}
+
+pub fn gts<T, O>(lhs: T, rhs: T) -> RResult<u32>
+where
+    T: AsSigned<Output = O>,
+    O: ::std::cmp::PartialOrd,
+{
+    Ok(if (lhs.as_signed()) > (rhs.as_signed()) {
+        1
+    } else {
+        0
+    })
+}
+
+pub fn gtu<T>(lhs: T, rhs: T) -> RResult<u32>
+where
+    T: ::std::cmp::PartialOrd,
+{
+    Ok(if lhs > rhs { 1 } else { 0 })
+}
+
+pub fn min<T>(lhs: T, rhs: T) -> RResult<T>
+where
+    T: Min,
+{
+    Ok(lhs.get_min(rhs))
+}
+
+pub fn max<T>(lhs: T, rhs: T) -> RResult<T>
+where
+    T: Max,
+{
+    Ok(lhs.get_max(rhs))
+}
+
+pub fn les<T, O>(lhs: T, rhs: T) -> RResult<u32>
+where
+    T: AsSigned<Output = O>,
+    O: ::std::cmp::PartialOrd,
+{
+    Ok(if (lhs.as_signed()) <= (rhs.as_signed()) {
+        1
+    } else {
+        0
+    })
+}
+
+pub fn leu<T>(lhs: T, rhs: T) -> RResult<u32>
+where
+    T: ::std::cmp::PartialOrd,
+{
+    Ok(if lhs <= rhs { 1 } else { 0 })
+}
+
+pub fn ges<T, O>(lhs: T, rhs: T) -> RResult<u32>
+where
+    T: AsSigned<Output = O>,
+    O: ::std::cmp::PartialOrd,
+{
+    Ok(if (lhs.as_signed()) >= (rhs.as_signed()) {
+        1
+    } else {
+        0
+    })
+}
+
+pub fn geu<T>(lhs: T, rhs: T) -> RResult<u32>
+where
+    T: ::std::cmp::PartialOrd,
+{
+    Ok(if lhs >= rhs { 1 } else { 0 })
+}
+
 pub fn ref_func(stack: &mut Stack, func_idx: usize) -> RResult<()> {
     match stack.current_frame() {
         Some(frame) => match frame.module.funcaddrs.get(func_idx) {
@@ -366,13 +496,80 @@ pub fn is_ref_null(stack: &mut Stack) -> RResult<()> {
 }
 
 #[macro_export]
-macro_rules! testop {
-    ($stack: expr, $first_type: path, $($op: tt)*) => {
-        if let Some($first_type(first)) = $stack.pop_value() {
-            let result = ($($op)*)(first)?;
-            $stack.push_entry(StackEntry::Value(crate::instances::value::Val::I32(result)));
-        } else {
-            return Err(Trap);
+macro_rules! binop_impl {
+    // ($fn_name:ident, $first_type: ty, $second_type: ty, $ret: ty) => {
+    //     fn $fn_name(
+    //         exec_fn: impl FnOnce($first_type, $second_type) -> $ret,
+    //         stack: &mut Stack,
+    //     ) -> RResult<()> {
+    //         if let Some($first_type(second)) = stack.pop_value() {
+    //             if let Some($second_type(first)) = stack.pop_value() {
+    //                 let result = exec_fn(first, second)?;
+    //                 stack.push_entry(StackEntry::Value(result));
+    //             } else {
+    //                 return Err(Trap);
+    //             }
+    //         } else {
+    //             return Err(Trap);
+    //         }
+    //     }
+    // };
+    ($fn_name:ident, $pattern: path, $type: ty) => {
+        #[inline]
+        fn $fn_name(
+            exec_fn: impl FnOnce($type, $type) -> RResult<$type>,
+            stack: &mut Stack,
+        ) -> RResult<()> {
+            if let Some($pattern(second)) = stack.pop_value() {
+                if let Some($pattern(first)) = stack.pop_value() {
+                    let result = exec_fn(first, second)?;
+                    stack.push_entry(StackEntry::Value($pattern(result)));
+                    return Ok(());
+                } else {
+                    return Err(Trap);
+                }
+            } else {
+                return Err(Trap);
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! testop_impl {
+    ($fn_name:ident, $pattern: path, $type: ty) => {
+        #[inline]
+        fn $fn_name(exec_fn: impl FnOnce($type) -> RResult<u32>, stack: &mut Stack) -> RResult<()> {
+            if let Some($pattern(first)) = stack.pop_value() {
+                let result = exec_fn(first)?;
+                stack.push_entry(StackEntry::Value(crate::instances::value::Val::I32(result)));
+            } else {
+                return Err(Trap);
+            }
+            Ok(())
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! relop_impl {
+    ($fn_name:ident, $pattern: path, $type: ty) => {
+        #[inline]
+        fn $fn_name(
+            exec_fn: impl FnOnce($type, $type) -> RResult<u32>,
+            stack: &mut Stack,
+        ) -> RResult<()> {
+            if let Some($pattern(second)) = stack.pop_value() {
+                if let Some($pattern(first)) = stack.pop_value() {
+                    let result = exec_fn(first, second)?;
+                    stack.push_entry(StackEntry::Value(crate::instances::value::Val::I32(result)));
+                } else {
+                    return Err(Trap);
+                }
+            } else {
+                return Err(Trap);
+            }
+            Ok(())
         }
     };
 }
@@ -453,6 +650,37 @@ macro_rules! trunc_sat_u {
 
             <$ret_type>::try_from(arg.trunc() as u128).or_else(|_| Ok(<$ret_type>::MAX))
         }
+    };
+}
+
+#[macro_export]
+macro_rules! fmin {
+    ($type: ty) => {
+        |lhs: $type, rhs: $type| {
+            if lhs.is_nan() || rhs.is_nan() {
+                return Ok(<$type>::NAN);
+            }
+            Ok(lhs.min(rhs))
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! fmax {
+    ($type: ty) => {
+        |lhs: $type, rhs: $type| {
+            if lhs.is_nan() || rhs.is_nan() {
+                return Ok(<$type>::NAN);
+            }
+            Ok(lhs.max(rhs))
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! fcopysign {
+    ($type: ty) => {
+        |lhs: $type, rhs: $type| Ok(lhs.copysign(rhs))
     };
 }
 
