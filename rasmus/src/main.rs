@@ -8,6 +8,8 @@ mod result;
 
 #[cfg(test)]
 mod execute_test;
+#[cfg(test)]
+mod test_utils;
 
 fn main() {
     println!("Hello, world!");

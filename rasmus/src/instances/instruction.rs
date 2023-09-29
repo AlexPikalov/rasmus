@@ -1,5 +1,4 @@
 use syntax::traits::{AsSigned, Max, Min};
-use syntax::types::FuncIdx;
 
 use super::label::LabelInst;
 use super::ref_inst::RefInst;
@@ -20,40 +19,6 @@ pub enum InstructionInst {
     Label(LabelInst),
     Frame(Frame),
     End,
-}
-
-#[macro_export]
-macro_rules! iextend_s {
-    ($from_type: ty, $signed_type: ty) => {
-        |val: $from_type| -> $from_type { (val as $signed_type) as $from_type }
-    };
-}
-
-#[macro_export]
-macro_rules! nearest {
-    ($ftype:ty) => {
-        |v: $ftype| {
-            if v == <$ftype>::NAN || v == <$ftype>::INFINITY || v == 0.0 {
-                v
-            } else if v > 0.0 && v <= 0.5 {
-                -0.0
-            } else if v < 0.0 && v >= -0.5 {
-                0.0
-            } else if v < 0.0 {
-                if v - v.trunc() >= -0.5 {
-                    v.trunc()
-                } else {
-                    v.trunc() + 1.0
-                }
-            } else {
-                if v - v.trunc() <= 0.5 {
-                    v.trunc()
-                } else {
-                    v.trunc() + 1.0
-                }
-            }
-        }
-    };
 }
 
 #[macro_export]
@@ -575,22 +540,6 @@ macro_rules! relop_impl {
 }
 
 #[macro_export]
-macro_rules! relop {
-    ($stack: expr, $arg_type: path, $($op: tt)*) => {
-        if let Some($arg_type(second)) = $stack.pop_value() {
-            if let Some($arg_type(first)) = $stack.pop_value() {
-                let result = ($($op)*)(first, second)?;
-                $stack.push_entry(StackEntry::Value(crate::instances::value::Val::I32(result)));
-            } else {
-                return Err(Trap);
-            }
-        } else {
-            return Err(Trap);
-        }
-    };
-}
-
-#[macro_export]
 macro_rules! cvtop {
     ($stack: expr, $arg_type: path, $ret_type: path, $($op: tt)*) => {
         if let Some($arg_type(arg)) = $stack.pop_value() {
@@ -598,6 +547,25 @@ macro_rules! cvtop {
             $stack.push_entry(StackEntry::Value($ret_type(result)));
         } else {
             return Err(Trap);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! cvtop_impl {
+    ($fn_name:ident, $input_val: path, $input_type: ty, $output_val: path, $output_type: ty) => {
+        #[inline]
+        fn $fn_name(
+            exec_fn: impl FnOnce($input_type) -> RResult<$output_type>,
+            stack: &mut Stack,
+        ) -> RResult<()> {
+            if let Some($input_val(arg)) = stack.pop_value() {
+                let result = exec_fn(arg)?;
+                stack.push_entry(StackEntry::Value($output_val(result)));
+            } else {
+                return Err(Trap);
+            }
+            Ok(())
         }
     };
 }
@@ -649,30 +617,6 @@ macro_rules! trunc_sat_u {
             }
 
             <$ret_type>::try_from(arg.trunc() as u128).or_else(|_| Ok(<$ret_type>::MAX))
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! fmin {
-    ($type: ty) => {
-        |lhs: $type, rhs: $type| {
-            if lhs.is_nan() || rhs.is_nan() {
-                return Ok(<$type>::NAN);
-            }
-            Ok(lhs.min(rhs))
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! fmax {
-    ($type: ty) => {
-        |lhs: $type, rhs: $type| {
-            if lhs.is_nan() || rhs.is_nan() {
-                return Ok(<$type>::NAN);
-            }
-            Ok(lhs.max(rhs))
         }
     };
 }

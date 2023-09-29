@@ -1,4 +1,5 @@
-use std::ops::Neg;
+mod exec_const;
+mod exec_unop;
 
 use crate::instances::instruction_vec::{shuffle_i8x16, swizzle_i8x16, vternop, vvunop};
 use crate::result::{RResult, Trap};
@@ -15,14 +16,22 @@ use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
 use crate::{
-    binop, binop_impl, binop_with_value, cvtop, demote, extract_lane_signed, fcopysign, float_s,
-    float_u, fmax, fmin, iextend_s, nearest, promote, reinterpret, relop, relop_impl,
-    shape_splat_float, shape_splat_integer, testop_impl, trunc_s, trunc_sat_s, trunc_sat_u,
-    trunc_u,
+    binop, binop_impl, binop_with_value, cvtop, cvtop_impl, demote, extract_lane_signed, fcopysign,
+    float_s, float_u, promote, reinterpret, relop_impl, shape_splat_float, shape_splat_integer,
+    testop_impl, trunc_s, trunc_sat_s, trunc_sat_u, trunc_u,
 };
 use syntax::instructions::{ExpressionType, InstructionType};
 use syntax::types::{Byte, F32Type, F64Type, FuncIdx, I32Type, I64Type, LaneIdx, U32Type};
 
+use self::exec_const::{f32_const, f64_const, i32_const, i64_const, v128_const};
+use self::exec_unop::{
+    f32_abs, f32_ceil, f32_floor, f32_nearest, f32_neg, f32_sqrt, f32_trunc, f64_abs, f64_ceil,
+    f64_floor, f64_nearest, f64_neg, f64_sqrt, f64_trunc, i32_clz, i32_ctz, i32_extend_16s,
+    i32_extend_8s, i32_popcnt, i64_clz, i64_ctz, i64_extend_16s, i64_extend_32s, i64_extend_8s,
+    i64_popcnt,
+};
+
+#[allow(dead_code)]
 pub fn execute_expression(
     expr: &ExpressionType,
     stack: &mut Stack,
@@ -47,49 +56,39 @@ pub fn execute_instruction(
     // frame_ref: &Frame,
 ) -> RResult<()> {
     match instr {
-        InstructionType::I32Const(I32Type(num_val)) => {
-            stack.push_entry(StackEntry::Value(Val::I32(*num_val)))
-        }
-        InstructionType::I64Const(I64Type(num_val)) => {
-            stack.push_entry(StackEntry::Value(Val::I64(*num_val)))
-        }
-        InstructionType::F32Const(F32Type(num_val)) => {
-            stack.push_entry(StackEntry::Value(Val::F32(*num_val)))
-        }
-        InstructionType::F64Const(F64Type(num_val)) => {
-            stack.push_entry(StackEntry::Value(Val::F64(*num_val)))
-        }
-        InstructionType::V128Const(v128) => {
-            stack.push_entry(StackEntry::Value(Val::Vec(v128_from_vec(v128)?)))
-        }
+        InstructionType::I32Const(I32Type(num_val)) => i32_const(num_val, stack)?,
+        InstructionType::I64Const(I64Type(num_val)) => i64_const(num_val, stack)?,
+        InstructionType::F32Const(F32Type(num_val)) => f32_const(num_val, stack)?,
+        InstructionType::F64Const(F64Type(num_val)) => f64_const(num_val, stack)?,
+        InstructionType::V128Const(v128) => v128_const(v128, stack)?,
         // iunop
-        InstructionType::I32Clz => i32_unop(|v: u32| v.leading_zeros() as u32, stack)?,
-        InstructionType::I64Clz => i64_unop(|v: u64| v.leading_zeros() as u64, stack)?,
-        InstructionType::I32Ctz => i32_unop(|v: u32| v.trailing_zeros() as u32, stack)?,
-        InstructionType::I64Ctz => i64_unop(|v: u64| v.trailing_zeros() as u64, stack)?,
-        InstructionType::I32Popcnt => i32_unop(|v: u32| v.count_ones() as u32, stack)?,
-        InstructionType::I64Popcnt => i64_unop(|v: u64| v.count_ones() as u64, stack)?,
+        InstructionType::I32Clz => i32_clz(stack)?,
+        InstructionType::I64Clz => i64_clz(stack)?,
+        InstructionType::I32Ctz => i32_ctz(stack)?,
+        InstructionType::I64Ctz => i64_ctz(stack)?,
+        InstructionType::I32Popcnt => i32_popcnt(stack)?,
+        InstructionType::I64Popcnt => i64_popcnt(stack)?,
         // funop
-        InstructionType::F32Abs => f32_unop(|v: f32| v.abs(), stack)?,
-        InstructionType::F64Abs => f64_unop(|v: f64| v.abs(), stack)?,
-        InstructionType::F32Neg => f32_unop(|v: f32| v.neg(), stack)?,
-        InstructionType::F64Neg => f64_unop(|v: f64| v.neg(), stack)?,
-        InstructionType::F32Sqrt => f32_unop(|v: f32| v.sqrt(), stack)?,
-        InstructionType::F64Sqrt => f64_unop(|v: f64| v.sqrt(), stack)?,
-        InstructionType::F32Ceil => f32_unop(|v: f32| v.ceil(), stack)?,
-        InstructionType::F64Ceil => f64_unop(|v: f64| v.ceil(), stack)?,
-        InstructionType::F32Floor => f32_unop(|v: f32| v.floor(), stack)?,
-        InstructionType::F64Floor => f64_unop(|v: f64| v.floor(), stack)?,
-        InstructionType::F32Trunc => f32_unop(|v: f32| v.trunc(), stack)?,
-        InstructionType::F64Trunc => f64_unop(|v: f64| v.trunc(), stack)?,
-        InstructionType::F32Nearest => f32_unop(nearest!(f32), stack)?,
-        InstructionType::F64Nearest => f64_unop(nearest!(f64), stack)?,
+        InstructionType::F32Abs => f32_abs(stack)?,
+        InstructionType::F64Abs => f64_abs(stack)?,
+        InstructionType::F32Neg => f32_neg(stack)?,
+        InstructionType::F64Neg => f64_neg(stack)?,
+        InstructionType::F32Sqrt => f32_sqrt(stack)?,
+        InstructionType::F64Sqrt => f64_sqrt(stack)?,
+        InstructionType::F32Ceil => f32_ceil(stack)?,
+        InstructionType::F64Ceil => f64_ceil(stack)?,
+        InstructionType::F32Floor => f32_floor(stack)?,
+        InstructionType::F64Floor => f64_floor(stack)?,
+        InstructionType::F32Trunc => f32_trunc(stack)?,
+        InstructionType::F64Trunc => f64_trunc(stack)?,
+        InstructionType::F32Nearest => f32_nearest(stack)?,
+        InstructionType::F64Nearest => f64_nearest(stack)?,
         // extendN_s
-        InstructionType::I32Extend8S => i32_unop(iextend_s!(u32, i8), stack)?,
-        InstructionType::I32Extend16S => i32_unop(iextend_s!(u32, i16), stack)?,
-        InstructionType::I64Extend8S => i64_unop(iextend_s!(u64, i8), stack)?,
-        InstructionType::I64Extend16S => i64_unop(iextend_s!(u64, i16), stack)?,
-        InstructionType::I64Extend32S => i64_unop(iextend_s!(u64, i32), stack)?,
+        InstructionType::I32Extend8S => i32_extend_8s(stack)?,
+        InstructionType::I32Extend16S => i32_extend_16s(stack)?,
+        InstructionType::I64Extend8S => i64_extend_8s(stack)?,
+        InstructionType::I64Extend16S => i64_extend_16s(stack)?,
+        InstructionType::I64Extend32S => i64_extend_32s(stack)?,
         // binop
         InstructionType::I32Add => i32_binop(iadd_32, stack)?,
         InstructionType::I64Add => i64_binop(iadd_64, stack)?,
@@ -373,6 +372,8 @@ relop_impl!(i32_relop, Val::I32, u32);
 relop_impl!(i64_relop, Val::I64, u64);
 relop_impl!(f32_relop, Val::F32, f32);
 relop_impl!(f64_relop, Val::F64, f64);
+
+cvtop_impl!(i64_i32_cvtop, Val::I64, u64, Val::I32, u32);
 
 pub(super) fn v128_from_vec(v: &Vec<Byte>) -> RResult<u128> {
     let slice: &[u8] = v.as_ref();

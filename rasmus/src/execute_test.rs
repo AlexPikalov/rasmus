@@ -4,18 +4,21 @@ use syntax::{
 };
 
 use crate::{
-    execute::{execute_instruction, v128_from_vec},
+    execute::execute_instruction,
     instances::{stack::Stack, store::Store, value::Val},
 };
 
+
+
+#[macro_export]
 macro_rules! test_instruction {
     ($test_name: ident, $instruction: expr, $expected_val: expr) => {
         #[test]
         fn $test_name() {
-            let mut store = Store::new();
-            let mut stack = Stack::new();
+            let mut store = crate::instances::store::Store::new();
+            let mut stack = crate::instances::stack::Stack::new();
 
-            execute_instruction(&$instruction, &mut stack, &mut store)
+            crate::execute::execute_instruction(&$instruction, &mut stack, &mut store)
                 .expect("should execute without errors");
 
             if let Some(val) = stack.pop_value() {
@@ -28,15 +31,15 @@ macro_rules! test_instruction {
     ($test_name: ident, $before_instructions: expr, $instruction: expr, $expected_val: expr) => {
         #[test]
         fn $test_name() {
-            let mut store = Store::new();
-            let mut stack = Stack::new();
+            let mut store = crate::instances::store::Store::new();
+            let mut stack = crate::instances::stack::Stack::new();
 
             for ref before in $before_instructions {
-                execute_instruction(before, &mut stack, &mut store)
+                crate::execute::execute_instruction(before, &mut stack, &mut store)
                     .expect("shouold execute before instruction wihtout errors");
             }
 
-            execute_instruction(&$instruction, &mut stack, &mut store)
+            crate::execute::execute_instruction(&$instruction, &mut stack, &mut store)
                 .expect("should execute instruction without errors");
 
             if let Some(val) = stack.pop_value() {
@@ -48,6 +51,7 @@ macro_rules! test_instruction {
     };
 }
 
+#[macro_export]
 macro_rules! test_instruction_assert {
     ($test_name: ident, $before_instructions: expr, $instruction: expr, $assert: expr) => {
         #[test]
@@ -69,64 +73,6 @@ macro_rules! test_instruction_assert {
         }
     };
 }
-
-test_instruction!(
-    i32_const,
-    InstructionType::I32Const(I32Type(1)),
-    Val::I32(1)
-);
-
-test_instruction!(
-    i64_const,
-    InstructionType::I64Const(I64Type(1)),
-    Val::I64(1)
-);
-
-test_instruction!(
-    f32_const,
-    InstructionType::F32Const(F32Type(1.0)),
-    Val::F32(1.0)
-);
-
-test_instruction!(
-    f64_const,
-    InstructionType::F64Const(F64Type(1.0)),
-    Val::F64(1.0)
-);
-
-test_instruction!(
-    v128_const,
-    InstructionType::V128Const(vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
-    Val::Vec(v128_from_vec(&vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]).unwrap())
-);
-
-test_instruction!(
-    i32_clz_no_zeros,
-    vec![InstructionType::I32Const(I32Type(u32::MAX))],
-    InstructionType::I32Clz,
-    Val::I32(0)
-);
-
-test_instruction!(
-    i32_clz_except_first,
-    vec![InstructionType::I32Const(I32Type(1))],
-    InstructionType::I32Clz,
-    Val::I32(u32::BITS - 1)
-);
-
-test_instruction!(
-    i64_clz_no_zeros,
-    vec![InstructionType::I64Const(I64Type(u64::MAX))],
-    InstructionType::I64Clz,
-    Val::I64(0)
-);
-
-test_instruction!(
-    i64_clz_except_first,
-    vec![InstructionType::I64Const(I64Type(1))],
-    InstructionType::I64Clz,
-    Val::I64((u64::BITS - 1) as u64)
-);
 
 test_instruction!(
     i32_extend8_s_positive,

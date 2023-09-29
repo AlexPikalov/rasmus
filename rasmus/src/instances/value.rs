@@ -10,3 +10,9 @@ pub enum Val {
     Vec(u128),
     Ref(RefInst),
 }
+
+impl From<u32> for Val {
+    fn from(u: u32) -> Self {
+        Val::I32(u)
+    }
+}
