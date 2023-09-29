@@ -1,28 +1,33 @@
+mod exec_binop;
 mod exec_const;
 mod exec_unop;
 
+use crate::execute::exec_binop::{iand, iandnot, ior, ixor};
 use crate::instances::instruction_vec::{shuffle_i8x16, swizzle_i8x16, vternop, vvunop};
 use crate::result::{RResult, Trap};
 
 use crate::instances::instruction::{
-    bitselect, eq, eqz, fadd, fdiv, fmul, fsub, ges, geu, gts, gtu, iadd_32, iadd_64, iand,
-    iandnot, idiv_32_s, idiv_32_u, idiv_64_s, idiv_64_u, imul_32, imul_64, ior, irem_32_s,
-    irem_32_u, irem_64_s, irem_64_u, irotl_32, irotl_64, irotr_32, irotr_64, is_ref_null, ishl_32,
-    ishl_64, ishr_s_32, ishr_s_64, ishr_u_32, ishr_u_64, isub_32, isub_64, ixor, les, leu, lts,
-    ltu, max, min, neq, ref_func,
+    bitselect, eq, eqz, ges, geu, gts, gtu, is_ref_null, les, leu, lts, ltu, neq, ref_func,
 };
 use crate::instances::ref_inst::RefInst;
 use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
 use crate::{
-    binop, binop_impl, binop_with_value, cvtop, cvtop_impl, demote, extract_lane_signed, fcopysign,
-    float_s, float_u, promote, reinterpret, relop_impl, shape_splat_float, shape_splat_integer,
-    testop_impl, trunc_s, trunc_sat_s, trunc_sat_u, trunc_u,
+    binop, binop_with_value, cvtop, cvtop_impl, demote, extract_lane_signed, float_s, float_u,
+    promote, reinterpret, relop_impl, shape_splat_float, shape_splat_integer, testop_impl, trunc_s,
+    trunc_sat_s, trunc_sat_u, trunc_u,
 };
 use syntax::instructions::{ExpressionType, InstructionType};
 use syntax::types::{Byte, F32Type, F64Type, FuncIdx, I32Type, I64Type, LaneIdx, U32Type};
 
+use self::exec_binop::{
+    f32_add, f32_copysign, f32_div, f32_max, f32_min, f32_mul, f32_sub, f64_add, f64_copysign,
+    f64_div, f64_max, f64_min, f64_mul, f64_sub, i32_add, i32_and, i32_div_s, i32_div_u, i32_mul,
+    i32_or, i32_rem_s, i32_rem_u, i32_rotl, i32_rotr, i32_shl, i32_shr_s, i32_shr_u, i32_sub,
+    i32_xor, i64_add, i64_and, i64_div_s, i64_div_u, i64_mul, i64_or, i64_rem_s, i64_rem_u,
+    i64_rotl, i64_rotr, i64_shl, i64_shr_s, i64_shr_u, i64_sub, i64_xor,
+};
 use self::exec_const::{f32_const, f64_const, i32_const, i64_const, v128_const};
 use self::exec_unop::{
     f32_abs, f32_ceil, f32_floor, f32_nearest, f32_neg, f32_sqrt, f32_trunc, f64_abs, f64_ceil,
@@ -90,51 +95,51 @@ pub fn execute_instruction(
         InstructionType::I64Extend16S => i64_extend_16s(stack)?,
         InstructionType::I64Extend32S => i64_extend_32s(stack)?,
         // binop
-        InstructionType::I32Add => i32_binop(iadd_32, stack)?,
-        InstructionType::I64Add => i64_binop(iadd_64, stack)?,
-        InstructionType::I32Sub => i32_binop(isub_32, stack)?,
-        InstructionType::I64Sub => i64_binop(isub_64, stack)?,
-        InstructionType::I32Mul => i32_binop(imul_32, stack)?,
-        InstructionType::I64Mul => i64_binop(imul_64, stack)?,
-        InstructionType::I32DivU => i32_binop(idiv_32_u, stack)?,
-        InstructionType::I32DivS => i32_binop(idiv_32_s, stack)?,
-        InstructionType::I64DivU => i64_binop(idiv_64_u, stack)?,
-        InstructionType::I64DivS => i64_binop(idiv_64_s, stack)?,
-        InstructionType::I32RemU => i32_binop(irem_32_u, stack)?,
-        InstructionType::I32RemS => i32_binop(irem_32_s, stack)?,
-        InstructionType::I64RemU => i64_binop(irem_64_u, stack)?,
-        InstructionType::I64RemS => i64_binop(irem_64_s, stack)?,
-        InstructionType::I32And => i32_binop(iand, stack)?,
-        InstructionType::I64And => i64_binop(iand, stack)?,
-        InstructionType::I32Or => i32_binop(ior, stack)?,
-        InstructionType::I64Or => i64_binop(ior, stack)?,
-        InstructionType::I32Xor => i32_binop(ixor, stack)?,
-        InstructionType::I64Xor => i64_binop(ixor, stack)?,
-        InstructionType::I32Shl => i32_binop(ishl_32, stack)?,
-        InstructionType::I64Shl => i64_binop(ishl_64, stack)?,
-        InstructionType::I32ShrU => i32_binop(ishr_u_32, stack)?,
-        InstructionType::I64ShrU => i64_binop(ishr_u_64, stack)?,
-        InstructionType::I32ShrS => i32_binop(ishr_s_32, stack)?,
-        InstructionType::I64ShrS => i64_binop(ishr_s_64, stack)?,
-        InstructionType::I32Rotl => i32_binop(irotl_32, stack)?,
-        InstructionType::I64Rotl => i64_binop(irotl_64, stack)?,
-        InstructionType::I32Rotr => i32_binop(irotr_32, stack)?,
-        InstructionType::I64Rotr => i64_binop(irotr_64, stack)?,
+        InstructionType::I32Add => i32_add(stack)?,
+        InstructionType::I64Add => i64_add(stack)?,
+        InstructionType::I32Sub => i32_sub(stack)?,
+        InstructionType::I64Sub => i64_sub(stack)?,
+        InstructionType::I32Mul => i32_mul(stack)?,
+        InstructionType::I64Mul => i64_mul(stack)?,
+        InstructionType::I32DivU => i32_div_u(stack)?,
+        InstructionType::I32DivS => i32_div_s(stack)?,
+        InstructionType::I64DivU => i64_div_u(stack)?,
+        InstructionType::I64DivS => i64_div_s(stack)?,
+        InstructionType::I32RemU => i32_rem_u(stack)?,
+        InstructionType::I32RemS => i32_rem_s(stack)?,
+        InstructionType::I64RemU => i64_rem_u(stack)?,
+        InstructionType::I64RemS => i64_rem_s(stack)?,
+        InstructionType::I32And => i32_and(stack)?,
+        InstructionType::I64And => i64_and(stack)?,
+        InstructionType::I32Or => i32_or(stack)?,
+        InstructionType::I64Or => i64_or(stack)?,
+        InstructionType::I32Xor => i32_xor(stack)?,
+        InstructionType::I64Xor => i64_xor(stack)?,
+        InstructionType::I32Shl => i32_shl(stack)?,
+        InstructionType::I64Shl => i64_shl(stack)?,
+        InstructionType::I32ShrU => i32_shr_u(stack)?,
+        InstructionType::I64ShrU => i64_shr_u(stack)?,
+        InstructionType::I32ShrS => i32_shr_s(stack)?,
+        InstructionType::I64ShrS => i64_shr_s(stack)?,
+        InstructionType::I32Rotl => i32_rotl(stack)?,
+        InstructionType::I64Rotl => i64_rotl(stack)?,
+        InstructionType::I32Rotr => i32_rotr(stack)?,
+        InstructionType::I64Rotr => i64_rotr(stack)?,
         // fbinop
-        InstructionType::F32Add => f32_binop(fadd, stack)?,
-        InstructionType::F64Add => f64_binop(fadd, stack)?,
-        InstructionType::F32Sub => f32_binop(fsub, stack)?,
-        InstructionType::F64Sub => f64_binop(fsub, stack)?,
-        InstructionType::F32Mul => f32_binop(fmul, stack)?,
-        InstructionType::F64Mul => f64_binop(fmul, stack)?,
-        InstructionType::F32Div => f32_binop(fdiv, stack)?,
-        InstructionType::F64Div => f64_binop(fdiv, stack)?,
-        InstructionType::F32Min => f32_binop(min, stack)?,
-        InstructionType::F64Min => f64_binop(min, stack)?,
-        InstructionType::F32Max => f32_binop(max, stack)?,
-        InstructionType::F64Max => f64_binop(max, stack)?,
-        InstructionType::F32Copysign => f32_binop(fcopysign!(f32), stack)?,
-        InstructionType::F64Copysign => f64_binop(fcopysign!(f64), stack)?,
+        InstructionType::F32Add => f32_add(stack)?,
+        InstructionType::F64Add => f64_add(stack)?,
+        InstructionType::F32Sub => f32_sub(stack)?,
+        InstructionType::F64Sub => f64_sub(stack)?,
+        InstructionType::F32Mul => f32_mul(stack)?,
+        InstructionType::F64Mul => f64_mul(stack)?,
+        InstructionType::F32Div => f32_div(stack)?,
+        InstructionType::F64Div => f64_div(stack)?,
+        InstructionType::F32Min => f32_min(stack)?,
+        InstructionType::F64Min => f64_min(stack)?,
+        InstructionType::F32Max => f32_max(stack)?,
+        InstructionType::F64Max => f64_max(stack)?,
+        InstructionType::F32Copysign => f32_copysign(stack)?,
+        InstructionType::F64Copysign => f64_copysign(stack)?,
         // testop
         InstructionType::I32Eqz => i32_testop(eqz, stack)?,
         InstructionType::I64Eqz => i64_testop(eqz, stack)?,
@@ -319,51 +324,6 @@ pub fn execute_instruction(
 
     Ok(())
 }
-
-fn i32_unop(exec_fn: impl FnOnce(u32) -> u32, stack: &mut Stack) -> RResult<()> {
-    if let Some(Val::I32(v)) = stack.pop_value() {
-        let result = exec_fn(v);
-        stack.push_entry(StackEntry::Value(Val::I32(result)));
-        return Ok(());
-    } else {
-        return Err(Trap);
-    }
-}
-
-fn i64_unop(exec_fn: impl FnOnce(u64) -> u64, stack: &mut Stack) -> RResult<()> {
-    if let Some(Val::I64(v)) = stack.pop_value() {
-        let result = exec_fn(v);
-        stack.push_entry(StackEntry::Value(Val::I64(result)));
-        return Ok(());
-    } else {
-        return Err(Trap);
-    }
-}
-
-fn f32_unop(exec_fn: impl FnOnce(f32) -> f32, stack: &mut Stack) -> RResult<()> {
-    if let Some(Val::F32(v)) = stack.pop_value() {
-        let result = exec_fn(v);
-        stack.push_entry(StackEntry::Value(Val::F32(result)));
-        return Ok(());
-    } else {
-        return Err(Trap);
-    }
-}
-
-fn f64_unop(exec_fn: impl FnOnce(f64) -> f64, stack: &mut Stack) -> RResult<()> {
-    if let Some(Val::F64(v)) = stack.pop_value() {
-        let result = exec_fn(v);
-        stack.push_entry(StackEntry::Value(Val::F64(result)));
-        return Ok(());
-    } else {
-        return Err(Trap);
-    }
-}
-
-binop_impl!(i32_binop, Val::I32, u32);
-binop_impl!(i64_binop, Val::I64, u64);
-binop_impl!(f32_binop, Val::F32, f32);
-binop_impl!(f64_binop, Val::F64, f64);
 
 testop_impl!(i32_testop, Val::I32, u32);
 testop_impl!(i64_testop, Val::I64, u64);

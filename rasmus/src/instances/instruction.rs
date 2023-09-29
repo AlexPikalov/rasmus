@@ -1,4 +1,4 @@
-use syntax::traits::{AsSigned, Max, Min};
+use syntax::traits::AsSigned;
 
 use super::label::LabelInst;
 use super::ref_inst::RefInst;
@@ -65,135 +65,6 @@ macro_rules! binop_with_value {
     };
 }
 
-pub fn iadd_32(a: u32, b: u32) -> RResult<u32> {
-    Ok(((a as u128) + (b as u128)).rem_euclid(2u128.pow(32)) as u32)
-}
-pub fn iadd_64(a: u64, b: u64) -> RResult<u64> {
-    Ok(((a as u128) + (b as u128)).rem_euclid(2u128.pow(64)) as u64)
-}
-
-pub fn isub_32(a: u32, b: u32) -> RResult<u32> {
-    let base = 2u128.pow(32);
-    Ok(((a as u128) + base - (b as u128)).rem_euclid(base) as u32)
-}
-pub fn isub_64(a: u64, b: u64) -> RResult<u64> {
-    let base = 2u128.pow(64);
-    Ok(((a as u128) + base - (b as u128)).rem_euclid(base) as u64)
-}
-
-pub fn imul_32(a: u32, b: u32) -> RResult<u32> {
-    let base = 2u128.pow(32);
-    Ok(((a as u128) * (b as u128)).rem_euclid(base) as u32)
-}
-pub fn imul_64(a: u64, b: u64) -> RResult<u64> {
-    let base = 2u128.pow(64);
-    Ok(((a as u128) * (b as u128)).rem_euclid(base) as u64)
-}
-
-pub fn idiv_32_u(a: u32, b: u32) -> RResult<u32> {
-    if b == 0 {
-        return Err(Trap);
-    }
-    Ok(a.div_euclid(b))
-}
-
-pub fn idiv_32_s(a: u32, b: u32) -> RResult<u32> {
-    let a_s = a as i32;
-    let b_s = b as i32;
-    if b_s == 0 {
-        return Err(Trap);
-    }
-    let div = a_s.div_euclid(b_s);
-    if div == 2u32.pow(31) as i32 {
-        return Err(Trap);
-    }
-    Ok(div as u32)
-}
-
-pub fn idiv_64_u(a: u64, b: u64) -> RResult<u64> {
-    if b == 0 {
-        return Err(Trap);
-    }
-    Ok(a.div_euclid(b))
-}
-
-pub fn idiv_64_s(a: u64, b: u64) -> RResult<u64> {
-    let a_s = a as i64;
-    let b_s = b as i64;
-    if b_s == 0 {
-        return Err(Trap);
-    }
-    let div = a_s / b_s;
-    if div == 2u64.pow(63) as i64 {
-        return Err(Trap);
-    }
-    Ok(div as u64)
-}
-
-pub fn irem_32_u(a: u32, b: u32) -> RResult<u32> {
-    if b == 0 {
-        return Err(Trap);
-    }
-
-    Ok(a - b * (a / b))
-}
-
-pub fn irem_32_s(a: u32, b: u32) -> RResult<u32> {
-    let a_s = a as i32;
-    let b_s = b as i32;
-    if b_s == 0 {
-        return Err(Trap);
-    }
-
-    Ok((a_s - b_s * (a_s / b_s)) as u32)
-}
-
-pub fn irem_64_u(a: u64, b: u64) -> RResult<u64> {
-    if b == 0 {
-        return Err(Trap);
-    }
-
-    Ok(a - b * (a / b))
-}
-
-pub fn irem_64_s(a: u64, b: u64) -> RResult<u64> {
-    let a_s = a as i64;
-    let b_s = b as i64;
-    if b_s == 0 {
-        return Err(Trap);
-    }
-
-    Ok((a_s - b_s * (a_s / b_s)) as u64)
-}
-
-pub fn iand<T>(lhs: T, rhs: T) -> RResult<T>
-where
-    T: std::ops::BitAnd<Output = T>,
-{
-    Ok(lhs & rhs)
-}
-
-pub fn iandnot<T>(lhs: T, rhs: T) -> RResult<T>
-where
-    T: std::ops::BitAnd<Output = T> + std::ops::Not<Output = T>,
-{
-    Ok(lhs & !rhs)
-}
-
-pub fn ior<T>(lhs: T, rhs: T) -> RResult<T>
-where
-    T: std::ops::BitOr<Output = T>,
-{
-    Ok(lhs | rhs)
-}
-
-pub fn ixor<T>(lhs: T, rhs: T) -> RResult<T>
-where
-    T: std::ops::BitXor<Output = T>,
-{
-    Ok(lhs ^ rhs)
-}
-
 pub fn bitselect<T>(first: T, second: T, third: T) -> RResult<T>
 where
     T: ::std::ops::Not<Output = T>
@@ -202,119 +73,6 @@ where
         + ::std::marker::Copy,
 {
     Ok((first & third) | (second & !third))
-}
-
-pub fn ishl_32(lhs: u32, rhs: u32) -> RResult<u32> {
-    let k = rhs.rem_euclid(32);
-    let shifted = lhs << k;
-    Ok((shifted as u128).rem_euclid((2u128).pow(32)) as u32)
-}
-
-pub fn ishl_64(lhs: u64, rhs: u64) -> RResult<u64> {
-    let k = rhs.rem_euclid(64);
-    let shifted = lhs << k;
-    Ok((shifted as u128).rem_euclid((2u128).pow(64)) as u64)
-}
-
-pub fn ishr_u_32(lhs: u32, rhs: u32) -> RResult<u32> {
-    let k = rhs.rem_euclid(32);
-    let bit = 0b11111111111111111111111111111110;
-    let mut res = lhs;
-    for _ in 0..k {
-        res = (res & bit).rotate_right(1);
-    }
-
-    Ok(res)
-}
-
-pub fn ishr_u_64(lhs: u64, rhs: u64) -> RResult<u64> {
-    let k = rhs.rem_euclid(64);
-    let bit = 0b1111111111111111111111111111111111111111111111111111111111111110;
-    let mut res = lhs;
-    for _ in 0..k {
-        res = (res & bit).rotate_right(1);
-    }
-
-    Ok(res)
-}
-
-pub fn ishr_s_32(lhs: u32, rhs: u32) -> RResult<u32> {
-    let k = rhs.rem_euclid(32);
-    if lhs.leading_ones() > 0 {
-        let most_significant_bit = 0b10000000000000000000000000000000u32;
-        let mut res = lhs;
-        for _ in 0..k {
-            res = res.rotate_right(1) | most_significant_bit;
-        }
-
-        Ok(res)
-    } else {
-        ishr_u_32(lhs, rhs)
-    }
-}
-
-pub fn ishr_s_64(lhs: u64, rhs: u64) -> RResult<u64> {
-    let k = rhs.rem_euclid(64);
-    if lhs.leading_ones() > 0 {
-        let most_significant_bit =
-            0b1000000000000000000000000000000000000000000000000000000000000000u64;
-        let mut res = lhs;
-        for _ in 0..k {
-            res = res.rotate_right(1) | most_significant_bit;
-        }
-
-        Ok(res)
-    } else {
-        ishr_u_64(lhs, rhs)
-    }
-}
-
-pub fn irotl_32(lhs: u32, rhs: u32) -> RResult<u32> {
-    let k = rhs.rem_euclid(32);
-    Ok(lhs.rotate_left(k))
-}
-
-pub fn irotl_64(lhs: u64, rhs: u64) -> RResult<u64> {
-    let k = rhs.rem_euclid(64) as u32;
-    Ok(lhs.rotate_left(k))
-}
-
-pub fn irotr_32(lhs: u32, rhs: u32) -> RResult<u32> {
-    let k = rhs.rem_euclid(32);
-    Ok(lhs.rotate_right(k))
-}
-
-pub fn irotr_64(lhs: u64, rhs: u64) -> RResult<u64> {
-    let k = rhs.rem_euclid(64) as u32;
-    Ok(lhs.rotate_right(k))
-}
-
-pub fn fadd<T>(lhs: T, rhs: T) -> RResult<T>
-where
-    T: ::std::ops::Add<Output = T>,
-{
-    Ok(lhs + rhs)
-}
-
-pub fn fsub<T>(lhs: T, rhs: T) -> RResult<T>
-where
-    T: ::std::ops::Sub<Output = T>,
-{
-    Ok(lhs - rhs)
-}
-
-pub fn fmul<T>(lhs: T, rhs: T) -> RResult<T>
-where
-    T: ::std::ops::Mul<Output = T>,
-{
-    Ok(lhs * rhs)
-}
-
-pub fn fdiv<T>(lhs: T, rhs: T) -> RResult<T>
-where
-    T: ::std::ops::Div<Output = T>,
-{
-    Ok(lhs / rhs)
 }
 
 pub fn eq<L, R>(lhs: L, rhs: R) -> RResult<u32>
@@ -374,20 +132,6 @@ where
     T: ::std::cmp::PartialOrd,
 {
     Ok(if lhs > rhs { 1 } else { 0 })
-}
-
-pub fn min<T>(lhs: T, rhs: T) -> RResult<T>
-where
-    T: Min,
-{
-    Ok(lhs.get_min(rhs))
-}
-
-pub fn max<T>(lhs: T, rhs: T) -> RResult<T>
-where
-    T: Max,
-{
-    Ok(lhs.get_max(rhs))
 }
 
 pub fn les<T, O>(lhs: T, rhs: T) -> RResult<u32>
@@ -458,46 +202,6 @@ pub fn is_ref_null(stack: &mut Stack) -> RResult<()> {
     }
 
     Ok(())
-}
-
-#[macro_export]
-macro_rules! binop_impl {
-    // ($fn_name:ident, $first_type: ty, $second_type: ty, $ret: ty) => {
-    //     fn $fn_name(
-    //         exec_fn: impl FnOnce($first_type, $second_type) -> $ret,
-    //         stack: &mut Stack,
-    //     ) -> RResult<()> {
-    //         if let Some($first_type(second)) = stack.pop_value() {
-    //             if let Some($second_type(first)) = stack.pop_value() {
-    //                 let result = exec_fn(first, second)?;
-    //                 stack.push_entry(StackEntry::Value(result));
-    //             } else {
-    //                 return Err(Trap);
-    //             }
-    //         } else {
-    //             return Err(Trap);
-    //         }
-    //     }
-    // };
-    ($fn_name:ident, $pattern: path, $type: ty) => {
-        #[inline]
-        fn $fn_name(
-            exec_fn: impl FnOnce($type, $type) -> RResult<$type>,
-            stack: &mut Stack,
-        ) -> RResult<()> {
-            if let Some($pattern(second)) = stack.pop_value() {
-                if let Some($pattern(first)) = stack.pop_value() {
-                    let result = exec_fn(first, second)?;
-                    stack.push_entry(StackEntry::Value($pattern(result)));
-                    return Ok(());
-                } else {
-                    return Err(Trap);
-                }
-            } else {
-                return Err(Trap);
-            }
-        }
-    };
 }
 
 #[macro_export]
@@ -618,13 +322,6 @@ macro_rules! trunc_sat_u {
 
             <$ret_type>::try_from(arg.trunc() as u128).or_else(|_| Ok(<$ret_type>::MAX))
         }
-    };
-}
-
-#[macro_export]
-macro_rules! fcopysign {
-    ($type: ty) => {
-        |lhs: $type, rhs: $type| Ok(lhs.copysign(rhs))
     };
 }
 
