@@ -1,5 +1,6 @@
 mod exec_binop;
 mod exec_const;
+mod exec_cvtop;
 mod exec_unop;
 
 use crate::execute::exec_binop::{iand, iandnot, ior, ixor};
@@ -14,8 +15,8 @@ use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
 use crate::{
-    binop, binop_with_value, cvtop, cvtop_impl, demote, extract_lane_signed, float_s, float_u,
-    promote, reinterpret, relop_impl, shape_splat_float, shape_splat_integer, testop_impl, trunc_s,
+    binop, binop_with_value, cvtop, demote, extract_lane_signed, float_s, float_u, promote,
+    reinterpret, relop_impl, shape_splat_float, shape_splat_integer, testop_impl, trunc_s,
     trunc_sat_s, trunc_sat_u, trunc_u,
 };
 use syntax::instructions::{ExpressionType, InstructionType};
@@ -29,6 +30,10 @@ use self::exec_binop::{
     i64_rotl, i64_rotr, i64_shl, i64_shr_s, i64_shr_u, i64_sub, i64_xor,
 };
 use self::exec_const::{f32_const, f64_const, i32_const, i64_const, v128_const};
+use self::exec_cvtop::{
+    f64_i32_cvtop, i32_trunc_f32_s, i32_trunc_f32_u, i32_trunc_f64_s, i32_trunc_f64_u,
+    i32_wrap_i64, i64_trunc_f32_s, i64_trunc_f32_u, i64_trunc_f64_s, i64_trunc_f64_u,
+};
 use self::exec_unop::{
     f32_abs, f32_ceil, f32_floor, f32_nearest, f32_neg, f32_sqrt, f32_trunc, f64_abs, f64_ceil,
     f64_floor, f64_nearest, f64_neg, f64_sqrt, f64_trunc, i32_clz, i32_ctz, i32_extend_16s,
@@ -177,35 +182,15 @@ pub fn execute_instruction(
         InstructionType::F32Ge => f32_relop(geu, stack)?,
         InstructionType::F64Ge => f64_relop(geu, stack)?,
         // cvtop
-        InstructionType::I32WrapI64 => {
-            cvtop!(stack, Val::I64, Val::I32, |arg: u64| {
-                Ok((arg as u128).rem_euclid(2u128).pow(32) as u32)
-            })
-        }
-        InstructionType::I32TruncF32U => {
-            cvtop!(stack, Val::F32, Val::I32, trunc_u!(f32, u32))
-        }
-        InstructionType::I32TruncF64U => {
-            cvtop!(stack, Val::F64, Val::I32, trunc_u!(f64, u32))
-        }
-        InstructionType::I32TruncF32S => {
-            cvtop!(stack, Val::F32, Val::I32, trunc_s!(f32, i32, u32))
-        }
-        InstructionType::I32TruncF64S => {
-            cvtop!(stack, Val::F64, Val::I32, trunc_s!(f64, i32, u32))
-        }
-        InstructionType::I64TruncF32U => {
-            cvtop!(stack, Val::F32, Val::I64, trunc_u!(f32, u64))
-        }
-        InstructionType::I64TruncF64U => {
-            cvtop!(stack, Val::F64, Val::I64, trunc_u!(f64, u64))
-        }
-        InstructionType::I64TruncF32S => {
-            cvtop!(stack, Val::F32, Val::I64, trunc_s!(f32, i64, u64))
-        }
-        InstructionType::I64TruncF64S => {
-            cvtop!(stack, Val::F64, Val::I64, trunc_s!(f64, i64, u64))
-        }
+        InstructionType::I32WrapI64 => i32_wrap_i64(stack)?,
+        InstructionType::I32TruncF32U => i32_trunc_f32_u(stack)?,
+        InstructionType::I32TruncF64U => i32_trunc_f64_u(stack)?,
+        InstructionType::I32TruncF32S => i32_trunc_f32_s(stack)?,
+        InstructionType::I32TruncF64S => i32_trunc_f64_s(stack)?,
+        InstructionType::I64TruncF32U => i64_trunc_f32_u(stack)?,
+        InstructionType::I64TruncF64U => i64_trunc_f64_u(stack)?,
+        InstructionType::I64TruncF32S => i64_trunc_f32_s(stack)?,
+        InstructionType::I64TruncF64S => i64_trunc_f64_s(stack)?,
         InstructionType::I32TruncSatF32U => {
             cvtop!(stack, Val::F32, Val::I32, trunc_sat_u!(f32, u32))
         }
@@ -332,8 +317,6 @@ relop_impl!(i32_relop, Val::I32, u32);
 relop_impl!(i64_relop, Val::I64, u64);
 relop_impl!(f32_relop, Val::F32, f32);
 relop_impl!(f64_relop, Val::F64, f64);
-
-cvtop_impl!(i64_i32_cvtop, Val::I64, u64, Val::I32, u32);
 
 pub(super) fn v128_from_vec(v: &Vec<Byte>) -> RResult<u128> {
     let slice: &[u8] = v.as_ref();

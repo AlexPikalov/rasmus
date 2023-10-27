@@ -256,34 +256,15 @@ macro_rules! cvtop {
 }
 
 #[macro_export]
-macro_rules! cvtop_impl {
-    ($fn_name:ident, $input_val: path, $input_type: ty, $output_val: path, $output_type: ty) => {
-        #[inline]
-        fn $fn_name(
-            exec_fn: impl FnOnce($input_type) -> RResult<$output_type>,
-            stack: &mut Stack,
-        ) -> RResult<()> {
-            if let Some($input_val(arg)) = stack.pop_value() {
-                let result = exec_fn(arg)?;
-                stack.push_entry(StackEntry::Value($output_val(result)));
-            } else {
-                return Err(Trap);
-            }
-            Ok(())
-        }
-    };
-}
-
-#[macro_export]
 macro_rules! trunc_u {
     ($arg_type: ty, $ret_type: ty) => {
         |arg: $arg_type| {
             if arg == <$arg_type>::NAN || arg == <$arg_type>::INFINITY {
-                return Err(Trap);
+                return Err($crate::result::Trap);
             }
 
             let trunked = arg.trunc() as u128;
-            <$ret_type>::try_from(trunked).map_err(|_| Trap)
+            <$ret_type>::try_from(trunked).map_err(|_| $crate::result::Trap)
         }
     };
 }
@@ -293,13 +274,10 @@ macro_rules! trunc_s {
     ($arg_type: ty, $aux_type: ty, $ret_type: ty) => {
         |arg: $arg_type| {
             if arg == <$arg_type>::NAN || arg == <$arg_type>::INFINITY {
-                return Err(Trap);
+                return Err($crate::result::Trap);
             }
 
-            let trunked = arg.trunc() as u128;
-            <$aux_type>::try_from(trunked)
-                .map_err(|_| Trap)
-                .map(|v| v as $ret_type)
+            Ok(arg.trunc() as $aux_type as $ret_type)
         }
     };
 }
