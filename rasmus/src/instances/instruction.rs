@@ -172,38 +172,6 @@ where
     Ok(if lhs >= rhs { 1 } else { 0 })
 }
 
-pub fn ref_func(stack: &mut Stack, func_idx: usize) -> RResult<()> {
-    match stack.current_frame() {
-        Some(frame) => match frame.module.funcaddrs.get(func_idx) {
-            Some(funcaddr) => {
-                stack.push_entry(StackEntry::Value(Val::Ref(RefInst::Func(funcaddr.clone()))))
-            }
-            None => {
-                return Err(Trap);
-            }
-        },
-        None => {
-            return Err(Trap);
-        }
-    }
-
-    Ok(())
-}
-
-pub fn is_ref_null(stack: &mut Stack) -> RResult<()> {
-    if let Some(Val::Ref(reference)) = stack.pop_value() {
-        let is_null = match reference {
-            RefInst::Null(_) => 1u32,
-            _ => 0u32,
-        };
-        stack.push_entry(StackEntry::Value(Val::I32(is_null)));
-    } else {
-        return Err(Trap);
-    }
-
-    Ok(())
-}
-
 #[macro_export]
 macro_rules! testop_impl {
     ($fn_name:ident, $pattern: path, $type: ty) => {

@@ -1,6 +1,7 @@
 mod exec_binop;
 mod exec_const;
 mod exec_cvtop;
+mod exec_ref;
 mod exec_unop;
 
 use crate::execute::exec_binop::{iand, iandnot, ior, ixor};
@@ -8,7 +9,7 @@ use crate::instances::instruction_vec::{shuffle_i8x16, swizzle_i8x16, vternop, v
 use crate::result::{RResult, Trap};
 
 use crate::instances::instruction::{
-    bitselect, eq, eqz, ges, geu, gts, gtu, is_ref_null, les, leu, lts, ltu, neq, ref_func,
+    bitselect, eq, eqz, ges, geu, gts, gtu, les, leu, lts, ltu, neq,
 };
 use crate::instances::ref_inst::RefInst;
 use crate::instances::stack::{Stack, StackEntry};
@@ -38,6 +39,7 @@ use self::exec_cvtop::{
     i64_trunc_f64_u, i64_trunc_sat_f32_s, i64_trunc_sat_f32_u, i64_trunc_sat_f64_s,
     i64_trunc_sat_f64_u,
 };
+use self::exec_ref::{is_ref_null, ref_func, ref_null};
 use self::exec_unop::{
     f32_abs, f32_ceil, f32_floor, f32_nearest, f32_neg, f32_sqrt, f32_trunc, f64_abs, f64_ceil,
     f64_floor, f64_nearest, f64_neg, f64_sqrt, f64_trunc, i32_clz, i32_ctz, i32_extend_16s,
@@ -216,14 +218,10 @@ pub fn execute_instruction(
         InstructionType::F32ReinterpretI32 => i32_reinterpret_f32(stack)?,
         InstructionType::F64ReinterpretI64 => i64_reinterpret_f64(stack)?,
         // reference instructions
-        InstructionType::RefNull(ref_type) => {
-            stack.push_entry(StackEntry::Value(Val::Ref(RefInst::Null(ref_type.clone()))))
-        }
-        InstructionType::RefIsNull => {
-            is_ref_null(stack)?;
-        }
+        InstructionType::RefNull(ref_type) => ref_null(ref_type, stack)?,
+        InstructionType::RefIsNull => is_ref_null(stack)?,
         InstructionType::RefFunc(FuncIdx(U32Type(func_idx))) => {
-            ref_func(stack, *func_idx as usize)?;
+            ref_func(stack, *func_idx as usize)?
         }
         // vector instructions
         InstructionType::V128Not => {

@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::data::DataInst;
@@ -16,7 +17,6 @@ use crate::{
 };
 use syntax::validation::types_validation::{is_memory_type_valid, is_table_type_valid};
 use syntax::{
-    instructions::ExpressionType,
     module::{ExportDescription, Module},
     types::{Byte, Func, FuncType, GlobalType, MemType, RefType, TableType},
 };
@@ -44,8 +44,16 @@ impl Store {
         }
     }
 
-    pub fn allocate_local_func(&mut self, func: Func, module_inst: Rc<ModuleInst>) -> FuncAddr {
-        let func_type = module_inst.types[func.func_type.0 .0 as usize].clone();
+    pub fn allocate_local_func(
+        &mut self,
+        func: Func,
+        module_inst: Rc<RefCell<ModuleInst>>,
+    ) -> FuncAddr {
+        println!(
+            "trying to allocate func - {func:?} types - {:?}",
+            module_inst
+        );
+        let func_type = module_inst.borrow().types[func.func_type.0 .0 as usize].clone();
         let func_inst = FuncInst::FuncInst(FuncInstLocal {
             func_type,
             module: module_inst.clone(),
@@ -240,9 +248,9 @@ impl Store {
         extern_vals: Vec<ExternVal>,
         mut globals: Vec<Val>,
         mut refs: Vec<Vec<RefInst>>,
-    ) -> RResult<Rc<ModuleInst>> {
+    ) -> RResult<Rc<RefCell<ModuleInst>>> {
         let mut module_inst = ModuleInst {
-            types: vec![],
+            types: module.types.clone(),
             tableaddrs: vec![],
             globaladdrs: vec![],
             funcaddrs: vec![],
@@ -250,7 +258,7 @@ impl Store {
             elemaddrs: vec![],
             dataaddrs: vec![],
             exports: vec![],
-            start: None,
+            start: module.start.clone(),
         };
 
         // table allocations
@@ -318,26 +326,21 @@ impl Store {
             self.allocate_data(data.clone_data());
         }
 
-        let mut module_inst_rc = Rc::new(module_inst);
+        let mut module_inst_rc = Rc::new(RefCell::new(module_inst));
 
         // func allocations
         let funcs = module.get_funcs().ok_or(Trap)?;
         for func in funcs {
             let func_addr = self.allocate_local_func(func, module_inst_rc.clone());
-            match Rc::get_mut(&mut module_inst_rc) {
-                Some(inst) => inst.funcaddrs.push(func_addr),
-                None => return Err(Trap),
-            }
+            module_inst_rc.borrow_mut().funcaddrs.push(func_addr);
         }
-        match Rc::get_mut(&mut module_inst_rc) {
-            Some(inst) => inst
-                .funcaddrs
-                .extend(extern_vals.iter().filter_map(|v| match v {
-                    ExternVal::Func(addr) => Some(addr),
-                    _ => None,
-                })),
-            None => return Err(Trap),
-        }
+        module_inst_rc
+            .borrow_mut()
+            .funcaddrs
+            .extend(extern_vals.iter().filter_map(|v| match v {
+                ExternVal::Func(addr) => Some(addr),
+                _ => None,
+            }));
 
         // exports instantiation
         for export_declaration in &module.exports {
@@ -346,6 +349,7 @@ impl Store {
                 value: match &export_declaration.desc {
                     ExportDescription::Func(type_idx) => {
                         let funcaddr = module_inst_rc
+                            .borrow()
                             .funcaddrs
                             .get(type_idx.0 .0 as usize)
                             .ok_or(Trap)?
@@ -354,6 +358,7 @@ impl Store {
                     }
                     ExportDescription::Global(global_idx) => {
                         let globaladdr = module_inst_rc
+                            .borrow()
                             .globaladdrs
                             .get(global_idx.0 .0 as usize)
                             .ok_or(Trap)?
@@ -362,6 +367,7 @@ impl Store {
                     }
                     ExportDescription::Mem(mem_idx) => {
                         let memaddr = module_inst_rc
+                            .borrow()
                             .memaddrs
                             .get(mem_idx.0 .0 as usize)
                             .ok_or(Trap)?
@@ -370,6 +376,7 @@ impl Store {
                     }
                     ExportDescription::Table(table_idx) => {
                         let tableaddr = module_inst_rc
+                            .borrow()
                             .tableaddrs
                             .get(table_idx.0 .0 as usize)
                             .ok_or(Trap)?
@@ -378,14 +385,108 @@ impl Store {
                     }
                 },
             };
-            match Rc::get_mut(&mut module_inst_rc) {
-                Some(inst) => {
-                    inst.exports.push(export_inst);
-                }
-                _ => return Err(Trap),
-            }
+            module_inst_rc.borrow_mut().exports.push(export_inst);
         }
 
         Ok(module_inst_rc)
     }
+}
+
+#[cfg(test)]
+mod test {
+    use std::{cell::RefCell, rc::Rc};
+
+    use syntax::{
+        module::ExpressionType,
+        types::{Func, FuncType, TypeIdx, U32Type},
+    };
+
+    use crate::instances::{
+        func::{FuncInst, FuncInstLocal, HostCode, HostFunc},
+        module::ModuleInst,
+    };
+
+    use super::Store;
+
+    #[test]
+    fn allocate_local_func() {
+        let mut store = Store::new();
+
+        let module_inst = Rc::new(RefCell::new(ModuleInst {
+            types: vec![FuncType {
+                parameters: vec![],
+                results: vec![],
+            }],
+            funcaddrs: vec![],
+            ..Default::default()
+        }));
+
+        let func = Func {
+            func_type: TypeIdx(U32Type(0)),
+            locals: vec![],
+            body: ExpressionType {
+                instructions: vec![],
+            },
+        };
+
+        let module_func_type = module_inst.borrow().types[func.func_type.0 .0 as usize].clone();
+        let expected_code = func.clone();
+        let func_addr = store.allocate_local_func(func, module_inst);
+
+        assert_eq!(func_addr, 0);
+
+        if let Some(FuncInst::FuncInst(FuncInstLocal {
+            func_type, code, ..
+        })) = store.funcs.get(0)
+        {
+            assert_eq!(
+                func_type, &module_func_type,
+                "allocated local function type should match"
+            );
+            assert_eq!(
+                code, &expected_code,
+                "allocated local function code should match"
+            );
+        } else {
+            panic!("local function should be allocated");
+        }
+    }
+
+    #[test]
+    fn allocate_host_func() {
+        let mut store = Store::new();
+
+        let func_type = FuncType {
+            parameters: vec![],
+            results: vec![],
+        };
+        let expected_func_type = func_type.clone();
+
+        let host_hode = HostCode;
+        let expected_host_code = host_hode.clone();
+
+        let func_addr = store.allocate_host_func(func_type, host_hode);
+
+        assert_eq!(func_addr, 0);
+
+        if let Some(FuncInst::HostFunc(HostFunc {
+            func_type,
+            host_code,
+        })) = store.funcs.get(0)
+        {
+            assert_eq!(
+                func_type, &expected_func_type,
+                "allocated host function type should match"
+            );
+            assert_eq!(
+                host_code, &expected_host_code,
+                "allocated host function code should match"
+            );
+        } else {
+            panic!("host function should be allocated");
+        }
+    }
+
+    #[test]
+    fn allocate_module() {}
 }

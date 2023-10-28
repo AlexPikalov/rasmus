@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::address::*;
@@ -24,20 +25,26 @@ pub struct ModuleInst {
     pub start: Option<StartType>,
 }
 
+// Takes module declaration type,
+// creates following inputs for module allocation
+// - externals
+// - vals
+// - refs
+// invokes module allocation process in the store
 impl ModuleInst {
     pub fn instantiate(
         store: &mut Store,
         stack: &mut Stack,
         module: &Module,
         module_registry: &Box<ModuleRegistry>,
-    ) -> RResult<Rc<Self>> {
+    ) -> RResult<Rc<RefCell<Self>>> {
         if !module.is_valid() {
             return Err(Trap);
         }
 
         let externals = module_registry.resolve_imports(&module);
-
-        let mut aux_module = Rc::new(ModuleInst {
+        let aux_module_raw = RefCell::new(ModuleInst {
+            types: module.types.clone(),
             globaladdrs: externals
                 .iter()
                 .filter_map(|external| match external.value {
@@ -48,16 +55,32 @@ impl ModuleInst {
             ..Default::default()
         });
 
-        for func in module.get_funcs().ok_or(Trap)? {
-            let module_ref = aux_module.clone();
-            match Rc::get_mut(&mut aux_module) {
-                Some(inst) => {
-                    inst.funcaddrs
-                        .push(store.allocate_local_func(func, module_ref));
-                }
-                None => return Err(Trap),
-            }
-        }
+        let aux_module = Rc::new(aux_module_raw);
+
+        let funcaddrs_aux: Vec<FuncAddr> = module
+            .get_funcs()
+            .ok_or(Trap)?
+            .iter()
+            .map(|func| store.allocate_local_func(func.clone(), aux_module.clone()))
+            .collect();
+
+        aux_module.borrow_mut().funcaddrs = funcaddrs_aux;
+
+        // for func in module.get_funcs().ok_or(Trap)? {
+        //     let module_ref = aux_module.clone();
+        //     match Rc::get_mut(&mut aux_module) {
+        //         Some(inst) => {
+        //             // FIXME: this function allocation is needed for val evaluation process
+        //             // aux module allocation should be freed when module is popped out of stack
+        //             inst.funcaddrs
+        //                 .push(store.allocate_local_func(func, module_ref));
+        //         }
+        //         None => {
+        //             println!("unable to borrow");
+        //             return Err(Trap);
+        //         }
+        //     }
+        // }
 
         stack.push_entry(StackEntry::Frame(Frame {
             module: aux_module.clone(),
@@ -309,5 +332,28 @@ impl ModuleInst {
             execute_instruction(&InstructionType::Call(start_fn.func.clone()), stack, store)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use syntax::module::Module;
+
+    use crate::{
+        instances::{stack::Stack, store::Store},
+        module_registry::ModuleRegistry,
+    };
+
+    use super::ModuleInst;
+
+    #[test]
+    fn instantiate_empty() {
+        let registry = Box::new(ModuleRegistry::new());
+        let empty_module = Module::default();
+        let mut store = Store::new();
+        let mut stack = Stack::new();
+
+        let instance = ModuleInst::instantiate(&mut store, &mut stack, &empty_module, &registry)
+            .expect("should instantiate empty instance");
     }
 }

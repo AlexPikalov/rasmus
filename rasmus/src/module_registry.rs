@@ -9,6 +9,17 @@ impl ModuleRegistry {
     }
 
     pub fn resolve_imports(&self, module: &Module) -> Vec<ExportInst> {
-        unimplemented!()
+        // TODO: validation
+        //Assert:
+        // is valid with external types
+        // classifying its imports.
+        //
+        // If the number
+        // of imports is not equal to the number
+        // of provided external values, then:
+        //
+        // Fail. 
+        // TODO:
+        vec![]
     }
 }

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use super::module::ModuleInst;
 use syntax::types::{Func, FuncType};
@@ -10,7 +10,7 @@ pub enum FuncInst {
 
 pub struct FuncInstLocal {
     pub func_type: FuncType,
-    pub module: Rc<ModuleInst>,
+    pub module: Rc<RefCell<ModuleInst>>,
     pub code: Func,
 }
 
@@ -19,4 +19,5 @@ pub struct HostFunc {
     pub host_code: HostCode,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct HostCode;

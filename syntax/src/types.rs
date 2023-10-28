@@ -486,6 +486,7 @@ impl ParseWithNom for F64Type {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Func {
     pub func_type: TypeIdx,
     pub locals: Vec<ValType>,

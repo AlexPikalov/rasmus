@@ -176,7 +176,7 @@ impl ExportDescription {
     pub const ENCODE_BYTE_GLOBAL: Byte = 0x03;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct StartType {
     pub func: FuncIdx,
 }

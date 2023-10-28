@@ -1,6 +1,6 @@
 use syntax::module::InstructionType;
 
-use crate::instances::value::Val;
+use crate::instances::{stack::Stack, store::Store, value::Val};
 
 pub fn test_instruction(
     before_instructions: Vec<InstructionType>,
@@ -16,6 +16,22 @@ pub fn test_instruction(
     }
 
     crate::execute::execute_instruction(&instruction, &mut stack, &mut store)
+        .expect("should execute instruction without errors");
+
+    if let Some(val) = stack.pop_value() {
+        assert_eq!(val, expected_val);
+    } else {
+        assert!(false, "stack should contain value");
+    }
+}
+
+pub fn test_instruction_with_stack_and_store(
+    stack: &mut Stack,
+    store: &mut Store,
+    instruction: InstructionType,
+    expected_val: Val,
+) {
+    crate::execute::execute_instruction(&instruction, stack, store)
         .expect("should execute instruction without errors");
 
     if let Some(val) = stack.pop_value() {
