@@ -15,9 +15,8 @@ use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
 use crate::{
-    binop, binop_with_value, cvtop, demote, extract_lane_signed, float_s, float_u, promote,
-    reinterpret, relop_impl, shape_splat_float, shape_splat_integer, testop_impl, trunc_s,
-    trunc_sat_s, trunc_sat_u, trunc_u,
+    binop, binop_with_value, extract_lane_signed, relop_impl, shape_splat_float,
+    shape_splat_integer, testop_impl,
 };
 use syntax::instructions::{ExpressionType, InstructionType};
 use syntax::types::{Byte, F32Type, F64Type, FuncIdx, I32Type, I64Type, LaneIdx, U32Type};
@@ -31,8 +30,13 @@ use self::exec_binop::{
 };
 use self::exec_const::{f32_const, f64_const, i32_const, i64_const, v128_const};
 use self::exec_cvtop::{
-    f64_i32_cvtop, i32_trunc_f32_s, i32_trunc_f32_u, i32_trunc_f64_s, i32_trunc_f64_u,
-    i32_wrap_i64, i64_trunc_f32_s, i64_trunc_f32_u, i64_trunc_f64_s, i64_trunc_f64_u,
+    f32_convert_i32_s, f32_convert_i32_u, f32_convert_i64_s, f32_convert_i64_u, f32_demote_f64,
+    f64_convert_i32_s, f64_convert_i32_u, f64_convert_i64_s, f64_convert_i64_u, f64_promote_f32,
+    i32_reinterpret_f32, i32_trunc_f32_s, i32_trunc_f32_u, i32_trunc_f64_s, i32_trunc_f64_u,
+    i32_trunc_sat_f32_s, i32_trunc_sat_f32_u, i32_trunc_sat_f64_s, i32_trunc_sat_f64_u,
+    i32_wrap_i64, i64_reinterpret_f64, i64_trunc_f32_s, i64_trunc_f32_u, i64_trunc_f64_s,
+    i64_trunc_f64_u, i64_trunc_sat_f32_s, i64_trunc_sat_f32_u, i64_trunc_sat_f64_s,
+    i64_trunc_sat_f64_u,
 };
 use self::exec_unop::{
     f32_abs, f32_ceil, f32_floor, f32_nearest, f32_neg, f32_sqrt, f32_trunc, f64_abs, f64_ceil,
@@ -191,66 +195,26 @@ pub fn execute_instruction(
         InstructionType::I64TruncF64U => i64_trunc_f64_u(stack)?,
         InstructionType::I64TruncF32S => i64_trunc_f32_s(stack)?,
         InstructionType::I64TruncF64S => i64_trunc_f64_s(stack)?,
-        InstructionType::I32TruncSatF32U => {
-            cvtop!(stack, Val::F32, Val::I32, trunc_sat_u!(f32, u32))
-        }
-        InstructionType::I32TruncSatF64U => {
-            cvtop!(stack, Val::F64, Val::I32, trunc_sat_u!(f64, u32))
-        }
-        InstructionType::I32TruncSatF32S => {
-            cvtop!(stack, Val::F32, Val::I32, trunc_sat_s!(f32, i32, u32))
-        }
-        InstructionType::I32TruncSatF64S => {
-            cvtop!(stack, Val::F64, Val::I32, trunc_sat_s!(f64, i32, u32))
-        }
-        InstructionType::I64TruncSatF32U => {
-            cvtop!(stack, Val::F32, Val::I64, trunc_sat_u!(f32, u64))
-        }
-        InstructionType::I64TruncSatF64U => {
-            cvtop!(stack, Val::F64, Val::I64, trunc_sat_u!(f64, u64))
-        }
-        InstructionType::I64TruncSatF32S => {
-            cvtop!(stack, Val::F32, Val::I64, trunc_sat_s!(f32, i64, u64))
-        }
-        InstructionType::I64TruncSatF64S => {
-            cvtop!(stack, Val::F64, Val::I64, trunc_sat_s!(f64, i64, u64))
-        }
-        InstructionType::F32ConvertI32S => {
-            cvtop!(stack, Val::F32, Val::I32, float_s!(f32, i32, u32))
-        }
-        InstructionType::F32ConvertI32U => {
-            cvtop!(stack, Val::F32, Val::I32, float_u!(f32, u32))
-        }
-        InstructionType::F32ConvertI64S => {
-            cvtop!(stack, Val::F32, Val::I64, float_s!(f32, i64, u64))
-        }
-        InstructionType::F32ConvertI64U => {
-            cvtop!(stack, Val::F32, Val::I64, float_u!(f32, u64))
-        }
-        InstructionType::F64ConvertI32S => {
-            cvtop!(stack, Val::F64, Val::I32, float_s!(f64, i32, u32))
-        }
-        InstructionType::F64ConvertI32U => {
-            cvtop!(stack, Val::F64, Val::I32, float_u!(f64, u32))
-        }
-        InstructionType::F64ConvertI64S => {
-            cvtop!(stack, Val::F64, Val::I64, float_s!(f64, i64, u64))
-        }
-        InstructionType::F64ConvertI64U => {
-            cvtop!(stack, Val::F64, Val::I64, float_u!(f64, u64))
-        }
-        InstructionType::F32DemoteF64 => {
-            cvtop!(stack, Val::F64, Val::F32, demote!(f64, f32))
-        }
-        InstructionType::F64PromoteF32 => {
-            cvtop!(stack, Val::F32, Val::F64, promote!(f32, f64))
-        }
-        InstructionType::F32ReinterpretI32 => {
-            cvtop!(stack, Val::F32, Val::I32, reinterpret!(f32, u32))
-        }
-        InstructionType::F64ReinterpretI64 => {
-            cvtop!(stack, Val::F64, Val::I64, reinterpret!(f64, u64))
-        }
+        InstructionType::I32TruncSatF32U => i32_trunc_sat_f32_u(stack)?,
+        InstructionType::I32TruncSatF64U => i32_trunc_sat_f64_u(stack)?,
+        InstructionType::I32TruncSatF32S => i32_trunc_sat_f32_s(stack)?,
+        InstructionType::I32TruncSatF64S => i32_trunc_sat_f64_s(stack)?,
+        InstructionType::I64TruncSatF32U => i64_trunc_sat_f32_u(stack)?,
+        InstructionType::I64TruncSatF64U => i64_trunc_sat_f64_u(stack)?,
+        InstructionType::I64TruncSatF32S => i64_trunc_sat_f32_s(stack)?,
+        InstructionType::I64TruncSatF64S => i64_trunc_sat_f64_s(stack)?,
+        InstructionType::F32ConvertI32S => f32_convert_i32_s(stack)?,
+        InstructionType::F32ConvertI32U => f32_convert_i32_u(stack)?,
+        InstructionType::F32ConvertI64S => f32_convert_i64_s(stack)?,
+        InstructionType::F32ConvertI64U => f32_convert_i64_u(stack)?,
+        InstructionType::F64ConvertI32S => f64_convert_i32_s(stack)?,
+        InstructionType::F64ConvertI32U => f64_convert_i32_u(stack)?,
+        InstructionType::F64ConvertI64S => f64_convert_i64_s(stack)?,
+        InstructionType::F64ConvertI64U => f64_convert_i64_u(stack)?,
+        InstructionType::F32DemoteF64 => f32_demote_f64(stack)?,
+        InstructionType::F64PromoteF32 => f64_promote_f32(stack)?,
+        InstructionType::F32ReinterpretI32 => i32_reinterpret_f32(stack)?,
+        InstructionType::F64ReinterpretI64 => i64_reinterpret_f64(stack)?,
         // reference instructions
         InstructionType::RefNull(ref_type) => {
             stack.push_entry(StackEntry::Value(Val::Ref(RefInst::Null(ref_type.clone()))))
