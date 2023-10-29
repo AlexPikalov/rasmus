@@ -1,12 +1,12 @@
+use syntax::types::Byte;
+
 use crate::{
     instances::{
         stack::{Stack, StackEntry},
         value::Val,
     },
-    result::RResult,
+    result::{RResult, Trap},
 };
-
-use super::v128_from_vec;
 
 pub fn i32_const(v: &u32, stack: &mut Stack) -> RResult<()> {
     stack.push_entry(StackEntry::Value(Val::I32(*v)));
@@ -33,6 +33,13 @@ pub fn v128_const(v: &Vec<u8>, stack: &mut Stack) -> RResult<()> {
     Ok(())
 }
 
+fn v128_from_vec(v: &Vec<Byte>) -> RResult<u128> {
+    let slice: &[u8] = v.as_ref();
+    let bytes: [u8; 16] = slice.try_into().map_err(|_| Trap)?;
+
+    Ok(u128::from_le_bytes(bytes))
+}
+
 #[cfg(test)]
 mod test {
     use syntax::{
@@ -40,7 +47,9 @@ mod test {
         types::{F32Type, F64Type, I32Type, I64Type},
     };
 
-    use crate::{execute::v128_from_vec, instances::value::Val, test_utils::test_instruction};
+    use crate::{instances::value::Val, test_utils::test_instruction};
+
+    use super::v128_from_vec;
 
     #[test]
     fn i32_const() {

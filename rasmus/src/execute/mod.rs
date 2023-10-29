@@ -3,24 +3,19 @@ mod exec_const;
 mod exec_cvtop;
 mod exec_ref;
 mod exec_unop;
+mod exec_vec;
 
-use crate::execute::exec_binop::{iand, iandnot, ior, ixor};
-use crate::instances::instruction_vec::{shuffle_i8x16, swizzle_i8x16, vternop, vvunop};
 use crate::result::{RResult, Trap};
 
 use crate::instances::instruction::{
     bitselect, eq, eqz, ges, geu, gts, gtu, les, leu, lts, ltu, neq,
 };
-use crate::instances::ref_inst::RefInst;
 use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
-use crate::{
-    binop, binop_with_value, extract_lane_signed, relop_impl, shape_splat_float,
-    shape_splat_integer, testop_impl,
-};
+use crate::{relop_impl, testop_impl};
 use syntax::instructions::{ExpressionType, InstructionType};
-use syntax::types::{Byte, F32Type, F64Type, FuncIdx, I32Type, I64Type, LaneIdx, U32Type};
+use syntax::types::{F32Type, F64Type, FuncIdx, I32Type, I64Type, LaneIdx, U32Type};
 
 use self::exec_binop::{
     f32_add, f32_copysign, f32_div, f32_max, f32_min, f32_mul, f32_sub, f64_add, f64_copysign,
@@ -45,6 +40,14 @@ use self::exec_unop::{
     f64_floor, f64_nearest, f64_neg, f64_sqrt, f64_trunc, i32_clz, i32_ctz, i32_extend_16s,
     i32_extend_8s, i32_popcnt, i64_clz, i64_ctz, i64_extend_16s, i64_extend_32s, i64_extend_8s,
     i64_popcnt,
+};
+use self::exec_vec::{
+    f32x4_extract_lane, f32x4_replace_lane, f32x4_splat, f64x2_extract_lane, f64x2_replace_lane,
+    f64x2_splat, i16x8_extract_lane_s, i16x8_extract_lane_u, i16x8_replace_lane, i16x8_splat,
+    i32x4_extract_lane, i32x4_replace_lane, i32x4_splat, i64x2_extract_lane, i64x2_replace_lane,
+    i64x2_splat, i8x16_extract_lane_s, i8x16_extract_lane_u, i8x16_replace_lane, i8x16_shuffle,
+    i8x16_splat, i8x16_swizzle, v128_and, v128_andnot, v128_anytrue, v128_or, v128_xor, vternop,
+    vvunop,
 };
 
 #[allow(dead_code)]
@@ -227,44 +230,63 @@ pub fn execute_instruction(
         InstructionType::V128Not => {
             vvunop(stack, ::std::ops::Not::not)?;
         }
-        InstructionType::V128And => {
-            binop!(stack, Val::Vec, iand);
-        }
-        InstructionType::V128AndNot => {
-            binop!(stack, Val::Vec, iandnot);
-        }
-        InstructionType::V128Or => {
-            binop!(stack, Val::Vec, ior);
-        }
-        InstructionType::V128Xor => {
-            binop!(stack, Val::Vec, ixor);
-        }
+        InstructionType::V128And => v128_and(stack)?,
+        InstructionType::V128AndNot => v128_andnot(stack)?,
+        InstructionType::V128Or => v128_or(stack)?,
+        InstructionType::V128Xor => v128_xor(stack)?,
         InstructionType::V128Bitselect => {
             vternop(stack, bitselect)?;
         }
-        InstructionType::I8x16Swizzle => {
-            binop!(stack, Val::Vec, swizzle_i8x16)
-        }
-        InstructionType::I8x16Shuffle(lane_idx) => {
-            binop_with_value!(stack, Val::Vec, lane_idx, shuffle_i8x16)
-        }
-        InstructionType::I8x16Splat => {
-            shape_splat_integer!(stack, Val::I32, u8, 16usize);
-        }
-        InstructionType::I32x4Splat => {
-            shape_splat_integer!(stack, Val::I32, u32, 4usize);
-        }
-        InstructionType::I64x2Splat => {
-            shape_splat_integer!(stack, Val::I64, u64, 2usize);
-        }
-        InstructionType::F32x4Splat => {
-            shape_splat_float!(stack, Val::F32, u32, 4usize)
-        }
-        InstructionType::F64x2Splat => {
-            shape_splat_float!(stack, Val::F64, u64, 2usize)
-        }
+        InstructionType::V128AnyTrue => v128_anytrue(stack)?,
+        InstructionType::I8x16Swizzle => i8x16_swizzle(stack)?,
+        InstructionType::I8x16Shuffle(lane_idx) => i8x16_shuffle(stack, lane_idx)?,
+        InstructionType::I8x16Splat => i8x16_splat(stack)?,
+        InstructionType::I16x8Splat => i16x8_splat(stack)?,
+        InstructionType::I32x4Splat => i32x4_splat(stack)?,
+        InstructionType::I64x2Splat => i64x2_splat(stack)?,
+        InstructionType::F32x4Splat => f32x4_splat(stack)?,
+        InstructionType::F64x2Splat => f64x2_splat(stack)?,
         InstructionType::I8x16ExtractLaneS(LaneIdx(lane_idx)) => {
-            extract_lane_signed!(stack, u32, Val::I32, 16u8, *lane_idx);
+            i8x16_extract_lane_s(stack, *lane_idx)?
+        }
+        InstructionType::I8x16ExtractLaneU(LaneIdx(lane_idx)) => {
+            i8x16_extract_lane_u(stack, *lane_idx)?
+        }
+        InstructionType::I16x8ExtractLaneS(LaneIdx(lane_idx)) => {
+            i16x8_extract_lane_s(stack, *lane_idx)?
+        }
+        InstructionType::I16x8ExtractLaneU(LaneIdx(lane_idx)) => {
+            i16x8_extract_lane_u(stack, *lane_idx)?
+        }
+        InstructionType::I32x4ExtractLane(LaneIdx(lane_idx)) => {
+            i32x4_extract_lane(stack, *lane_idx)?
+        }
+        InstructionType::I64x2ExtractLane(LaneIdx(lane_idx)) => {
+            i64x2_extract_lane(stack, *lane_idx)?
+        }
+        InstructionType::F32x4ExtractLane(LaneIdx(lane_idx)) => {
+            f32x4_extract_lane(stack, *lane_idx)?
+        }
+        InstructionType::F64x2ExtractLane(LaneIdx(lane_idx)) => {
+            f64x2_extract_lane(stack, *lane_idx)?
+        }
+        InstructionType::I8x16ReplaceLane(LaneIdx(lane_idx)) => {
+            i8x16_replace_lane(stack, *lane_idx)?
+        }
+        InstructionType::I16x8ReplaceLane(LaneIdx(lane_idx)) => {
+            i16x8_replace_lane(stack, *lane_idx)?
+        }
+        InstructionType::I32x4ReplaceLane(LaneIdx(lane_idx)) => {
+            i32x4_replace_lane(stack, *lane_idx)?
+        }
+        InstructionType::I64x2ReplaceLane(LaneIdx(lane_idx)) => {
+            i64x2_replace_lane(stack, *lane_idx)?
+        }
+        InstructionType::F32x4ReplaceLane(LaneIdx(lane_idx)) => {
+            f32x4_replace_lane(stack, *lane_idx)?
+        }
+        InstructionType::F64x2ReplaceLane(LaneIdx(lane_idx)) => {
+            f64x2_replace_lane(stack, *lane_idx)?
         }
         _ => unimplemented!(),
     }
@@ -279,10 +301,3 @@ relop_impl!(i32_relop, Val::I32, u32);
 relop_impl!(i64_relop, Val::I64, u64);
 relop_impl!(f32_relop, Val::F32, f32);
 relop_impl!(f64_relop, Val::F64, f64);
-
-pub(super) fn v128_from_vec(v: &Vec<Byte>) -> RResult<u128> {
-    let slice: &[u8] = v.as_ref();
-    let bytes: [u8; 16] = slice.try_into().map_err(|_| Trap)?;
-
-    Ok(u128::from_le_bytes(bytes))
-}

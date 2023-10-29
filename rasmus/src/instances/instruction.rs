@@ -49,22 +49,6 @@ macro_rules! binop {
     };
 }
 
-#[macro_export]
-macro_rules! binop_with_value {
-    ($stack: expr, $type: path, $val: expr, $($op: tt)*) => {
-        if let Some($type(second)) = $stack.pop_value() {
-            if let Some($type(first)) = $stack.pop_value() {
-                let result = ($($op)*)(first, second, $val)?;
-                $stack.push_entry(StackEntry::Value($type(result)));
-            } else {
-                return Err(Trap);
-            }
-        } else {
-            return Err(Trap);
-        }
-    };
-}
-
 pub fn bitselect<T>(first: T, second: T, third: T) -> RResult<T>
 where
     T: ::std::ops::Not<Output = T>

@@ -1,3 +1,5 @@
+use syntax::types::U32Type;
+
 use super::frame::Frame;
 use super::label::LabelInst;
 use super::value::Val;
@@ -52,6 +54,61 @@ impl Stack {
     pub fn pop_value(&mut self) -> Option<Val> {
         match self.stack.pop() {
             Some(StackEntry::Value(val)) => Some(val),
+            Some(v) => {
+                self.stack.push(v);
+                None
+            }
+            None => None,
+        }
+    }
+
+    pub fn pop_i32(&mut self) -> Option<u32> {
+        match self.stack.pop() {
+            Some(StackEntry::Value(Val::I32(v))) => Some(v),
+            Some(v) => {
+                self.stack.push(v);
+                None
+            }
+            None => None,
+        }
+    }
+
+    pub fn pop_i64(&mut self) -> Option<u64> {
+        match self.stack.pop() {
+            Some(StackEntry::Value(Val::I64(v))) => Some(v),
+            Some(v) => {
+                self.stack.push(v);
+                None
+            }
+            None => None,
+        }
+    }
+
+    pub fn pop_f32(&mut self) -> Option<f32> {
+        match self.stack.pop() {
+            Some(StackEntry::Value(Val::F32(v))) => Some(v),
+            Some(v) => {
+                self.stack.push(v);
+                None
+            }
+            None => None,
+        }
+    }
+
+    pub fn pop_f64(&mut self) -> Option<f64> {
+        match self.stack.pop() {
+            Some(StackEntry::Value(Val::F64(v))) => Some(v),
+            Some(v) => {
+                self.stack.push(v);
+                None
+            }
+            None => None,
+        }
+    }
+
+    pub fn pop_v128(&mut self) -> Option<u128> {
+        match self.stack.pop() {
+            Some(StackEntry::Value(Val::Vec(v))) => Some(v),
             Some(v) => {
                 self.stack.push(v);
                 None
