@@ -42,16 +42,18 @@ use self::exec_unop::{
     i64_popcnt,
 };
 use self::exec_vec::{
-    f32x4_extract_lane, f32x4_replace_lane, f32x4_splat, f64x2_extract_lane, f64x2_replace_lane,
-    f64x2_splat, i16x8_extract_lane_s, i16x8_extract_lane_u, i16x8_replace_lane, i16x8_splat,
-    i32x4_extract_lane, i32x4_replace_lane, i32x4_splat, i64x2_extract_lane, i64x2_replace_lane,
-    i64x2_splat, i8x16_extract_lane_s, i8x16_extract_lane_u, i8x16_replace_lane, i8x16_shuffle,
-    i8x16_splat, i8x16_swizzle, shape_f32_abs, shape_f32_ceil, shape_f32_floor, shape_f32_nearest,
-    shape_f32_neg, shape_f32_sqrt, shape_f32_trunc, shape_f64_abs, shape_f64_ceil, shape_f64_floor,
+    binop_16x8, binop_32x4, binop_64x2, binop_8x16, f32x4_extract_lane, f32x4_replace_lane,
+    f32x4_splat, f64x2_extract_lane, f64x2_replace_lane, f64x2_splat, i16x8_extract_lane_s,
+    i16x8_extract_lane_u, i16x8_replace_lane, i16x8_splat, i32x4_extract_lane, i32x4_replace_lane,
+    i32x4_splat, i64x2_extract_lane, i64x2_replace_lane, i64x2_splat, i8x16_extract_lane_s,
+    i8x16_extract_lane_u, i8x16_replace_lane, i8x16_shuffle, i8x16_splat, i8x16_swizzle,
+    shape_f32_abs, shape_f32_ceil, shape_f32_floor, shape_f32_nearest, shape_f32_neg,
+    shape_f32_sqrt, shape_f32_trunc, shape_f64_abs, shape_f64_ceil, shape_f64_floor,
     shape_f64_nearest, shape_f64_neg, shape_f64_sqrt, shape_f64_trunc, shape_i16_abs,
-    shape_i16_neg, shape_i32_abs, shape_i32_neg, shape_i64_abs, shape_i64_neg, shape_i8_abs,
-    shape_i8_neg, shape_i8_popcnt, unop_16x8, unop_32x4, unop_64x2, unop_8x16, v128_and,
-    v128_andnot, v128_anytrue, v128_or, v128_xor, vternop, vvunop,
+    shape_i16_add, shape_i16_neg, shape_i16_sub, shape_i32_abs, shape_i32_add, shape_i32_neg,
+    shape_i32_sub, shape_i64_abs, shape_i64_add, shape_i64_neg, shape_i64_sub, shape_i8_abs,
+    shape_i8_add, shape_i8_neg, shape_i8_popcnt, shape_i8_sub, unop_16x8, unop_32x4, unop_64x2,
+    unop_8x16, v128_and, v128_andnot, v128_anytrue, v128_or, v128_xor, vternop, vvunop,
 };
 
 #[allow(dead_code)]
@@ -315,7 +317,18 @@ pub fn execute_instruction(
         InstructionType::F64x2Trunc => unop_64x2(stack, shape_f64_trunc)?,
         InstructionType::F32x4Nearest => unop_32x4(stack, shape_f32_nearest)?,
         InstructionType::F64x2Nearest => unop_64x2(stack, shape_f64_nearest)?,
-        InstructionType::I8x16Popcnt => unop_8x16(stack, shape_i8_popcnt)?, // _ => unimplemented!(),
+        InstructionType::I8x16Popcnt => unop_8x16(stack, shape_i8_popcnt)?,
+        // shape.vbinop
+        InstructionType::I8x16Add => binop_8x16(stack, shape_i8_add)?,
+        InstructionType::I16x8Add => binop_16x8(stack, shape_i16_add)?,
+        InstructionType::I32x4Add => binop_32x4(stack, shape_i32_add)?,
+        InstructionType::I64x2Add => binop_64x2(stack, shape_i64_add)?,
+        InstructionType::I8x16Sub => binop_8x16(stack, shape_i8_sub)?,
+        InstructionType::I16x8Sub => binop_16x8(stack, shape_i16_sub)?,
+        InstructionType::I32x4Sub => binop_32x4(stack, shape_i32_sub)?,
+        InstructionType::I64x2Sub => binop_64x2(stack, shape_i64_sub)?,
+        // TODO: vfbinop = add | sub | mul | div | min | max | pmin | pmax
+        // _ => unimplemented!(),
     }
 
     Ok(())

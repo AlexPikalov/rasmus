@@ -10,7 +10,7 @@ use crate::instances::{
     value::Val,
 };
 
-use super::exec_binop::{iand, iandnot, ior, ixor};
+use super::exec_binop::{iadd_32, iadd_64, iand, iandnot, ior, ixor, isub_32, isub_64};
 
 pub fn vbinop<Op>(stack: &mut Stack, operation: Op) -> RResult<()>
 where
@@ -646,6 +646,42 @@ pub fn shape_i8_popcnt(v: &u8) -> u8 {
     (*v as i8).count_ones() as u8
 }
 
+pub fn shape_i8_add((left, right): (&u8, &u8)) -> u8 {
+    ((*left as u128) + (*right as u128)).rem_euclid(2u128.pow(8)) as u8
+}
+
+pub fn shape_i16_add((left, right): (&u16, &u16)) -> u16 {
+    ((*left as u128) + (*right as u128)).rem_euclid(2u128.pow(16)) as u16
+}
+
+pub fn shape_i32_add((left, right): (&u32, &u32)) -> u32 {
+    // it is safe to unwrap because iadd_32 just wraps addition result into Ok
+    iadd_32(*left, *right).unwrap()
+}
+
+pub fn shape_i64_add((left, right): (&u64, &u64)) -> u64 {
+    // it is safe to unwrap because iadd_64 just wraps addition result into Ok
+    iadd_64(*left, *right).unwrap()
+}
+
+pub fn shape_i8_sub((left, right): (&u8, &u8)) -> u8 {
+  ((*left as u128) - (*right as u128)).rem_euclid(2u128.pow(8)) as u8
+}
+
+pub fn shape_i16_sub((left, right): (&u16, &u16)) -> u16 {
+  ((*left as u128) - (*right as u128)).rem_euclid(2u128.pow(16)) as u16
+}
+
+pub fn shape_i32_sub((left, right): (&u32, &u32)) -> u32 {
+  // it is safe to unwrap because iadd_32 just wraps addition result into Ok
+  isub_32(*left, *right).unwrap()
+}
+
+pub fn shape_i64_sub((left, right): (&u64, &u64)) -> u64 {
+  // it is safe to unwrap because iadd_64 just wraps addition result into Ok
+  isub_64(*left, *right).unwrap()
+}
+
 pub fn unop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>
 where
     F: FnMut(&u8) -> u8 + Copy,
@@ -684,6 +720,90 @@ where
         let lanes = to_lanes_64x2(v);
         vec_from_lanes(lanes.iter().map(func).collect())
     })
+}
+
+pub fn binop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnMut((&u8, &u8)) -> u8 + Copy,
+{
+    let left = stack.pop_v128().ok_or(Trap)?;
+    let right = stack.pop_v128().ok_or(Trap)?;
+    let lanes_left = to_lanes_8x16(left);
+    let lanes_right = to_lanes_8x16(right);
+    let result_vec = vec_from_lanes(
+        lanes_left
+            .iter()
+            .zip(lanes_right.iter())
+            .map(func)
+            .collect(),
+    );
+
+    stack.push_entry(StackEntry::Value(Val::Vec(result_vec)));
+
+    Ok(())
+}
+
+pub fn binop_16x8<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnMut((&u16, &u16)) -> u16 + Copy,
+{
+    let left = stack.pop_v128().ok_or(Trap)?;
+    let right = stack.pop_v128().ok_or(Trap)?;
+    let lanes_left = to_lanes_16x8(left);
+    let lanes_right = to_lanes_16x8(right);
+    let result_vec = vec_from_lanes(
+        lanes_left
+            .iter()
+            .zip(lanes_right.iter())
+            .map(func)
+            .collect(),
+    );
+
+    stack.push_entry(StackEntry::Value(Val::Vec(result_vec)));
+
+    Ok(())
+}
+
+pub fn binop_32x4<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnMut((&u32, &u32)) -> u32 + Copy,
+{
+    let left = stack.pop_v128().ok_or(Trap)?;
+    let right = stack.pop_v128().ok_or(Trap)?;
+    let lanes_left = to_lanes_32x4(left);
+    let lanes_right = to_lanes_32x4(right);
+    let result_vec = vec_from_lanes(
+        lanes_left
+            .iter()
+            .zip(lanes_right.iter())
+            .map(func)
+            .collect(),
+    );
+
+    stack.push_entry(StackEntry::Value(Val::Vec(result_vec)));
+
+    Ok(())
+}
+
+pub fn binop_64x2<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnMut((&u64, &u64)) -> u64 + Copy,
+{
+    let left = stack.pop_v128().ok_or(Trap)?;
+    let right = stack.pop_v128().ok_or(Trap)?;
+    let lanes_left = to_lanes_64x2(left);
+    let lanes_right = to_lanes_64x2(right);
+    let result_vec = vec_from_lanes(
+        lanes_left
+            .iter()
+            .zip(lanes_right.iter())
+            .map(func)
+            .collect(),
+    );
+
+    stack.push_entry(StackEntry::Value(Val::Vec(result_vec)));
+
+    Ok(())
 }
 
 #[cfg(test)]
