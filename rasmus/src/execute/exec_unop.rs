@@ -8,6 +8,7 @@ use crate::{
     result::{RResult, Trap},
 };
 
+#[macro_export]
 macro_rules! nearest {
     ($ftype:ty) => {
         |v: $ftype| {

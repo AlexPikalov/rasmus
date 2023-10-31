@@ -1,5 +1,8 @@
+use std::ops::Neg;
+
 use syntax::types::LaneIdx;
 
+use crate::nearest;
 use crate::result::{RResult, Trap};
 
 use crate::instances::{
@@ -505,6 +508,182 @@ pub fn f64x2_replace_lane(stack: &mut Stack, lane_idx: u8) -> RResult<()> {
     stack.push_entry(StackEntry::Value(Val::Vec(vec_from_lanes(lanes.to_vec()))));
 
     Ok(())
+}
+
+pub fn f32x4_abs(stack: &mut Stack) -> RResult<()> {
+    vvunop(stack, |v| {
+        let lanes = to_lanes_32x4(v);
+        vec_from_lanes(
+            lanes
+                .iter()
+                .map(|l| {
+                    let float = f32::from_be_bytes(l.to_be_bytes()).abs();
+                    u32::from_be_bytes(float.to_be_bytes())
+                })
+                .collect(),
+        )
+    })
+}
+
+pub fn f64x2_abs(stack: &mut Stack) -> RResult<()> {
+    vvunop(stack, |v| {
+        let lanes = to_lanes_64x2(v);
+        vec_from_lanes(
+            lanes
+                .iter()
+                .map(|l| {
+                    let float = f64::from_be_bytes(l.to_be_bytes()).abs();
+                    u64::from_be_bytes(float.to_be_bytes())
+                })
+                .collect(),
+        )
+    })
+}
+
+pub fn shape_i8_abs(v: &u8) -> u8 {
+    (*v as i8).abs() as u8
+}
+
+pub fn shape_i16_abs(v: &u16) -> u16 {
+    (*v as i16).abs() as u16
+}
+
+pub fn shape_i32_abs(v: &u32) -> u32 {
+    (*v as i32).abs() as u32
+}
+
+pub fn shape_i64_abs(v: &u64) -> u64 {
+    (*v as i64).abs() as u64
+}
+
+pub fn shape_f32_abs(v: &u32) -> u32 {
+    let float = f32::from_be_bytes(v.to_be_bytes()).abs();
+    u32::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f64_abs(v: &u64) -> u64 {
+    let float = f64::from_be_bytes(v.to_be_bytes()).abs();
+    u64::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_i8_neg(v: &u8) -> u8 {
+    (*v as i8).neg() as u8
+}
+
+pub fn shape_i16_neg(v: &u16) -> u16 {
+    (*v as i16).neg() as u16
+}
+
+pub fn shape_i32_neg(v: &u32) -> u32 {
+    (*v as i32).neg() as u32
+}
+
+pub fn shape_i64_neg(v: &u64) -> u64 {
+    (*v as i64).neg() as u64
+}
+
+pub fn shape_f32_neg(v: &u32) -> u32 {
+    let float = f32::from_be_bytes(v.to_be_bytes()).neg();
+    u32::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f64_neg(v: &u64) -> u64 {
+    let float = f64::from_be_bytes(v.to_be_bytes()).neg();
+    u64::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f32_sqrt(v: &u32) -> u32 {
+    let float = f32::from_be_bytes(v.to_be_bytes()).sqrt();
+    u32::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f64_sqrt(v: &u64) -> u64 {
+    let float = f64::from_be_bytes(v.to_be_bytes()).sqrt();
+    u64::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f32_ceil(v: &u32) -> u32 {
+    let float = f32::from_be_bytes(v.to_be_bytes()).ceil();
+    u32::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f64_ceil(v: &u64) -> u64 {
+    let float = f64::from_be_bytes(v.to_be_bytes()).ceil();
+    u64::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f32_floor(v: &u32) -> u32 {
+    let float = f32::from_be_bytes(v.to_be_bytes()).floor();
+    u32::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f64_floor(v: &u64) -> u64 {
+    let float = f64::from_be_bytes(v.to_be_bytes()).floor();
+    u64::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f32_trunc(v: &u32) -> u32 {
+    let float = f32::from_be_bytes(v.to_be_bytes()).trunc();
+    u32::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f64_trunc(v: &u64) -> u64 {
+    let float = f64::from_be_bytes(v.to_be_bytes()).trunc();
+    u64::from_be_bytes(float.to_be_bytes())
+}
+
+pub fn shape_f32_nearest(v: &u32) -> u32 {
+    let float = f32::from_be_bytes(v.to_be_bytes());
+    u32::from_be_bytes(nearest!(f32)(float).to_be_bytes())
+}
+
+pub fn shape_f64_nearest(v: &u64) -> u64 {
+    let float = f64::from_be_bytes(v.to_be_bytes()).trunc();
+    u64::from_be_bytes(nearest!(f64)(float).to_be_bytes())
+}
+
+pub fn shape_i8_popcnt(v: &u8) -> u8 {
+    (*v as i8).count_ones() as u8
+}
+
+pub fn unop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnMut(&u8) -> u8 + Copy,
+{
+    vvunop(stack, |v| {
+        let lanes = to_lanes_8x16(v);
+        vec_from_lanes(lanes.iter().map(func).collect())
+    })
+}
+
+pub fn unop_16x8<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnMut(&u16) -> u16 + Copy,
+{
+    vvunop(stack, |v| {
+        let lanes = to_lanes_16x8(v);
+        vec_from_lanes(lanes.iter().map(func).collect())
+    })
+}
+
+pub fn unop_32x4<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnMut(&u32) -> u32 + Copy,
+{
+    vvunop(stack, |v| {
+        let lanes = to_lanes_32x4(v);
+        vec_from_lanes(lanes.iter().map(func).collect())
+    })
+}
+
+pub fn unop_64x2<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnMut(&u64) -> u64 + Copy,
+{
+    vvunop(stack, |v| {
+        let lanes = to_lanes_64x2(v);
+        vec_from_lanes(lanes.iter().map(func).collect())
+    })
 }
 
 #[cfg(test)]

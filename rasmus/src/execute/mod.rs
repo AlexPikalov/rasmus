@@ -46,8 +46,12 @@ use self::exec_vec::{
     f64x2_splat, i16x8_extract_lane_s, i16x8_extract_lane_u, i16x8_replace_lane, i16x8_splat,
     i32x4_extract_lane, i32x4_replace_lane, i32x4_splat, i64x2_extract_lane, i64x2_replace_lane,
     i64x2_splat, i8x16_extract_lane_s, i8x16_extract_lane_u, i8x16_replace_lane, i8x16_shuffle,
-    i8x16_splat, i8x16_swizzle, v128_and, v128_andnot, v128_anytrue, v128_or, v128_xor, vternop,
-    vvunop,
+    i8x16_splat, i8x16_swizzle, shape_f32_abs, shape_f32_ceil, shape_f32_floor, shape_f32_nearest,
+    shape_f32_neg, shape_f32_sqrt, shape_f32_trunc, shape_f64_abs, shape_f64_ceil, shape_f64_floor,
+    shape_f64_nearest, shape_f64_neg, shape_f64_sqrt, shape_f64_trunc, shape_i16_abs,
+    shape_i16_neg, shape_i32_abs, shape_i32_neg, shape_i64_abs, shape_i64_neg, shape_i8_abs,
+    shape_i8_neg, shape_i8_popcnt, unop_16x8, unop_32x4, unop_64x2, unop_8x16, v128_and,
+    v128_andnot, v128_anytrue, v128_or, v128_xor, vternop, vvunop,
 };
 
 #[allow(dead_code)]
@@ -288,7 +292,30 @@ pub fn execute_instruction(
         InstructionType::F64x2ReplaceLane(LaneIdx(lane_idx)) => {
             f64x2_replace_lane(stack, *lane_idx)?
         }
-        _ => unimplemented!(),
+        // shape.vunop
+        InstructionType::I8x16Abs => unop_8x16(stack, shape_i8_abs)?,
+        InstructionType::I16x8Abs => unop_16x8(stack, shape_i16_abs)?,
+        InstructionType::I32x4Abs => unop_32x4(stack, shape_i32_abs)?,
+        InstructionType::I64x2Abs => unop_64x2(stack, shape_i64_abs)?,
+        InstructionType::F32x4Abs => unop_32x4(stack, shape_f32_abs)?,
+        InstructionType::F64x2Abs => unop_64x2(stack, shape_f64_abs)?,
+        InstructionType::I8x16Neg => unop_8x16(stack, shape_i8_neg)?,
+        InstructionType::I16x8Neg => unop_16x8(stack, shape_i16_neg)?,
+        InstructionType::I32x4Neg => unop_32x4(stack, shape_i32_neg)?,
+        InstructionType::I64x2Neg => unop_64x2(stack, shape_i64_neg)?,
+        InstructionType::F32x4Neg => unop_32x4(stack, shape_f32_neg)?,
+        InstructionType::F64x2Neg => unop_64x2(stack, shape_f64_neg)?,
+        InstructionType::F32x4Sqrt => unop_32x4(stack, shape_f32_sqrt)?,
+        InstructionType::F64x2Sqrt => unop_64x2(stack, shape_f64_sqrt)?,
+        InstructionType::F32x4Ceil => unop_32x4(stack, shape_f32_ceil)?,
+        InstructionType::F64x2Ceil => unop_64x2(stack, shape_f64_ceil)?,
+        InstructionType::F32x4Floor => unop_32x4(stack, shape_f32_floor)?,
+        InstructionType::F64x2Floor => unop_64x2(stack, shape_f64_floor)?,
+        InstructionType::F32x4Trunc => unop_32x4(stack, shape_f32_trunc)?,
+        InstructionType::F64x2Trunc => unop_64x2(stack, shape_f64_trunc)?,
+        InstructionType::F32x4Nearest => unop_32x4(stack, shape_f32_nearest)?,
+        InstructionType::F64x2Nearest => unop_64x2(stack, shape_f64_nearest)?,
+        InstructionType::I8x16Popcnt => unop_8x16(stack, shape_i8_popcnt)?, // _ => unimplemented!(),
     }
 
     Ok(())
