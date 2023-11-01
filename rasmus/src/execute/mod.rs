@@ -52,10 +52,13 @@ use self::exec_vec::{
     shape_f32_sqrt, shape_f32_sub, shape_f32_trunc, shape_f64_abs, shape_f64_add, shape_f64_ceil,
     shape_f64_div, shape_f64_floor, shape_f64_max, shape_f64_min, shape_f64_mul, shape_f64_nearest,
     shape_f64_neg, shape_f64_pmax, shape_f64_pmin, shape_f64_sqrt, shape_f64_sub, shape_f64_trunc,
-    shape_i16_abs, shape_i16_add, shape_i16_neg, shape_i16_sub, shape_i32_abs, shape_i32_add,
-    shape_i32_neg, shape_i32_sub, shape_i64_abs, shape_i64_add, shape_i64_neg, shape_i64_sub,
-    shape_i8_abs, shape_i8_add, shape_i8_neg, shape_i8_popcnt, shape_i8_sub, unop_16x8, unop_32x4,
-    unop_64x2, unop_8x16, v128_and, v128_andnot, v128_anytrue, v128_or, v128_xor, vternop, vvunop,
+    shape_i16_abs, shape_i16_add, shape_i16_max_s, shape_i16_max_u, shape_i16_min_s,
+    shape_i16_min_u, shape_i16_neg, shape_i16_sub, shape_i32_abs, shape_i32_add, shape_i32_max_s,
+    shape_i32_max_u, shape_i32_min_s, shape_i32_min_u, shape_i32_neg, shape_i32_sub, shape_i64_abs,
+    shape_i64_add, shape_i64_neg, shape_i64_sub, shape_i8_abs, shape_i8_add, shape_i8_max_s,
+    shape_i8_max_u, shape_i8_min_s, shape_i8_min_u, shape_i8_neg, shape_i8_popcnt, shape_i8_sub,
+    unop_16x8, unop_32x4, unop_64x2, unop_8x16, v128_and, v128_andnot, v128_anytrue, v128_or,
+    v128_xor, vternop, vvunop,
 };
 
 #[allow(dead_code)]
@@ -345,7 +348,19 @@ pub fn execute_instruction(
         InstructionType::F64x2Pmin => binop_64x2(stack, shape_f64_pmin)?,
         InstructionType::F32x4Pmax => binop_32x4(stack, shape_f32_pmax)?,
         InstructionType::F64x2Pmax => binop_64x2(stack, shape_f64_pmax)?,
-        // TODO: viminmaxop = min_sx | max_sx
+        InstructionType::I8x16MinU => binop_8x16(stack, shape_i8_min_u)?,
+        InstructionType::I8x16MinS => binop_8x16(stack, shape_i8_min_s)?,
+        InstructionType::I16x8MinU => binop_16x8(stack, shape_i16_min_u)?,
+        InstructionType::I16x8MinS => binop_16x8(stack, shape_i16_min_s)?,
+        InstructionType::I32x4MinU => binop_32x4(stack, shape_i32_min_u)?,
+        InstructionType::I32x4MinS => binop_32x4(stack, shape_i32_min_s)?,
+        InstructionType::I8x16MaxU => binop_8x16(stack, shape_i8_max_u)?,
+        InstructionType::I8x16MaxS => binop_8x16(stack, shape_i8_max_s)?,
+        InstructionType::I16x8MaxU => binop_16x8(stack, shape_i16_max_u)?,
+        InstructionType::I16x8MaxS => binop_16x8(stack, shape_i16_max_s)?,
+        InstructionType::I32x4MaxU => binop_32x4(stack, shape_i32_max_u)?,
+        InstructionType::I32x4MaxS => binop_32x4(stack, shape_i32_max_s)?
+        // TODO: visatbinop = add_sat_sx | sub_sat_sx
         // _ => unimplemented!(),
     }
 

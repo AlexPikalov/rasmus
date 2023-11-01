@@ -784,6 +784,54 @@ pub fn shape_f64_pmax((left, right): (&u64, &u64)) -> u64 {
     u64::from_be_bytes(max_val.to_be_bytes())
 }
 
+pub fn shape_i8_min_u((left, right): (&u8, &u8)) -> u8 {
+    *left.min(right)
+}
+
+pub fn shape_i8_min_s((left, right): (&u8, &u8)) -> u8 {
+    (*left as i8).min(*right as i8) as u8
+}
+
+pub fn shape_i16_min_u((left, right): (&u16, &u16)) -> u16 {
+    *left.min(right)
+}
+
+pub fn shape_i16_min_s((left, right): (&u16, &u16)) -> u16 {
+    (*left as i16).min(*right as i16) as u16
+}
+
+pub fn shape_i32_min_u((left, right): (&u32, &u32)) -> u32 {
+    *left.min(right)
+}
+
+pub fn shape_i32_min_s((left, right): (&u32, &u32)) -> u32 {
+    (*left as i32).min(*right as i32) as u32
+}
+
+pub fn shape_i8_max_u((left, right): (&u8, &u8)) -> u8 {
+    *left.max(right)
+}
+
+pub fn shape_i8_max_s((left, right): (&u8, &u8)) -> u8 {
+    (*left as i8).max(*right as i8) as u8
+}
+
+pub fn shape_i16_max_u((left, right): (&u16, &u16)) -> u16 {
+    *left.max(right)
+}
+
+pub fn shape_i16_max_s((left, right): (&u16, &u16)) -> u16 {
+    (*left as i16).max(*right as i16) as u16
+}
+
+pub fn shape_i32_max_u((left, right): (&u32, &u32)) -> u32 {
+    *left.max(right)
+}
+
+pub fn shape_i32_max_s((left, right): (&u32, &u32)) -> u32 {
+    (*left as i32).max(*right as i32) as u32
+}
+
 pub fn unop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>
 where
     F: FnMut(&u8) -> u8 + Copy,
