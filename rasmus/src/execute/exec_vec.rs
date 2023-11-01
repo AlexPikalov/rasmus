@@ -10,7 +10,9 @@ use crate::instances::{
     value::Val,
 };
 
-use super::exec_binop::{iadd_32, iadd_64, iand, iandnot, ior, ixor, isub_32, isub_64};
+use super::exec_binop::{
+    fadd, fdiv, fmul, fsub, iadd_32, iadd_64, iand, iandnot, ior, isub_32, isub_64, ixor, max, min,
+};
 
 pub fn vbinop<Op>(stack: &mut Stack, operation: Op) -> RResult<()>
 where
@@ -665,21 +667,121 @@ pub fn shape_i64_add((left, right): (&u64, &u64)) -> u64 {
 }
 
 pub fn shape_i8_sub((left, right): (&u8, &u8)) -> u8 {
-  ((*left as u128) - (*right as u128)).rem_euclid(2u128.pow(8)) as u8
+    ((*left as u128) - (*right as u128)).rem_euclid(2u128.pow(8)) as u8
 }
 
 pub fn shape_i16_sub((left, right): (&u16, &u16)) -> u16 {
-  ((*left as u128) - (*right as u128)).rem_euclid(2u128.pow(16)) as u16
+    ((*left as u128) - (*right as u128)).rem_euclid(2u128.pow(16)) as u16
 }
 
 pub fn shape_i32_sub((left, right): (&u32, &u32)) -> u32 {
-  // it is safe to unwrap because iadd_32 just wraps addition result into Ok
-  isub_32(*left, *right).unwrap()
+    // it is safe to unwrap because isub_32 just wraps substraction result into Ok
+    isub_32(*left, *right).unwrap()
 }
 
 pub fn shape_i64_sub((left, right): (&u64, &u64)) -> u64 {
-  // it is safe to unwrap because iadd_64 just wraps addition result into Ok
-  isub_64(*left, *right).unwrap()
+    // it is safe to unwrap because isub_64 just wraps substraction result into Ok
+    isub_64(*left, *right).unwrap()
+}
+
+pub fn shape_f32_add((left, right): (&u32, &u32)) -> u32 {
+    let f_left = f32::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f32::from_be_bytes(right.to_be_bytes()).trunc();
+    u32::from_be_bytes((fadd(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f64_add((left, right): (&u64, &u64)) -> u64 {
+    let f_left = f64::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f64::from_be_bytes(right.to_be_bytes()).trunc();
+    u64::from_be_bytes((fadd(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f32_sub((left, right): (&u32, &u32)) -> u32 {
+    let f_left = f32::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f32::from_be_bytes(right.to_be_bytes()).trunc();
+    u32::from_be_bytes((fsub(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f64_sub((left, right): (&u64, &u64)) -> u64 {
+    let f_left = f64::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f64::from_be_bytes(right.to_be_bytes()).trunc();
+    u64::from_be_bytes((fsub(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f32_mul((left, right): (&u32, &u32)) -> u32 {
+    let f_left = f32::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f32::from_be_bytes(right.to_be_bytes()).trunc();
+    u32::from_be_bytes((fmul(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f64_mul((left, right): (&u64, &u64)) -> u64 {
+    let f_left = f64::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f64::from_be_bytes(right.to_be_bytes()).trunc();
+    u64::from_be_bytes((fmul(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f32_div((left, right): (&u32, &u32)) -> u32 {
+    let f_left = f32::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f32::from_be_bytes(right.to_be_bytes()).trunc();
+    u32::from_be_bytes((fdiv(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f64_div((left, right): (&u64, &u64)) -> u64 {
+    let f_left = f64::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f64::from_be_bytes(right.to_be_bytes()).trunc();
+    u64::from_be_bytes((fdiv(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f32_min((left, right): (&u32, &u32)) -> u32 {
+    let f_left = f32::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f32::from_be_bytes(right.to_be_bytes()).trunc();
+    u32::from_be_bytes((min(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f64_min((left, right): (&u64, &u64)) -> u64 {
+    let f_left = f64::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f64::from_be_bytes(right.to_be_bytes()).trunc();
+    u64::from_be_bytes((min(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f32_max((left, right): (&u32, &u32)) -> u32 {
+    let f_left = f32::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f32::from_be_bytes(right.to_be_bytes()).trunc();
+    u32::from_be_bytes((max(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f64_max((left, right): (&u64, &u64)) -> u64 {
+    let f_left = f64::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f64::from_be_bytes(right.to_be_bytes()).trunc();
+    u64::from_be_bytes((max(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_f32_pmin((left, right): (&u32, &u32)) -> u32 {
+    let f_left = f32::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f32::from_be_bytes(right.to_be_bytes()).trunc();
+    let min_val = if f_left > f_right { f_right } else { f_left };
+    u32::from_be_bytes(min_val.to_be_bytes())
+}
+
+pub fn shape_f64_pmin((left, right): (&u64, &u64)) -> u64 {
+    let f_left = f64::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f64::from_be_bytes(right.to_be_bytes()).trunc();
+    let min_val = if f_left > f_right { f_right } else { f_left };
+    u64::from_be_bytes(min_val.to_be_bytes())
+}
+
+pub fn shape_f32_pmax((left, right): (&u32, &u32)) -> u32 {
+    let f_left = f32::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f32::from_be_bytes(right.to_be_bytes()).trunc();
+    let max_val = if f_left < f_right { f_right } else { f_left };
+    u32::from_be_bytes(max_val.to_be_bytes())
+}
+
+pub fn shape_f64_pmax((left, right): (&u64, &u64)) -> u64 {
+    let f_left = f64::from_be_bytes(left.to_be_bytes()).trunc();
+    let f_right = f64::from_be_bytes(right.to_be_bytes()).trunc();
+    let max_val = if f_left < f_right { f_right } else { f_left };
+    u64::from_be_bytes(max_val.to_be_bytes())
 }
 
 pub fn unop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>

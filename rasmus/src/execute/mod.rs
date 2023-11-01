@@ -47,13 +47,15 @@ use self::exec_vec::{
     i16x8_extract_lane_u, i16x8_replace_lane, i16x8_splat, i32x4_extract_lane, i32x4_replace_lane,
     i32x4_splat, i64x2_extract_lane, i64x2_replace_lane, i64x2_splat, i8x16_extract_lane_s,
     i8x16_extract_lane_u, i8x16_replace_lane, i8x16_shuffle, i8x16_splat, i8x16_swizzle,
-    shape_f32_abs, shape_f32_ceil, shape_f32_floor, shape_f32_nearest, shape_f32_neg,
-    shape_f32_sqrt, shape_f32_trunc, shape_f64_abs, shape_f64_ceil, shape_f64_floor,
-    shape_f64_nearest, shape_f64_neg, shape_f64_sqrt, shape_f64_trunc, shape_i16_abs,
-    shape_i16_add, shape_i16_neg, shape_i16_sub, shape_i32_abs, shape_i32_add, shape_i32_neg,
-    shape_i32_sub, shape_i64_abs, shape_i64_add, shape_i64_neg, shape_i64_sub, shape_i8_abs,
-    shape_i8_add, shape_i8_neg, shape_i8_popcnt, shape_i8_sub, unop_16x8, unop_32x4, unop_64x2,
-    unop_8x16, v128_and, v128_andnot, v128_anytrue, v128_or, v128_xor, vternop, vvunop,
+    shape_f32_abs, shape_f32_add, shape_f32_ceil, shape_f32_div, shape_f32_floor, shape_f32_max,
+    shape_f32_min, shape_f32_mul, shape_f32_nearest, shape_f32_neg, shape_f32_pmax, shape_f32_pmin,
+    shape_f32_sqrt, shape_f32_sub, shape_f32_trunc, shape_f64_abs, shape_f64_add, shape_f64_ceil,
+    shape_f64_div, shape_f64_floor, shape_f64_max, shape_f64_min, shape_f64_mul, shape_f64_nearest,
+    shape_f64_neg, shape_f64_pmax, shape_f64_pmin, shape_f64_sqrt, shape_f64_sub, shape_f64_trunc,
+    shape_i16_abs, shape_i16_add, shape_i16_neg, shape_i16_sub, shape_i32_abs, shape_i32_add,
+    shape_i32_neg, shape_i32_sub, shape_i64_abs, shape_i64_add, shape_i64_neg, shape_i64_sub,
+    shape_i8_abs, shape_i8_add, shape_i8_neg, shape_i8_popcnt, shape_i8_sub, unop_16x8, unop_32x4,
+    unop_64x2, unop_8x16, v128_and, v128_andnot, v128_anytrue, v128_or, v128_xor, vternop, vvunop,
 };
 
 #[allow(dead_code)]
@@ -327,7 +329,23 @@ pub fn execute_instruction(
         InstructionType::I16x8Sub => binop_16x8(stack, shape_i16_sub)?,
         InstructionType::I32x4Sub => binop_32x4(stack, shape_i32_sub)?,
         InstructionType::I64x2Sub => binop_64x2(stack, shape_i64_sub)?,
-        // TODO: vfbinop = add | sub | mul | div | min | max | pmin | pmax
+        InstructionType::F32x4Add => binop_32x4(stack, shape_f32_add)?,
+        InstructionType::F64x2Add => binop_64x2(stack, shape_f64_add)?,
+        InstructionType::F32x4Sub => binop_32x4(stack, shape_f32_sub)?,
+        InstructionType::F64x2Sub => binop_64x2(stack, shape_f64_sub)?,
+        InstructionType::F32x4Mul => binop_32x4(stack, shape_f32_mul)?,
+        InstructionType::F64x2Mul => binop_64x2(stack, shape_f64_mul)?,
+        InstructionType::F32x4Div => binop_32x4(stack, shape_f32_div)?,
+        InstructionType::F64x2Div => binop_64x2(stack, shape_f64_div)?,
+        InstructionType::F32x4Min => binop_32x4(stack, shape_f32_min)?,
+        InstructionType::F64x2Min => binop_64x2(stack, shape_f64_min)?,
+        InstructionType::F32x4Max => binop_32x4(stack, shape_f32_max)?,
+        InstructionType::F64x2Max => binop_64x2(stack, shape_f64_max)?,
+        InstructionType::F32x4Pmin => binop_32x4(stack, shape_f32_pmin)?,
+        InstructionType::F64x2Pmin => binop_64x2(stack, shape_f64_pmin)?,
+        InstructionType::F32x4Pmax => binop_32x4(stack, shape_f32_pmax)?,
+        InstructionType::F64x2Pmax => binop_64x2(stack, shape_f64_pmax)?,
+        // TODO: viminmaxop = min_sx | max_sx
         // _ => unimplemented!(),
     }
 
