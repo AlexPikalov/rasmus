@@ -373,7 +373,7 @@ pub fn execute_instruction(
         InstructionType::I8x16AvgrU => binop_8x16(stack, shape_i8_avgr_u)?,
         InstructionType::I16x8AvgrU => binop_16x8(stack, shape_i16_avgr_u)?,
         InstructionType::I16x8Q15MulrSatS => binop_16x8(stack, shape_i16_mulr_sat_s)?,
-        // TODO: visatbinop = add_sat_sx | sub_sat_sx
+
         _ => unimplemented!(),
     }
 
