@@ -11,7 +11,8 @@ use crate::instances::{
 };
 
 use super::exec_binop::{
-    fadd, fdiv, fmul, fsub, iadd_32, iadd_64, iand, iandnot, ior, isub_32, isub_64, ixor, max, min,
+    fadd, fdiv, fmul, fsub, iadd_32, iadd_64, iand, iandnot, ior, ishr_s_32, isub_32, isub_64,
+    ixor, max, min,
 };
 
 pub fn vbinop<Op>(stack: &mut Stack, operation: Op) -> RResult<()>
@@ -830,6 +831,100 @@ pub fn shape_i32_max_u((left, right): (&u32, &u32)) -> u32 {
 
 pub fn shape_i32_max_s((left, right): (&u32, &u32)) -> u32 {
     (*left as i32).max(*right as i32) as u32
+}
+
+pub fn shape_i8_sat_add_u((left, right): (&u8, &u8)) -> u8 {
+    left.checked_add(*right).unwrap_or(u8::MAX)
+}
+
+pub fn shape_i16_sat_add_u((left, right): (&u16, &u16)) -> u16 {
+    left.checked_add(*right).unwrap_or(u16::MAX)
+}
+
+pub fn shape_i8_sat_add_s((left, right): (&u8, &u8)) -> u8 {
+    let left_signed = *left as i8;
+    let right_signed = *right as i8;
+    left_signed.checked_add(right_signed).unwrap_or_else(|| {
+        let left_sign = left_signed.signum();
+        let right_sign = right_signed.signum();
+        if left_sign > 0 && right_sign > 0 {
+            i8::MAX
+        } else {
+            i8::MIN
+        }
+    }) as u8
+}
+
+pub fn shape_i16_sat_add_s((left, right): (&u16, &u16)) -> u16 {
+    let left_signed = *left as i16;
+    let right_signed = *right as i16;
+    left_signed.checked_add(right_signed).unwrap_or_else(|| {
+        let left_sign = left_signed.signum();
+        let right_sign = right_signed.signum();
+        if left_sign > 0 && right_sign > 0 {
+            i16::MAX
+        } else {
+            i16::MIN
+        }
+    }) as u16
+}
+
+pub fn shape_i8_sat_sub_u((left, right): (&u8, &u8)) -> u8 {
+    left.checked_sub(*right).unwrap_or(u8::MAX)
+}
+
+pub fn shape_i16_sat_sub_u((left, right): (&u16, &u16)) -> u16 {
+    left.checked_sub(*right).unwrap_or(u16::MAX)
+}
+
+pub fn shape_i8_sat_sub_s((left, right): (&u8, &u8)) -> u8 {
+    let left_signed = *left as i8;
+    let right_signed = *right as i8;
+    left_signed.checked_sub(right_signed).unwrap_or_else(|| {
+        let left_sign = left_signed.signum();
+        let right_sign = right_signed.signum();
+        if left_sign > 0 && right_sign < 0 {
+            i8::MAX
+        } else {
+            i8::MIN
+        }
+    }) as u8
+}
+
+pub fn shape_i16_sat_sub_s((left, right): (&u16, &u16)) -> u16 {
+    let left_signed = *left as i16;
+    let right_signed = *right as i16;
+    left_signed.checked_sub(right_signed).unwrap_or_else(|| {
+        let left_sign = left_signed.signum();
+        let right_sign = right_signed.signum();
+        if left_sign > 0 && right_sign < 0 {
+            i16::MAX
+        } else {
+            i16::MIN
+        }
+    }) as u16
+}
+
+pub fn shape_i8_avgr_u(args: (&u8, &u8)) -> u8 {
+    shape_i8_add(args) / 2
+}
+
+pub fn shape_i16_avgr_u(args: (&u16, &u16)) -> u16 {
+    shape_i16_add(args) / 2
+}
+
+pub fn shape_i16_mulr_sat_s((left, right): (&u16, &u16)) -> u16 {
+    let l = *left as u32;
+    let r = *right as u32;
+    let mulr = ishr_s_32(l * r + 2u32.pow(14), 15).unwrap() as i32;
+
+    if mulr > i16::MAX as i32 {
+        i16::MAX as u16
+    } else if mulr < i16::MIN as i32 {
+        i16::MIN as u16
+    } else {
+        mulr as u16
+    }
 }
 
 pub fn unop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>
