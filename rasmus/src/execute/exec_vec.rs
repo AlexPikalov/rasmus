@@ -10,6 +10,7 @@ use crate::instances::{
     value::Val,
 };
 
+use super::as_float_trait::AsFloat;
 use super::as_signed_trait::AsSigned;
 use super::exec_binop::{
     fadd, fdiv, fmul, fsub, iadd_32, iadd_64, iand, iandnot, ior, ishr_s_32, isub_32, isub_64,
@@ -1000,6 +1001,38 @@ where
     S: std::cmp::PartialOrd,
 {
     lhs.as_signed() >= rhs.as_signed()
+}
+
+pub fn shapef_lt<T, F>((lhs, rhs): (&T, &T)) -> bool
+where
+    F: std::cmp::PartialOrd,
+    T: AsFloat<F>,
+{
+    lhs.as_float() < rhs.as_float()
+}
+
+pub fn shapef_gt<T, F>((lhs, rhs): (&T, &T)) -> bool
+where
+    F: std::cmp::PartialOrd,
+    T: AsFloat<F>,
+{
+    lhs.as_float() > rhs.as_float()
+}
+
+pub fn shapef_le<T, F>((lhs, rhs): (&T, &T)) -> bool
+where
+    F: std::cmp::PartialOrd,
+    T: AsFloat<F>,
+{
+    lhs.as_float() <= rhs.as_float()
+}
+
+pub fn shapef_ge<T, F>((lhs, rhs): (&T, &T)) -> bool
+where
+    F: std::cmp::PartialOrd,
+    T: AsFloat<F>,
+{
+    lhs.as_float() >= rhs.as_float()
 }
 
 pub fn unop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>
