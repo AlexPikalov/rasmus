@@ -10,6 +10,7 @@ use crate::instances::{
     value::Val,
 };
 
+use super::as_signed_trait::AsSigned;
 use super::exec_binop::{
     fadd, fdiv, fmul, fsub, iadd_32, iadd_64, iand, iandnot, ior, ishr_s_32, isub_32, isub_64,
     ixor, max, min,
@@ -927,6 +928,80 @@ pub fn shape_i16_mulr_sat_s((left, right): (&u16, &u16)) -> u16 {
     }
 }
 
+pub fn shape_eq<T>((lhs, rhs): (&T, &T)) -> bool
+where
+    T: std::cmp::PartialEq,
+{
+    lhs == rhs
+}
+
+pub fn shape_ne<T>((lhs, rhs): (&T, &T)) -> bool
+where
+    T: std::cmp::PartialEq,
+{
+    lhs != rhs
+}
+
+pub fn shape_lt_u<T>((lhs, rhs): (&T, &T)) -> bool
+where
+    T: std::cmp::PartialOrd,
+{
+    lhs < rhs
+}
+
+pub fn shape_lt_s<T, S>((lhs, rhs): (&T, &T)) -> bool
+where
+    T: AsSigned<S>,
+    S: std::cmp::PartialOrd,
+{
+    lhs.as_signed() < rhs.as_signed()
+}
+
+pub fn shape_gt_u<T>((lhs, rhs): (&T, &T)) -> bool
+where
+    T: std::cmp::PartialOrd,
+{
+    lhs > rhs
+}
+
+pub fn shape_gt_s<T, S>((lhs, rhs): (&T, &T)) -> bool
+where
+    T: AsSigned<S>,
+    S: std::cmp::PartialOrd,
+{
+    lhs.as_signed() > rhs.as_signed()
+}
+
+pub fn shape_le_u<T>((lhs, rhs): (&T, &T)) -> bool
+where
+    T: std::cmp::PartialOrd,
+{
+    lhs <= rhs
+}
+
+pub fn shape_le_s<T, S>((lhs, rhs): (&T, &T)) -> bool
+where
+    T: AsSigned<S>,
+    S: std::cmp::PartialOrd,
+{
+    lhs.as_signed() <= rhs.as_signed()
+}
+
+pub fn shape_ge_u<T>((lhs, rhs): (&T, &T)) -> bool
+where
+    T: std::cmp::PartialOrd,
+{
+    lhs >= rhs
+}
+
+pub fn shape_ge_s<T, S>((lhs, rhs): (&T, &T)) -> bool
+where
+    T: AsSigned<S>,
+    S: std::cmp::PartialOrd,
+{
+    lhs.as_signed() >= rhs.as_signed()
+}
+
 pub fn unop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>
 where
     F: FnMut(&u8) -> u8 + Copy,
@@ -1049,6 +1124,66 @@ where
     stack.push_entry(StackEntry::Value(Val::Vec(result_vec)));
 
     Ok(())
+}
+
+pub fn relop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnOnce((&u8, &u8)) -> bool + Copy,
+{
+    binop_8x16(stack, |values| relop_8(func(values)))
+}
+
+pub fn relop_16x8<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnOnce((&u16, &u16)) -> bool + Copy,
+{
+    binop_16x8(stack, |values| relop_16(func(values)))
+}
+
+pub fn relop_32x4<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnOnce((&u32, &u32)) -> bool + Copy,
+{
+    binop_32x4(stack, |values| relop_32(func(values)))
+}
+
+pub fn relop_64x2<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnOnce((&u64, &u64)) -> bool + Copy,
+{
+    binop_64x2(stack, |values| relop_64(func(values)))
+}
+
+fn relop_8(b: bool) -> u8 {
+    if b {
+        u8::MAX
+    } else {
+        0
+    }
+}
+
+fn relop_16(b: bool) -> u16 {
+    if b {
+        u16::MAX
+    } else {
+        0
+    }
+}
+
+fn relop_32(b: bool) -> u32 {
+    if b {
+        u32::MAX
+    } else {
+        0
+    }
+}
+
+fn relop_64(b: bool) -> u64 {
+    if b {
+        u64::MAX
+    } else {
+        0
+    }
 }
 
 #[cfg(test)]

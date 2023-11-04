@@ -1,3 +1,5 @@
+mod as_float_trait;
+mod as_signed_trait;
 mod exec_binop;
 mod exec_const;
 mod exec_cvtop;
@@ -47,19 +49,21 @@ use self::exec_vec::{
     i16x8_extract_lane_u, i16x8_replace_lane, i16x8_splat, i32x4_extract_lane, i32x4_replace_lane,
     i32x4_splat, i64x2_extract_lane, i64x2_replace_lane, i64x2_splat, i8x16_extract_lane_s,
     i8x16_extract_lane_u, i8x16_replace_lane, i8x16_shuffle, i8x16_splat, i8x16_swizzle,
-    shape_f32_abs, shape_f32_add, shape_f32_ceil, shape_f32_div, shape_f32_floor, shape_f32_max,
-    shape_f32_min, shape_f32_mul, shape_f32_nearest, shape_f32_neg, shape_f32_pmax, shape_f32_pmin,
-    shape_f32_sqrt, shape_f32_sub, shape_f32_trunc, shape_f64_abs, shape_f64_add, shape_f64_ceil,
-    shape_f64_div, shape_f64_floor, shape_f64_max, shape_f64_min, shape_f64_mul, shape_f64_nearest,
-    shape_f64_neg, shape_f64_pmax, shape_f64_pmin, shape_f64_sqrt, shape_f64_sub, shape_f64_trunc,
-    shape_i16_abs, shape_i16_add, shape_i16_avgr_u, shape_i16_max_s, shape_i16_max_u,
-    shape_i16_min_s, shape_i16_min_u, shape_i16_mulr_sat_s, shape_i16_neg, shape_i16_sat_add_s,
-    shape_i16_sat_add_u, shape_i16_sat_sub_s, shape_i16_sat_sub_u, shape_i16_sub, shape_i32_abs,
-    shape_i32_add, shape_i32_max_s, shape_i32_max_u, shape_i32_min_s, shape_i32_min_u,
-    shape_i32_neg, shape_i32_sub, shape_i64_abs, shape_i64_add, shape_i64_neg, shape_i64_sub,
-    shape_i8_abs, shape_i8_add, shape_i8_avgr_u, shape_i8_max_s, shape_i8_max_u, shape_i8_min_s,
-    shape_i8_min_u, shape_i8_neg, shape_i8_popcnt, shape_i8_sat_add_s, shape_i8_sat_add_u,
-    shape_i8_sat_sub_s, shape_i8_sat_sub_u, shape_i8_sub, unop_16x8, unop_32x4, unop_64x2,
+    relop_16x8, relop_32x4, relop_64x2, relop_8x16, shape_eq, shape_f32_abs, shape_f32_add,
+    shape_f32_ceil, shape_f32_div, shape_f32_floor, shape_f32_max, shape_f32_min, shape_f32_mul,
+    shape_f32_nearest, shape_f32_neg, shape_f32_pmax, shape_f32_pmin, shape_f32_sqrt,
+    shape_f32_sub, shape_f32_trunc, shape_f64_abs, shape_f64_add, shape_f64_ceil, shape_f64_div,
+    shape_f64_floor, shape_f64_max, shape_f64_min, shape_f64_mul, shape_f64_nearest, shape_f64_neg,
+    shape_f64_pmax, shape_f64_pmin, shape_f64_sqrt, shape_f64_sub, shape_f64_trunc, shape_ge_s,
+    shape_ge_u, shape_gt_s, shape_gt_u, shape_i16_abs, shape_i16_add, shape_i16_avgr_u,
+    shape_i16_max_s, shape_i16_max_u, shape_i16_min_s, shape_i16_min_u, shape_i16_mulr_sat_s,
+    shape_i16_neg, shape_i16_sat_add_s, shape_i16_sat_add_u, shape_i16_sat_sub_s,
+    shape_i16_sat_sub_u, shape_i16_sub, shape_i32_abs, shape_i32_add, shape_i32_max_s,
+    shape_i32_max_u, shape_i32_min_s, shape_i32_min_u, shape_i32_neg, shape_i32_sub, shape_i64_abs,
+    shape_i64_add, shape_i64_neg, shape_i64_sub, shape_i8_abs, shape_i8_add, shape_i8_avgr_u,
+    shape_i8_max_s, shape_i8_max_u, shape_i8_min_s, shape_i8_min_u, shape_i8_neg, shape_i8_popcnt,
+    shape_i8_sat_add_s, shape_i8_sat_add_u, shape_i8_sat_sub_s, shape_i8_sat_sub_u, shape_i8_sub,
+    shape_le_s, shape_le_u, shape_lt_s, shape_lt_u, shape_ne, unop_16x8, unop_32x4, unop_64x2,
     unop_8x16, v128_and, v128_andnot, v128_anytrue, v128_or, v128_xor, vternop, vvunop,
 };
 
@@ -81,6 +85,7 @@ pub fn execute_expression(
     stack.pop_value().ok_or(Trap)
 }
 
+// TODO: rewrite remaining singed instructions using AsSigned trait
 pub fn execute_instruction(
     instr: &InstructionType,
     stack: &mut Stack,
@@ -373,8 +378,42 @@ pub fn execute_instruction(
         InstructionType::I8x16AvgrU => binop_8x16(stack, shape_i8_avgr_u)?,
         InstructionType::I16x8AvgrU => binop_16x8(stack, shape_i16_avgr_u)?,
         InstructionType::I16x8Q15MulrSatS => binop_16x8(stack, shape_i16_mulr_sat_s)?,
-
-        _ => unimplemented!(),
+        InstructionType::I8x16Eq => relop_8x16(stack, shape_eq)?,
+        InstructionType::I16x8Eq => relop_16x8(stack, shape_eq)?,
+        InstructionType::I32x4Eq => relop_32x4(stack, shape_eq)?,
+        InstructionType::I64x2Eq => relop_64x2(stack, shape_eq)?,
+        InstructionType::I8x16Ne => relop_8x16(stack, shape_ne)?,
+        InstructionType::I16x8Ne => relop_16x8(stack, shape_ne)?,
+        InstructionType::I32x4Ne => relop_32x4(stack, shape_ne)?,
+        InstructionType::I64x2Ne => relop_64x2(stack, shape_ne)?,
+        InstructionType::I8x16LtU => relop_8x16(stack, shape_lt_u)?,
+        InstructionType::I16x8LtU => relop_16x8(stack, shape_lt_u)?,
+        InstructionType::I32x4LtU => relop_32x4(stack, shape_lt_u)?,
+        InstructionType::I8x16LtS => relop_8x16(stack, shape_lt_s)?,
+        InstructionType::I16x8LtS => relop_16x8(stack, shape_lt_s)?,
+        InstructionType::I32x4LtS => relop_32x4(stack, shape_lt_s)?,
+        InstructionType::I64x2LtS => relop_64x2(stack, shape_lt_s)?,
+        InstructionType::I8x16GtU => relop_8x16(stack, shape_gt_u)?,
+        InstructionType::I16x8GtU => relop_16x8(stack, shape_gt_u)?,
+        InstructionType::I32x4GtU => relop_32x4(stack, shape_gt_u)?,
+        InstructionType::I8x16GtS => relop_8x16(stack, shape_gt_s)?,
+        InstructionType::I16x8GtS => relop_16x8(stack, shape_gt_s)?,
+        InstructionType::I32x4GtS => relop_32x4(stack, shape_gt_s)?,
+        InstructionType::I64x2GtS => relop_64x2(stack, shape_gt_s)?,
+        InstructionType::I8x16LeU => relop_8x16(stack, shape_le_u)?,
+        InstructionType::I16x8LeU => relop_16x8(stack, shape_le_u)?,
+        InstructionType::I32x4LeU => relop_32x4(stack, shape_le_u)?,
+        InstructionType::I8x16LeS => relop_8x16(stack, shape_le_s)?,
+        InstructionType::I16x8LeS => relop_16x8(stack, shape_le_s)?,
+        InstructionType::I32x4LeS => relop_32x4(stack, shape_le_s)?,
+        InstructionType::I64x2LeS => relop_64x2(stack, shape_le_s)?,
+        InstructionType::I8x16GeU => relop_8x16(stack, shape_ge_u)?,
+        InstructionType::I16x8GeU => relop_16x8(stack, shape_ge_u)?,
+        InstructionType::I32x4GeU => relop_32x4(stack, shape_ge_u)?,
+        InstructionType::I8x16GeS => relop_8x16(stack, shape_ge_s)?,
+        InstructionType::I16x8GeS => relop_16x8(stack, shape_ge_s)?,
+        InstructionType::I32x4GeS => relop_32x4(stack, shape_ge_s)?,
+        InstructionType::I64x2GeS => relop_64x2(stack, shape_ge_s)?, // _ => unimplemented!(),
     }
 
     Ok(())
