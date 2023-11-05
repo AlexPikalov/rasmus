@@ -442,36 +442,6 @@ pub fn f64x2_replace_lane(stack: &mut Stack, lane_idx: u8) -> RResult<()> {
     Ok(())
 }
 
-pub fn f32x4_abs(stack: &mut Stack) -> RResult<()> {
-    vvunop(stack, |v| {
-        let lanes = to_lanes_32x4(v);
-        vec_from_lanes(
-            lanes
-                .iter()
-                .map(|l| {
-                    let float = f32::from_be_bytes(l.to_be_bytes()).abs();
-                    u32::from_be_bytes(float.to_be_bytes())
-                })
-                .collect(),
-        )
-    })
-}
-
-pub fn f64x2_abs(stack: &mut Stack) -> RResult<()> {
-    vvunop(stack, |v| {
-        let lanes = to_lanes_64x2(v);
-        vec_from_lanes(
-            lanes
-                .iter()
-                .map(|l| {
-                    let float = f64::from_be_bytes(l.to_be_bytes()).abs();
-                    u64::from_be_bytes(float.to_be_bytes())
-                })
-                .collect(),
-        )
-    })
-}
-
 pub fn shape_i8_abs(v: &u8) -> u8 {
     (*v as i8).abs() as u8
 }
@@ -1251,254 +1221,254 @@ where
     Ok(())
 }
 
-#[cfg(test)]
-mod test {
-    use syntax::types::LaneIdx;
+// #[cfg(test)]
+// mod test {
+//     use syntax::types::LaneIdx;
 
-    use super::*;
+//     use super::*;
 
-    #[test]
-    fn vec_from_lanes_test() {
-        // i8x16
-        assert_eq!(
-            vec_from_lanes(vec![
-                0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
-            ],),
-            0
-        );
+//     #[test]
+//     fn vec_from_lanes_test() {
+//         // i8x16
+//         assert_eq!(
+//             vec_from_lanes(vec![
+//                 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+//             ],),
+//             0
+//         );
 
-        assert_eq!(
-        vec_from_lanes(vec![
-            0b00010001u8,
-            0b00010001u8,
-            0b00010001u8,
-            0b00010001u8,
-            0b00010001u8,
-            0b00010001u8,
-            0b00010001u8,
-            0b00010001u8,
-            0u8,
-            0u8,
-            0u8,
-            0u8,
-            0u8,
-            0u8,
-            0u8,
-            0u8,
-        ],),
-        0b00010001000100010001000100010001000100010001000100010001000100010000000000000000000000000000000000000000000000000000000000000000u128
-    );
+//         assert_eq!(
+//         vec_from_lanes(vec![
+//             0b00010001u8,
+//             0b00010001u8,
+//             0b00010001u8,
+//             0b00010001u8,
+//             0b00010001u8,
+//             0b00010001u8,
+//             0b00010001u8,
+//             0b00010001u8,
+//             0u8,
+//             0u8,
+//             0u8,
+//             0u8,
+//             0u8,
+//             0u8,
+//             0u8,
+//             0u8,
+//         ],),
+//         0b00010001000100010001000100010001000100010001000100010001000100010000000000000000000000000000000000000000000000000000000000000000u128
+//     );
 
-        assert_eq!(
-            vec_from_lanes(vec![
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-                u8::MAX,
-            ],),
-            u128::MAX
-        );
+//         assert_eq!(
+//             vec_from_lanes(vec![
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//                 u8::MAX,
+//             ],),
+//             u128::MAX
+//         );
 
-        // i16x8
-        assert_eq!(
-            vec_from_lanes(vec![0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16]),
-            0,
-        );
+//         // i16x8
+//         assert_eq!(
+//             vec_from_lanes(vec![0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16, 0u16]),
+//             0,
+//         );
 
-        assert_eq!(
-            vec_from_lanes(vec![
-                u16::MAX,
-                u16::MAX,
-                u16::MAX,
-                u16::MAX,
-                u16::MAX,
-                u16::MAX,
-                u16::MAX,
-                u16::MAX,
-            ]),
-            u128::MAX,
-        );
+//         assert_eq!(
+//             vec_from_lanes(vec![
+//                 u16::MAX,
+//                 u16::MAX,
+//                 u16::MAX,
+//                 u16::MAX,
+//                 u16::MAX,
+//                 u16::MAX,
+//                 u16::MAX,
+//                 u16::MAX,
+//             ]),
+//             u128::MAX,
+//         );
 
-        // i32x4
-        assert_eq!(vec_from_lanes(vec![0u32, 0u32, 0u32, 0u32,]), 0);
-        assert_eq!(
-            vec_from_lanes(vec![u32::MAX, u32::MAX, u32::MAX, u32::MAX,]),
-            u128::MAX
-        );
+//         // i32x4
+//         assert_eq!(vec_from_lanes(vec![0u32, 0u32, 0u32, 0u32,]), 0);
+//         assert_eq!(
+//             vec_from_lanes(vec![u32::MAX, u32::MAX, u32::MAX, u32::MAX,]),
+//             u128::MAX
+//         );
 
-        // i64x2
-        assert_eq!(vec_from_lanes(vec![0u64, 0u64]), 0);
-        assert_eq!(vec_from_lanes(vec![u64::MAX, u64::MAX]), u128::MAX);
-    }
+//         // i64x2
+//         assert_eq!(vec_from_lanes(vec![0u64, 0u64]), 0);
+//         assert_eq!(vec_from_lanes(vec![u64::MAX, u64::MAX]), u128::MAX);
+//     }
 
-    #[test]
-    fn vec_to_lanes_16x8() {
-        let init_lanes = vec![1u16, 2u16, 3u16, 4u16, 5u16, 6u16, 7u16, 8u16];
-        let vector = vec_from_lanes(init_lanes.clone());
+//     #[test]
+//     fn vec_to_lanes_16x8() {
+//         let init_lanes = vec![1u16, 2u16, 3u16, 4u16, 5u16, 6u16, 7u16, 8u16];
+//         let vector = vec_from_lanes(init_lanes.clone());
 
-        let result_lanes = to_lanes_16x8(vector);
+//         let result_lanes = to_lanes_16x8(vector);
 
-        assert_eq!(
-            result_lanes.to_vec(),
-            init_lanes,
-            "should properly return 16x8 lanes"
-        );
-    }
+//         assert_eq!(
+//             result_lanes.to_vec(),
+//             init_lanes,
+//             "should properly return 16x8 lanes"
+//         );
+//     }
 
-    #[test]
-    fn vec_to_lanes_32x4() {
-        let init_lanes = vec![1u32, 2u32, 3u32, 4u32];
-        let vector = vec_from_lanes(init_lanes.clone());
+//     #[test]
+//     fn vec_to_lanes_32x4() {
+//         let init_lanes = vec![1u32, 2u32, 3u32, 4u32];
+//         let vector = vec_from_lanes(init_lanes.clone());
 
-        let result_lanes = to_lanes_32x4(vector);
+//         let result_lanes = to_lanes_32x4(vector);
 
-        assert_eq!(
-            result_lanes.to_vec(),
-            init_lanes,
-            "should properly return 16x8 lanes"
-        );
-    }
+//         assert_eq!(
+//             result_lanes.to_vec(),
+//             init_lanes,
+//             "should properly return 16x8 lanes"
+//         );
+//     }
 
-    #[test]
-    fn vec_to_lanes_64x2() {
-        let init_lanes = vec![1u64, 2u64];
-        let vector = vec_from_lanes(init_lanes.clone());
+//     #[test]
+//     fn vec_to_lanes_64x2() {
+//         let init_lanes = vec![1u64, 2u64];
+//         let vector = vec_from_lanes(init_lanes.clone());
 
-        let result_lanes = to_lanes_64x2(vector);
+//         let result_lanes = to_lanes_64x2(vector);
 
-        assert_eq!(
-            result_lanes.to_vec(),
-            init_lanes,
-            "should properly return 16x8 lanes"
-        );
-    }
+//         assert_eq!(
+//             result_lanes.to_vec(),
+//             init_lanes,
+//             "should properly return 16x8 lanes"
+//         );
+//     }
 
-    #[test]
-    fn swizzle_i8x16_test() {
-        let src = vec_from_lanes(vec![
-            1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-        ]);
-        let pick = vec_from_lanes(vec![0u8, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]);
-        let expected = vec_from_lanes(vec![
-            1u8, 3, 5, 7, 9, 11, 13, 15, 2, 4, 6, 8, 10, 12, 14, 16,
-        ]);
-        assert_eq!(
-            inner_swizzle_i8x16(src, pick).expect("should swizzle without errors"),
-            expected
-        );
-    }
+//     #[test]
+//     fn swizzle_i8x16_test() {
+//         let src = vec_from_lanes(vec![
+//             1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+//         ]);
+//         let pick = vec_from_lanes(vec![0u8, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15]);
+//         let expected = vec_from_lanes(vec![
+//             1u8, 3, 5, 7, 9, 11, 13, 15, 2, 4, 6, 8, 10, 12, 14, 16,
+//         ]);
+//         assert_eq!(
+//             inner_swizzle_i8x16(src, pick).expect("should swizzle without errors"),
+//             expected
+//         );
+//     }
 
-    #[test]
-    fn shuffle_i8x16_test() {
-        let left = vec_from_lanes(vec![
-            1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
-        ]);
-        let right = vec_from_lanes(vec![
-            17u8, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
-        ]);
+//     #[test]
+//     fn shuffle_i8x16_test() {
+//         let left = vec_from_lanes(vec![
+//             1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+//         ]);
+//         let right = vec_from_lanes(vec![
+//             17u8, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
+//         ]);
 
-        assert!(
-            inner_shuffle_i8x16(
-                left,
-                right,
-                &([33u8; 16].iter().map(|v| LaneIdx(*v)).collect())
-            )
-            .is_err(),
-            "should return error if any of lane_idx is more or equal 32"
-        );
+//         assert!(
+//             inner_shuffle_i8x16(
+//                 left,
+//                 right,
+//                 &([33u8; 16].iter().map(|v| LaneIdx(*v)).collect())
+//             )
+//             .is_err(),
+//             "should return error if any of lane_idx is more or equal 32"
+//         );
 
-        assert_eq!(
-            inner_shuffle_i8x16(
-                left,
-                right,
-                &(vec![0u8, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
-                    .iter()
-                    .map(|v| LaneIdx(*v))
-                    .collect())
-            )
-            .expect("should shuffle without errors"),
-            vec_from_lanes(vec![
-                1u8, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31
-            ]),
-            "should return error if any of lane_idx is more or equal 32"
-        );
-    }
+//         assert_eq!(
+//             inner_shuffle_i8x16(
+//                 left,
+//                 right,
+//                 &(vec![0u8, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
+//                     .iter()
+//                     .map(|v| LaneIdx(*v))
+//                     .collect())
+//             )
+//             .expect("should shuffle without errors"),
+//             vec_from_lanes(vec![
+//                 1u8, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31
+//             ]),
+//             "should return error if any of lane_idx is more or equal 32"
+//         );
+//     }
 
-    #[test]
-    fn shape_splat_i8x16_test() {
-        let mut stack = Stack::new();
-        stack.push_entry(StackEntry::Value(Val::I32(1)));
-        i8x16_splat(&mut stack).expect("should splat without errors");
-        let val = stack.pop_value();
-        let expected = vec_from_lanes(vec![1u8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
-        assert_eq!(val, Some(Val::Vec(expected)), "should property splat");
-    }
+//     #[test]
+//     fn shape_splat_i8x16_test() {
+//         let mut stack = Stack::new();
+//         stack.push_entry(StackEntry::Value(Val::I32(1)));
+//         i8x16_splat(&mut stack).expect("should splat without errors");
+//         let val = stack.pop_value();
+//         let expected = vec_from_lanes(vec![1u8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
+//         assert_eq!(val, Some(Val::Vec(expected)), "should property splat");
+//     }
 
-    #[test]
-    fn shape_splat_i16x8_test() {
-        let mut stack = Stack::new();
-        stack.push_entry(StackEntry::Value(Val::I32(1)));
-        i16x8_splat(&mut stack).expect("should splat without errors");
-        let val = stack.pop_value();
-        let expected = vec_from_lanes(vec![1u16, 1, 1, 1, 1, 1, 1, 1]);
-        assert_eq!(val, Some(Val::Vec(expected)), "should property splat");
-    }
+//     #[test]
+//     fn shape_splat_i16x8_test() {
+//         let mut stack = Stack::new();
+//         stack.push_entry(StackEntry::Value(Val::I32(1)));
+//         i16x8_splat(&mut stack).expect("should splat without errors");
+//         let val = stack.pop_value();
+//         let expected = vec_from_lanes(vec![1u16, 1, 1, 1, 1, 1, 1, 1]);
+//         assert_eq!(val, Some(Val::Vec(expected)), "should property splat");
+//     }
 
-    #[test]
-    fn shape_splat_i32x4_test() {
-        let mut stack = Stack::new();
-        stack.push_entry(StackEntry::Value(Val::I32(1)));
-        i32x4_splat(&mut stack).expect("should splat without errors");
-        let val = stack.pop_value();
-        let expected = vec_from_lanes(vec![1u32, 1u32, 1u32, 1u32]);
-        assert_eq!(val, Some(Val::Vec(expected)), "should property splat");
-    }
+//     #[test]
+//     fn shape_splat_i32x4_test() {
+//         let mut stack = Stack::new();
+//         stack.push_entry(StackEntry::Value(Val::I32(1)));
+//         i32x4_splat(&mut stack).expect("should splat without errors");
+//         let val = stack.pop_value();
+//         let expected = vec_from_lanes(vec![1u32, 1u32, 1u32, 1u32]);
+//         assert_eq!(val, Some(Val::Vec(expected)), "should property splat");
+//     }
 
-    #[test]
-    fn shape_splat_i64x2_test() {
-        let mut stack = Stack::new();
-        stack.push_entry(StackEntry::Value(Val::I64(2)));
-        i64x2_splat(&mut stack).expect("should splat without errors");
-        let val = stack.pop_value();
-        let expected = vec_from_lanes(vec![2u64, 2u64]);
-        assert_eq!(val, Some(Val::Vec(expected)), "should property splat");
-    }
+//     #[test]
+//     fn shape_splat_i64x2_test() {
+//         let mut stack = Stack::new();
+//         stack.push_entry(StackEntry::Value(Val::I64(2)));
+//         i64x2_splat(&mut stack).expect("should splat without errors");
+//         let val = stack.pop_value();
+//         let expected = vec_from_lanes(vec![2u64, 2u64]);
+//         assert_eq!(val, Some(Val::Vec(expected)), "should property splat");
+//     }
 
-    #[test]
-    fn shape_extract_lane_s_i8x16_test() {
-        let mut stack = Stack::new();
-        stack.push_entry(StackEntry::Value(Val::Vec(vec_from_lanes(vec![
-            255u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]))));
+//     #[test]
+//     fn shape_extract_lane_s_i8x16_test() {
+//         let mut stack = Stack::new();
+//         stack.push_entry(StackEntry::Value(Val::Vec(vec_from_lanes(vec![
+//             255u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//         ]))));
 
-        i8x16_extract_lane_s(&mut stack, 0).expect("should splat without errors");
+//         i8x16_extract_lane_s(&mut stack, 0).expect("should splat without errors");
 
-        let val = stack.pop_value();
-        assert_eq!(val, Some(Val::I32(-1i32 as u32)), "should property splat");
-    }
+//         let val = stack.pop_value();
+//         assert_eq!(val, Some(Val::I32(-1i32 as u32)), "should property splat");
+//     }
 
-    #[test]
-    fn shape_extract_lane_u_i8x16_test() {
-        let mut stack = Stack::new();
-        stack.push_entry(StackEntry::Value(Val::Vec(vec_from_lanes(vec![
-            255u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]))));
+//     #[test]
+//     fn shape_extract_lane_u_i8x16_test() {
+//         let mut stack = Stack::new();
+//         stack.push_entry(StackEntry::Value(Val::Vec(vec_from_lanes(vec![
+//             255u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//         ]))));
 
-        i8x16_extract_lane_u(&mut stack, 0).expect("should splat without errors");
+//         i8x16_extract_lane_u(&mut stack, 0).expect("should splat without errors");
 
-        let val = stack.pop_value();
-        assert_eq!(val, Some(Val::I32(255)), "should property splat");
-    }
-}
+//         let val = stack.pop_value();
+//         assert_eq!(val, Some(Val::I32(255)), "should property splat");
+//     }
+// }

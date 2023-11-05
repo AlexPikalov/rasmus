@@ -69,7 +69,10 @@ use self::exec_vec::{
     shiftop_64x2, shiftop_8x16, unop_16x8, unop_32x4, unop_64x2, unop_8x16, v128_and, v128_andnot,
     v128_anytrue, v128_or, v128_xor, vternop, vvunop,
 };
-use self::exec_vector::{all_true_16x8, all_true_32x4, all_true_64x2, all_true_8x16};
+use self::exec_vector::{
+    all_true_16x8, all_true_32x4, all_true_64x2, all_true_8x16, bitmask_16x8, bitmask_32x4,
+    bitmask_64x2, bitmask_8x16,
+};
 
 #[allow(dead_code)]
 pub fn execute_expression(
@@ -446,6 +449,10 @@ pub fn execute_instruction(
         InstructionType::I16x8AllTrue => all_true_16x8(stack)?,
         InstructionType::I32x4AllTrue => all_true_32x4(stack)?,
         InstructionType::I64x2AllTrue => all_true_64x2(stack)?,
+        InstructionType::I8x16Bitmask => bitmask_8x16(stack)?,
+        InstructionType::I16x8Bitmask => bitmask_16x8(stack)?,
+        InstructionType::I32x4Bitmask => bitmask_32x4(stack)?,
+        InstructionType::I64x2Bitmask => bitmask_64x2(stack)?,
         _ => unimplemented!(),
     }
 

@@ -50,15 +50,15 @@ macro_rules! trunc_u {
 macro_rules! trunc_sat_u {
     ($arg_type: ty, $ret_type: ty) => {
         |arg: $arg_type| {
-            if arg == <$arg_type>::NAN {
+            if arg.is_nan() {
                 return Err($crate::result::Trap);
             }
 
-            if arg == <$arg_type>::NEG_INFINITY {
+            if arg.is_infinite() && arg.is_sign_negative() {
                 return Ok(0);
             }
 
-            if arg == <$arg_type>::INFINITY {
+            if arg.is_infinite() && arg.is_sign_positive() {
                 return Ok(<$ret_type>::MAX);
             }
 
@@ -70,15 +70,15 @@ macro_rules! trunc_sat_u {
 macro_rules! trunc_sat_s {
     ($arg_type: ty, $aux_type: ty, $ret_type: ty) => {
         |arg: $arg_type| {
-            if arg == <$arg_type>::NAN {
+            if arg.is_nan() {
                 return Err($crate::result::Trap);
             }
 
-            if arg == <$arg_type>::NEG_INFINITY {
+            if arg.is_infinite() && arg.is_sign_negative() {
                 return Ok(<$aux_type>::MIN as $ret_type);
             }
 
-            if arg == <$arg_type>::INFINITY {
+            if arg.is_infinite() && arg.is_sign_positive() {
                 return Ok(<$aux_type>::MAX as $ret_type);
             }
 

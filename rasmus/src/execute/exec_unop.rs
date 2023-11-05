@@ -12,7 +12,7 @@ use crate::{
 macro_rules! nearest {
     ($ftype:ty) => {
         |v: $ftype| {
-            if v == <$ftype>::NAN || v == <$ftype>::INFINITY || v == 0.0 {
+            if v.is_nan() || v.is_infinite() || v == 0.0 {
                 v
             } else if v > 0.0 && v <= 0.5 {
                 -0.0
