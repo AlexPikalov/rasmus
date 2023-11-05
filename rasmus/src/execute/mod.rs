@@ -71,7 +71,8 @@ use self::exec_vec::{
 };
 use self::exec_vector::{
     all_true_16x8, all_true_32x4, all_true_64x2, all_true_8x16, bitmask_16x8, bitmask_32x4,
-    bitmask_64x2, bitmask_8x16,
+    bitmask_64x2, bitmask_8x16, shape_16x8_narrow_32x4_s, shape_16x8_narrow_32x4_u,
+    shape_8x16_narrow_16x8_s, shape_8x16_narrow_16x8_u,
 };
 
 #[allow(dead_code)]
@@ -453,6 +454,10 @@ pub fn execute_instruction(
         InstructionType::I16x8Bitmask => bitmask_16x8(stack)?,
         InstructionType::I32x4Bitmask => bitmask_32x4(stack)?,
         InstructionType::I64x2Bitmask => bitmask_64x2(stack)?,
+        InstructionType::I8x16NarrowI16x8U => shape_8x16_narrow_16x8_u(stack)?,
+        InstructionType::I8x16NarrowI16x8S => shape_8x16_narrow_16x8_s(stack)?,
+        InstructionType::I16x8NarrowI32x4U => shape_16x8_narrow_32x4_u(stack)?,
+        InstructionType::I16x8NarrowI32x4S => shape_16x8_narrow_32x4_s(stack)?,
         _ => unimplemented!(),
     }
 
