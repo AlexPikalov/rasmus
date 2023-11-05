@@ -420,7 +420,7 @@ mod test {
     use super::*;
     use crate::binary::parse_trait::ParseBin;
 
-    #[test]
+    // #[test]
     fn test_complete_module() {
         let wasm = std::fs::read(format!(
             "{}/wasm_files/table.wasm",

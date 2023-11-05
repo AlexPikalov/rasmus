@@ -25,7 +25,7 @@ macro_rules! cvtop_impl {
 macro_rules! trunc_s {
     ($arg_type: ty, $aux_type: ty, $ret_type: ty) => {
         |arg: $arg_type| {
-            if arg == <$arg_type>::NAN || arg == <$arg_type>::INFINITY {
+            if arg.is_nan() || arg.is_infinite() {
                 return Err($crate::result::Trap);
             }
 
@@ -37,7 +37,7 @@ macro_rules! trunc_s {
 macro_rules! trunc_u {
     ($arg_type: ty, $ret_type: ty) => {
         |arg: $arg_type| {
-            if arg == <$arg_type>::NAN || arg == <$arg_type>::INFINITY {
+            if arg.is_nan() || arg.is_infinite() {
                 return Err($crate::result::Trap);
             }
 

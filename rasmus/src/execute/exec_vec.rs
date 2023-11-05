@@ -133,10 +133,6 @@ pub fn to_lanes_8x16(vector: u128) -> [u8; 16] {
     vector.to_be_bytes()
 }
 
-pub fn to_lanes_8x16_V(vector: u128) -> Vec<u8> {
-    vector.to_be_bytes().to_vec()
-}
-
 pub fn to_lanes_16x8(vector: u128) -> [u16; 8] {
     let lanes = to_lanes_8x16(vector);
     let mut arr = [0u16; 8];
