@@ -133,6 +133,10 @@ pub fn to_lanes_8x16(vector: u128) -> [u8; 16] {
     vector.to_be_bytes()
 }
 
+pub fn to_lanes_8x16_V(vector: u128) -> Vec<u8> {
+    vector.to_be_bytes().to_vec()
+}
+
 pub fn to_lanes_16x8(vector: u128) -> [u16; 8] {
     let lanes = to_lanes_8x16(vector);
     let mut arr = [0u16; 8];
@@ -1035,6 +1039,51 @@ where
     lhs.as_float() >= rhs.as_float()
 }
 
+pub fn make_shape_shl<T>(size: u32) -> impl FnOnce(T, u32) -> T + Copy
+where
+    T: std::ops::Shl<u32, Output = T>,
+{
+    move |lane: T, shift: u32| {
+        let k = shift.rem_euclid(size);
+        lane << k
+    }
+}
+
+pub fn make_shape_shr_u<T>(size: u32) -> impl FnOnce(T, u32) -> T + Copy
+where
+    T: std::ops::Shr<u32, Output = T>,
+{
+    move |lane: T, shift: u32| {
+        let k = shift.rem_euclid(size);
+        lane >> k
+    }
+}
+
+pub fn make_shape_shr_s<T>(size: u32) -> impl FnOnce(T, u32) -> T + Copy
+where
+    T: std::ops::Shr<u32, Output = T>
+        + std::ops::BitOrAssign
+        + std::ops::BitAnd<T, Output = T>
+        + From<u8>
+        + std::ops::Div<T, Output = T>
+        + std::ops::Shl<u32, Output = T>
+        + Copy,
+{
+    move |lane: T, shift: u32| {
+        let k = shift.rem_euclid(size);
+        let mut shifted = lane >> k;
+        // lane / lane is a generic one
+        let most_significant_byte = lane & (lane / lane);
+        let mut byte_propagator = (most_significant_byte) << (size - 1);
+        for _ in 0..k {
+            shifted |= byte_propagator;
+            byte_propagator = byte_propagator >> 1;
+        }
+
+        shifted
+    }
+}
+
 pub fn unop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>
 where
     F: FnMut(&u8) -> u8 + Copy,
@@ -1217,6 +1266,66 @@ fn relop_64(b: bool) -> u64 {
     } else {
         0
     }
+}
+
+pub fn shiftop_8x16<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnOnce(u8, u32) -> u8 + Copy,
+{
+    let shift = stack.pop_i32().ok_or(Trap)?;
+    let vector = stack.pop_v128().ok_or(Trap)?;
+
+    let lanes = to_lanes_8x16(vector);
+
+    let result_vec = vec_from_lanes(lanes.iter().map(|l| func(*l, shift)).collect());
+    stack.push_entry(StackEntry::Value(Val::Vec(result_vec)));
+
+    Ok(())
+}
+
+pub fn shiftop_16x8<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnOnce(u16, u32) -> u16 + Copy,
+{
+    let shift = stack.pop_i32().ok_or(Trap)?;
+    let vector = stack.pop_v128().ok_or(Trap)?;
+
+    let lanes = to_lanes_16x8(vector);
+
+    let result_vec = vec_from_lanes(lanes.iter().map(|l| func(*l, shift)).collect());
+    stack.push_entry(StackEntry::Value(Val::Vec(result_vec)));
+
+    Ok(())
+}
+
+pub fn shiftop_32x4<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnOnce(u32, u32) -> u32 + Copy,
+{
+    let shift = stack.pop_i32().ok_or(Trap)?;
+    let vector = stack.pop_v128().ok_or(Trap)?;
+
+    let lanes = to_lanes_32x4(vector);
+
+    let result_vec = vec_from_lanes(lanes.iter().map(|l| func(*l, shift)).collect());
+    stack.push_entry(StackEntry::Value(Val::Vec(result_vec)));
+
+    Ok(())
+}
+
+pub fn shiftop_64x2<F>(stack: &mut Stack, func: F) -> RResult<()>
+where
+    F: FnOnce(u64, u32) -> u64 + Copy,
+{
+    let shift = stack.pop_i32().ok_or(Trap)?;
+    let vector = stack.pop_v128().ok_or(Trap)?;
+
+    let lanes = to_lanes_64x2(vector);
+
+    let result_vec = vec_from_lanes(lanes.iter().map(|l| func(*l, shift)).collect());
+    stack.push_entry(StackEntry::Value(Val::Vec(result_vec)));
+
+    Ok(())
 }
 
 #[cfg(test)]
