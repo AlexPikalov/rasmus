@@ -71,8 +71,9 @@ use self::exec_vec::{
 };
 use self::exec_vector::{
     all_true_16x8, all_true_32x4, all_true_64x2, all_true_8x16, bitmask_16x8, bitmask_32x4,
-    bitmask_64x2, bitmask_8x16, shape_16x8_narrow_32x4_s, shape_16x8_narrow_32x4_u,
-    shape_8x16_narrow_16x8_s, shape_8x16_narrow_16x8_u,
+    bitmask_64x2, bitmask_8x16, f32x4_vcvtop_i32x4, i32x4_vcvtop_f32x4, shape_16x8_narrow_32x4_s,
+    shape_16x8_narrow_32x4_u, shape_8x16_narrow_16x8_s, shape_8x16_narrow_16x8_u,
+    shape_f32_convert_i32_s, shape_f32_convert_i32_u, shape_i32_trunc_f32_s, shape_i32_trunc_f32_u,
 };
 
 #[allow(dead_code)]
@@ -458,7 +459,11 @@ pub fn execute_instruction(
         InstructionType::I8x16NarrowI16x8S => shape_8x16_narrow_16x8_s(stack)?,
         InstructionType::I16x8NarrowI32x4U => shape_16x8_narrow_32x4_u(stack)?,
         InstructionType::I16x8NarrowI32x4S => shape_16x8_narrow_32x4_s(stack)?,
-        _ => unimplemented!(),
+        InstructionType::I32x4TruncSatF32x4S => i32x4_vcvtop_f32x4(stack, shape_i32_trunc_f32_s)?,
+        InstructionType::I32x4TruncSatF32x4U => i32x4_vcvtop_f32x4(stack, shape_i32_trunc_f32_u)?,
+        InstructionType::F32x4ConvertI32x4S => f32x4_vcvtop_i32x4(stack, shape_f32_convert_i32_s)?,
+        InstructionType::F32x4ConvertI32x4U => f32x4_vcvtop_i32x4(stack, shape_f32_convert_i32_u)?,
+        // _ => unimplemented!(),
     }
 
     Ok(())
