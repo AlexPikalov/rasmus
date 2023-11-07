@@ -6,7 +6,7 @@ use crate::{
     result::{RResult, Trap},
 };
 
-use super::{to_lanes_32x4, vec_from_lanes};
+use super::{to_lanes_16x8, to_lanes_32x4, to_lanes_8x16, vec_from_lanes};
 
 pub fn i32x4_vcvtop_f32x4<F>(stack: &mut Stack, func: F) -> RResult<()>
 where
@@ -97,10 +97,99 @@ where
     Ok(())
 }
 
+pub enum Half {
+    Low,
+    High,
+}
+
+pub fn i16x8_vcvtop_half_i8x16<F>(stack: &mut Stack, func: F, half: Half) -> RResult<()>
+where
+    F: FnOnce(u8) -> u16 + Copy,
+{
+    let vector = stack.pop_v128().ok_or(Trap)?;
+    let range = match half {
+        Half::Low => 0..8,
+        Half::High => 8..16,
+    };
+    let lanes = &to_lanes_8x16(vector)[range];
+    let new_lanes = vec_from_lanes(lanes.iter().map(|l| func(*l)).collect());
+
+    stack.push_entry(StackEntry::Value(Val::Vec(new_lanes)));
+    Ok(())
+}
+
+pub fn i32x4_vcvtop_half_i16x8<F>(stack: &mut Stack, func: F, half: Half) -> RResult<()>
+where
+    F: FnOnce(u16) -> u32 + Copy,
+{
+    let vector = stack.pop_v128().ok_or(Trap)?;
+    let range = match half {
+        Half::Low => 0..4,
+        Half::High => 4..8,
+    };
+    let lanes = &to_lanes_16x8(vector)[range];
+    let new_lanes = vec_from_lanes(lanes.iter().map(|l| func(*l)).collect());
+
+    stack.push_entry(StackEntry::Value(Val::Vec(new_lanes)));
+    Ok(())
+}
+
+pub fn i64x2_vcvtop_half_i32x4<F>(stack: &mut Stack, func: F, half: Half) -> RResult<()>
+where
+    F: FnOnce(u32) -> u64 + Copy,
+{
+    let vector = stack.pop_v128().ok_or(Trap)?;
+    let range = match half {
+        Half::Low => 0..2,
+        Half::High => 2..4,
+    };
+    let lanes = &to_lanes_32x4(vector)[range];
+    let new_lanes = vec_from_lanes(lanes.iter().map(|l| func(*l)).collect());
+
+    stack.push_entry(StackEntry::Value(Val::Vec(new_lanes)));
+    Ok(())
+}
+
 pub fn shape_f32_convert_i32_u(v: u32) -> u32 {
     u32::from_be_bytes((v as f32).to_be_bytes())
 }
 
 pub fn shape_f32_convert_i32_s(v: u32) -> u32 {
     u32::from_be_bytes((v as i32 as f32).to_be_bytes())
+}
+
+pub fn i8_extend_i16_u(v: u8) -> u16 {
+    v as u16
+}
+
+pub fn i8_extend_i16_s(v: u8) -> u16 {
+    v as i8 as u16
+}
+
+pub fn i16_extend_i32_u(v: u16) -> u32 {
+    v as u32
+}
+
+pub fn i16_extend_i32_s(v: u16) -> u32 {
+    v as i16 as u32
+}
+
+pub fn i32_extend_i64_u(v: u32) -> u64 {
+    v as u64
+}
+
+pub fn i32_extend_i64_s(v: u32) -> u64 {
+    v as i32 as u64
+}
+
+pub fn i32_convert_f64_s(v: u32) -> u64 {
+    u64::from_be_bytes((v as i32 as f64).to_be_bytes())
+}
+
+pub fn i32_convert_f64_u(v: u32) -> u64 {
+    u64::from_be_bytes((v as f64).to_be_bytes())
+}
+
+pub fn f32_promote_f64(v: u32) -> u64 {
+    u64::from_be_bytes((f32::from_be_bytes(v.to_be_bytes()) as f64).to_be_bytes())
 }
