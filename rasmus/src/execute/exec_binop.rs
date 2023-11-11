@@ -233,6 +233,9 @@ binop_impl!(i64_binop, Val::I64, u64);
 binop_impl!(f32_binop, Val::F32, f32);
 binop_impl!(f64_binop, Val::F64, f64);
 
+pub fn iadd_16(a: u16, b: u16) -> RResult<u16> {
+    Ok(((a as u128) + (b as u128)).rem_euclid(2u128.pow(16)) as u16)
+}
 pub fn iadd_32(a: u32, b: u32) -> RResult<u32> {
     Ok(((a as u128) + (b as u128)).rem_euclid(2u128.pow(32)) as u32)
 }
