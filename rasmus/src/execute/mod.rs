@@ -75,9 +75,10 @@ use self::exec_vector::{
     i16_extend_i32_u, i16x8_vcvtop_half_i8x16, i32_convert_f64_s, i32_convert_f64_u,
     i32_extend_i64_s, i32_extend_i64_u, i32x4_vcvtop_f32x4, i32x4_vcvtop_half_i16x8,
     i64x2_vcvtop_half_i32x4, i8_extend_i16_s, i8_extend_i16_u, shape_16x8_narrow_32x4_s,
-    shape_16x8_narrow_32x4_u, shape_8x16_narrow_16x8_s, shape_8x16_narrow_16x8_u,
-    shape_f32_convert_i32_s, shape_f32_convert_i32_u, shape_i32_trunc_f32_s, shape_i32_trunc_f32_u,
-    Half,
+    shape_16x8_narrow_32x4_u, shape_32x4_vcvtop_64x2_zero, shape_8x16_narrow_16x8_s,
+    shape_8x16_narrow_16x8_u, shape_f32_convert_i32_s, shape_f32_convert_i32_u,
+    shape_f32_demote_f64, shape_i32_trunc_f32_s, shape_i32_trunc_f32_u, shape_i32_trunc_f64_s,
+    shape_i32_trunc_f64_u, Half,
 };
 
 #[allow(dead_code)]
@@ -512,7 +513,15 @@ pub fn execute_instruction(
         InstructionType::F64x2PromoteLowF32x4 => {
             i64x2_vcvtop_half_i32x4(stack, f32_promote_f64, Half::Low)?
         }
-        // _ => unimplemented!(),
+        InstructionType::I32x4TruncSatF64x2UZero => {
+            shape_32x4_vcvtop_64x2_zero(stack, shape_i32_trunc_f64_u)?
+        }
+        InstructionType::I32x4TruncSatF64x2SZero => {
+            shape_32x4_vcvtop_64x2_zero(stack, shape_i32_trunc_f64_s)?
+        }
+        InstructionType::F32x4DemoteF64x2Zero => {
+            shape_32x4_vcvtop_64x2_zero(stack, shape_f32_demote_f64)?
+        } // _ => unimplemented!(),
     }
 
     Ok(())
