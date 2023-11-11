@@ -249,6 +249,11 @@ pub fn isub_64(a: u64, b: u64) -> RResult<u64> {
     Ok(((a as u128) + base - (b as u128)).rem_euclid(base) as u64)
 }
 
+pub fn imul_16(a: u16, b: u16) -> u16 {
+    let base = 2u128.pow(16);
+    ((a as u128) * (b as u128)).rem_euclid(base) as u16
+}
+
 pub fn imul_32(a: u32, b: u32) -> RResult<u32> {
     let base = 2u128.pow(32);
     Ok(((a as u128) * (b as u128)).rem_euclid(base) as u32)
