@@ -6,6 +6,6 @@ use super::value::Val;
 
 #[derive(Debug, Clone)]
 pub struct Frame {
-    pub locals: Rc<Vec<Val>>,
+    pub locals: Rc<RefCell<Vec<Val>>>,
     pub module: Rc<RefCell<ModuleInst>>,
 }

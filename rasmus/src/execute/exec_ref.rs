@@ -47,7 +47,7 @@ pub fn is_ref_null(stack: &mut Stack) -> RResult<()> {
 
 #[cfg(test)]
 mod test {
-    use std::rc::Rc;
+    use std::{cell::RefCell, rc::Rc};
 
     use syntax::{
         module::{CodeType, ExpressionType, FuncCodeType, InstructionType, Module},
@@ -113,7 +113,7 @@ mod test {
             ModuleInst::instantiate(&mut store, &mut stack, &module, &module_registry)
                 .expect("unable to instantiate module");
         stack.push_entry(StackEntry::Frame(Frame {
-            locals: Rc::new(vec![]),
+            locals: Rc::new(RefCell::new(vec![])),
             module: module_inst,
         }));
 

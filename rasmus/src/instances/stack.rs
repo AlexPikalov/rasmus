@@ -129,8 +129,8 @@ impl Stack {
         None
     }
 
-    pub fn current_frame(&self) -> Option<&Frame> {
-        self.stack.iter().rev().find_map(|entry| match entry {
+    pub fn current_frame(&mut self) -> Option<&mut Frame> {
+        self.stack.iter_mut().rev().find_map(|entry| match entry {
             StackEntry::Frame(frame) => Some(frame),
             _ => None,
         })

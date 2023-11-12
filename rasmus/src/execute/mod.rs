@@ -6,6 +6,7 @@ mod exec_cvtop;
 mod exec_parametric;
 mod exec_ref;
 mod exec_unop;
+mod exec_variable;
 mod exec_vec;
 mod exec_vector;
 
@@ -46,6 +47,7 @@ use self::exec_unop::{
     i32_extend_8s, i32_popcnt, i64_clz, i64_ctz, i64_extend_16s, i64_extend_32s, i64_extend_8s,
     i64_popcnt,
 };
+use self::exec_variable::{global_get, global_set, local_get, local_set, local_tee};
 use self::exec_vec::{
     binop_16x8, binop_32x4, binop_64x2, binop_8x16, f32x4_extract_lane, f32x4_replace_lane,
     f32x4_splat, f64x2_extract_lane, f64x2_replace_lane, f64x2_splat, i16x8_extract_lane_s,
@@ -552,6 +554,13 @@ pub fn execute_instruction(
         // parametric instructions
         InstructionType::Drop => exec_drop(stack)?,
         InstructionType::Select => exec_select(stack)?,
+
+        // variable instruction
+        InstructionType::LocalGet(local_idx) => local_get(stack, local_idx)?,
+        InstructionType::LocalSet(local_idx) => local_set(stack, local_idx)?,
+        InstructionType::LocalTee(local_idx) => local_tee(stack, local_idx)?,
+        InstructionType::GlobalGet(global_idx) => global_get(stack, store, global_idx)?,
+        InstructionType::GlobalSet(global_idx) => global_set(stack, store, global_idx)?,
         // _ => unimplemented!(),
     }
 
