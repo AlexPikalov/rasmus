@@ -44,7 +44,9 @@ use self::exec_cvtop::{
 };
 use self::exec_memory::{
     f32_load, f64_load, i32_load, i32_load_16, i32_load_8, i64_load, i64_load_16, i64_load_32,
-    i64_load_8, v128_load,
+    i64_load_8, v128_load, v128_load16_lane, v128_load16_splat, v128_load32_lane,
+    v128_load32_splat, v128_load32_zero, v128_load64_lane, v128_load64_splat, v128_load64_zero,
+    v128_load8_lane, v128_load8_splat, v128_load_16x4, v128_load_32x2, v128_load_8x8,
 };
 use self::exec_parametric::{exec_drop, exec_select};
 use self::exec_ref::{is_ref_null, ref_func, ref_null};
@@ -597,7 +599,43 @@ pub fn execute_instruction(
         InstructionType::I64Load16U(mem_arg) => i64_load_16(stack, store, mem_arg, Sign::Unsigned)?,
         InstructionType::I64Load16S(mem_arg) => i64_load_16(stack, store, mem_arg, Sign::Signed)?,
         InstructionType::I64Load32U(mem_arg) => i64_load_32(stack, store, mem_arg, Sign::Unsigned)?,
-        InstructionType::I64Load32S(mem_arg) => i64_load_32(stack, store, mem_arg, Sign::Signed)?, // _ => unimplemented!(),
+        InstructionType::I64Load32S(mem_arg) => i64_load_32(stack, store, mem_arg, Sign::Signed)?,
+        InstructionType::V128Load8x8U(mem_arg) => {
+            v128_load_8x8(stack, store, mem_arg, Sign::Unsigned)?
+        }
+        InstructionType::V128Load8x8S(mem_arg) => {
+            v128_load_8x8(stack, store, mem_arg, Sign::Signed)?
+        }
+        InstructionType::V128Load16x4U(mem_arg) => {
+            v128_load_16x4(stack, store, mem_arg, Sign::Unsigned)?
+        }
+        InstructionType::V128Load16x4S(mem_arg) => {
+            v128_load_16x4(stack, store, mem_arg, Sign::Signed)?
+        }
+        InstructionType::V128Load32x2U(mem_arg) => {
+            v128_load_32x2(stack, store, mem_arg, Sign::Unsigned)?
+        }
+        InstructionType::V128Load32x2S(mem_arg) => {
+            v128_load_32x2(stack, store, mem_arg, Sign::Signed)?
+        }
+        InstructionType::V128Load8Splat(mem_arg) => v128_load8_splat(stack, store, mem_arg)?,
+        InstructionType::V128Load16Splat(mem_arg) => v128_load16_splat(stack, store, mem_arg)?,
+        InstructionType::V128Load32Splat(mem_arg) => v128_load32_splat(stack, store, mem_arg)?,
+        InstructionType::V128Load64Splat(mem_arg) => v128_load64_splat(stack, store, mem_arg)?,
+        InstructionType::V128Load32Zero(mem_arg) => v128_load32_zero(stack, store, mem_arg)?,
+        InstructionType::V128Load64Zero(mem_arg) => v128_load64_zero(stack, store, mem_arg)?,
+        InstructionType::V128Load8Lane((mem_arg, lane_idx)) => {
+            v128_load8_lane(stack, store, mem_arg, lane_idx)?
+        }
+        InstructionType::V128Load16Lane((mem_arg, lane_idx)) => {
+            v128_load16_lane(stack, store, mem_arg, lane_idx)?
+        }
+        InstructionType::V128Load32Lane((mem_arg, lane_idx)) => {
+            v128_load32_lane(stack, store, mem_arg, lane_idx)?
+        }
+        InstructionType::V128Load64Lane((mem_arg, lane_idx)) => {
+            v128_load64_lane(stack, store, mem_arg, lane_idx)?
+        } // _ => unimplemented!(),
     }
 
     Ok(())

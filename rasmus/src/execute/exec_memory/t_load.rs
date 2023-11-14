@@ -18,14 +18,14 @@ pub fn i32_load(
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get(mem_addr).ok_or(Trap)?;
     let i = stack.pop_i32().ok_or(Trap)?;
-    let ea = i + offset;
+    let ea = (i + offset) as usize;
     let bits = 32;
 
     if (ea + bits / 8) as usize > mem_inst.data.len() {
         return Err(Trap);
     }
 
-    let c = u32::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data));
+    let c = u32::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data, ea));
 
     i32_const(&c, stack)
 }
@@ -38,14 +38,14 @@ pub fn i64_load(
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get(mem_addr).ok_or(Trap)?;
     let i = stack.pop_i32().ok_or(Trap)?;
-    let ea = i + offset;
+    let ea = (i + offset) as usize;
     let bits = 64;
 
     if (ea + bits / 8) as usize > mem_inst.data.len() {
         return Err(Trap);
     }
 
-    let c = u64::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data));
+    let c = u64::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data, ea));
 
     i64_const(&c, stack)
 }
@@ -58,14 +58,14 @@ pub fn f32_load(
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get(mem_addr).ok_or(Trap)?;
     let i = stack.pop_i32().ok_or(Trap)?;
-    let ea = i + offset;
+    let ea = (i + offset) as usize;
     let bits = 32;
 
     if (ea + bits / 8) as usize > mem_inst.data.len() {
         return Err(Trap);
     }
 
-    let c = f32::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data));
+    let c = f32::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data, ea));
 
     f32_const(&c, stack)
 }
@@ -78,14 +78,14 @@ pub fn f64_load(
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get(mem_addr).ok_or(Trap)?;
     let i = stack.pop_i32().ok_or(Trap)?;
-    let ea = i + offset;
+    let ea = (i + offset) as usize;
     let bits = 64;
 
     if (ea + bits / 8) as usize > mem_inst.data.len() {
         return Err(Trap);
     }
 
-    let c = f64::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data));
+    let c = f64::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data, ea));
 
     f64_const(&c, stack)
 }
@@ -99,14 +99,14 @@ pub fn i32_load_8(
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get(mem_addr).ok_or(Trap)?;
     let i = stack.pop_i32().ok_or(Trap)?;
-    let ea = i + offset;
+    let ea = (i + offset) as usize;
     let bits = 8;
 
     if (ea + bits / 8) as usize > mem_inst.data.len() {
         return Err(Trap);
     }
 
-    let n = u8::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data));
+    let n = u8::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data, ea));
     let c = match sign {
         Sign::Signed => n as i8 as u32,
         Sign::Unsigned => n as u32,
@@ -124,14 +124,14 @@ pub fn i32_load_16(
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get(mem_addr).ok_or(Trap)?;
     let i = stack.pop_i32().ok_or(Trap)?;
-    let ea = i + offset;
+    let ea = (i + offset) as usize;
     let bits = 16;
 
     if (ea + bits / 8) as usize > mem_inst.data.len() {
         return Err(Trap);
     }
 
-    let n = u16::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data));
+    let n = u16::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data, ea));
     let c = match sign {
         Sign::Signed => n as i16 as u32,
         Sign::Unsigned => n as u32,
@@ -149,14 +149,14 @@ pub fn i64_load_8(
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get(mem_addr).ok_or(Trap)?;
     let i = stack.pop_i32().ok_or(Trap)?;
-    let ea = i + offset;
+    let ea = (i + offset) as usize;
     let bits = 8;
 
     if (ea + bits / 8) as usize > mem_inst.data.len() {
         return Err(Trap);
     }
 
-    let n = u8::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data));
+    let n = u8::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data, ea));
     let c = match sign {
         Sign::Signed => n as i8 as u64,
         Sign::Unsigned => n as u64,
@@ -174,14 +174,14 @@ pub fn i64_load_16(
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get(mem_addr).ok_or(Trap)?;
     let i = stack.pop_i32().ok_or(Trap)?;
-    let ea = i + offset;
+    let ea = (i + offset) as usize;
     let bits = 16;
 
     if (ea + bits / 8) as usize > mem_inst.data.len() {
         return Err(Trap);
     }
 
-    let n = u16::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data));
+    let n = u16::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data, ea));
     let c = match sign {
         Sign::Signed => n as i16 as u64,
         Sign::Unsigned => n as u64,
@@ -199,14 +199,14 @@ pub fn i64_load_32(
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get(mem_addr).ok_or(Trap)?;
     let i = stack.pop_i32().ok_or(Trap)?;
-    let ea = i + offset;
+    let ea = (i + offset) as usize;
     let bits = 32;
 
     if (ea + bits / 8) as usize > mem_inst.data.len() {
         return Err(Trap);
     }
 
-    let n = u32::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data));
+    let n = u32::from_le_bytes(MemoryBytesGetter::get_bytes(&mem_inst.data, ea));
     let c = match sign {
         Sign::Signed => n as i32 as u64,
         Sign::Unsigned => n as u64,
