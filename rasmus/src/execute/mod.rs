@@ -5,6 +5,7 @@ mod exec_const;
 mod exec_cvtop;
 mod exec_parametric;
 mod exec_ref;
+mod exec_table;
 mod exec_unop;
 mod exec_variable;
 mod exec_vec;
@@ -41,6 +42,9 @@ use self::exec_cvtop::{
 };
 use self::exec_parametric::{exec_drop, exec_select};
 use self::exec_ref::{is_ref_null, ref_func, ref_null};
+use self::exec_table::{
+    elem_drop, table_copy, table_fill, table_get, table_grow, table_init, table_set, table_size,
+};
 use self::exec_unop::{
     f32_abs, f32_ceil, f32_floor, f32_nearest, f32_neg, f32_sqrt, f32_trunc, f64_abs, f64_ceil,
     f64_floor, f64_nearest, f64_neg, f64_sqrt, f64_trunc, i32_clz, i32_ctz, i32_extend_16s,
@@ -555,12 +559,22 @@ pub fn execute_instruction(
         InstructionType::Drop => exec_drop(stack)?,
         InstructionType::Select => exec_select(stack)?,
 
-        // variable instruction
+        // variable instructions
         InstructionType::LocalGet(local_idx) => local_get(stack, local_idx)?,
         InstructionType::LocalSet(local_idx) => local_set(stack, local_idx)?,
         InstructionType::LocalTee(local_idx) => local_tee(stack, local_idx)?,
         InstructionType::GlobalGet(global_idx) => global_get(stack, store, global_idx)?,
         InstructionType::GlobalSet(global_idx) => global_set(stack, store, global_idx)?,
+
+        // table instructions
+        InstructionType::TableGet(table_idx) => table_get(stack, store, table_idx)?,
+        InstructionType::TableSet(table_idx) => table_set(stack, store, table_idx)?,
+        InstructionType::TableSize(table_idx) => table_size(stack, store, table_idx)?,
+        InstructionType::TableGrow(table_idx) => table_grow(stack, store, table_idx)?,
+        InstructionType::TableFill(table_idx) => table_fill(stack, store, table_idx)?,
+        InstructionType::TableCopy(table_idxes) => table_copy(stack, store, table_idxes)?,
+        InstructionType::TableInit(table_idxes) => table_init(stack, store, table_idxes)?,
+        InstructionType::ElemDrop(elem_idx) => elem_drop(stack, store, elem_idx)?,
         // _ => unimplemented!(),
     }
 

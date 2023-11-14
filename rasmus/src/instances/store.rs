@@ -27,7 +27,7 @@ pub struct Store {
     pub tables: Vec<TableInst>,
     pub mems: Vec<MemInst>,
     pub globals: Vec<GlobalInst>,
-    pub elems: Vec<ElemInst>,
+    pub elems: Vec<Option<ElemInst>>,
     pub datas: Vec<DataInst>,
 }
 
@@ -42,6 +42,20 @@ impl Store {
             elems: vec![],
             datas: vec![],
         }
+    }
+
+    pub fn drop_elem(&mut self, e: ElemAddr) -> RResult<()> {
+        self.elems
+            .get(e)
+            // check if elem with index e exists
+            .ok_or(Trap)?
+            .as_ref()
+            // check if elem with index e is not None
+            .ok_or(Trap)?;
+
+        self.elems[e] = None;
+
+        Ok(())
     }
 
     pub fn allocate_local_func(
@@ -107,7 +121,7 @@ impl Store {
 
     pub fn allocate_elem(&mut self, elem_type: RefType, elem: Vec<RefInst>) -> ElemAddr {
         let elem_inst = ElemInst { elem, elem_type };
-        self.elems.push(elem_inst);
+        self.elems.push(Some(elem_inst));
 
         self.elems.len() - 1 as ElemAddr
     }

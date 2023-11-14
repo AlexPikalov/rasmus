@@ -2,6 +2,7 @@ use syntax::types::U32Type;
 
 use super::frame::Frame;
 use super::label::LabelInst;
+use super::ref_inst::RefInst;
 use super::value::Val;
 
 #[derive(Debug, Clone)]
@@ -127,6 +128,17 @@ impl Stack {
         }
 
         None
+    }
+
+    pub fn pop_ref(&mut self) -> Option<RefInst> {
+        match self.stack.pop() {
+            Some(StackEntry::Value(Val::Ref(r))) => Some(r),
+            Some(v) => {
+                self.stack.push(v);
+                None
+            }
+            None => None,
+        }
     }
 
     pub fn current_frame(&mut self) -> Option<&mut Frame> {

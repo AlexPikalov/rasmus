@@ -2,6 +2,7 @@ use syntax::types::Byte;
 
 use crate::{
     instances::{
+        ref_inst::RefInst,
         stack::{Stack, StackEntry},
         value::Val,
     },
@@ -30,6 +31,11 @@ pub fn f64_const(v: &f64, stack: &mut Stack) -> RResult<()> {
 
 pub fn v128_const(v: &Vec<u8>, stack: &mut Stack) -> RResult<()> {
     stack.push_entry(StackEntry::Value(Val::Vec(v128_from_vec(v)?)));
+    Ok(())
+}
+
+pub fn ref_const(r: RefInst, stack: &mut Stack) -> RResult<()> {
+    stack.push_entry(StackEntry::Value(Val::Ref(r)));
     Ok(())
 }
 
