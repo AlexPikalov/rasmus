@@ -5,6 +5,7 @@ mod instances;
 mod module;
 mod module_registry;
 mod result;
+pub mod sign;
 
 #[cfg(test)]
 mod execute_test;

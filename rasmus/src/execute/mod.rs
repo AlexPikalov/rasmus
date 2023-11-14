@@ -3,6 +3,7 @@ mod as_signed_trait;
 mod exec_binop;
 mod exec_const;
 mod exec_cvtop;
+mod exec_memory;
 mod exec_parametric;
 mod exec_ref;
 mod exec_table;
@@ -19,6 +20,7 @@ use crate::instances::instruction::{
 use crate::instances::stack::{Stack, StackEntry};
 use crate::instances::store::Store;
 use crate::instances::value::Val;
+use crate::sign::Sign;
 use crate::{relop_impl, testop_impl};
 use syntax::instructions::{ExpressionType, InstructionType};
 use syntax::types::{F32Type, F64Type, FuncIdx, I32Type, I64Type, LaneIdx, U32Type};
@@ -39,6 +41,10 @@ use self::exec_cvtop::{
     i32_wrap_i64, i64_reinterpret_f64, i64_trunc_f32_s, i64_trunc_f32_u, i64_trunc_f64_s,
     i64_trunc_f64_u, i64_trunc_sat_f32_s, i64_trunc_sat_f32_u, i64_trunc_sat_f64_s,
     i64_trunc_sat_f64_u,
+};
+use self::exec_memory::{
+    f32_load, f64_load, i32_load, i32_load_16, i32_load_8, i64_load, i64_load_16, i64_load_32,
+    i64_load_8, v128_load,
 };
 use self::exec_parametric::{exec_drop, exec_select};
 use self::exec_ref::{is_ref_null, ref_func, ref_null};
@@ -575,7 +581,23 @@ pub fn execute_instruction(
         InstructionType::TableCopy(table_idxes) => table_copy(stack, store, table_idxes)?,
         InstructionType::TableInit(table_idxes) => table_init(stack, store, table_idxes)?,
         InstructionType::ElemDrop(elem_idx) => elem_drop(stack, store, elem_idx)?,
-        // _ => unimplemented!(),
+
+        // memory instructions
+        InstructionType::I32Load(mem_arg) => i32_load(stack, store, mem_arg)?,
+        InstructionType::I64Load(mem_arg) => i64_load(stack, store, mem_arg)?,
+        InstructionType::F32Load(mem_arg) => f32_load(stack, store, mem_arg)?,
+        InstructionType::F64Load(mem_arg) => f64_load(stack, store, mem_arg)?,
+        InstructionType::V128Load(mem_arg) => v128_load(stack, store, mem_arg)?,
+        InstructionType::I32Load8U(mem_arg) => i32_load_8(stack, store, mem_arg, Sign::Unsigned)?,
+        InstructionType::I32Load8S(mem_arg) => i32_load_8(stack, store, mem_arg, Sign::Signed)?,
+        InstructionType::I32Load16U(mem_arg) => i32_load_16(stack, store, mem_arg, Sign::Unsigned)?,
+        InstructionType::I32Load16S(mem_arg) => i32_load_16(stack, store, mem_arg, Sign::Signed)?,
+        InstructionType::I64Load8U(mem_arg) => i64_load_8(stack, store, mem_arg, Sign::Unsigned)?,
+        InstructionType::I64Load8S(mem_arg) => i64_load_8(stack, store, mem_arg, Sign::Signed)?,
+        InstructionType::I64Load16U(mem_arg) => i64_load_16(stack, store, mem_arg, Sign::Unsigned)?,
+        InstructionType::I64Load16S(mem_arg) => i64_load_16(stack, store, mem_arg, Sign::Signed)?,
+        InstructionType::I64Load32U(mem_arg) => i64_load_32(stack, store, mem_arg, Sign::Unsigned)?,
+        InstructionType::I64Load32S(mem_arg) => i64_load_32(stack, store, mem_arg, Sign::Signed)?, // _ => unimplemented!(),
     }
 
     Ok(())

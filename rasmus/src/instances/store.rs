@@ -21,6 +21,10 @@ use syntax::{
     types::{Byte, Func, FuncType, GlobalType, MemType, RefType, TableType},
 };
 
+// TODO: consider using HashMap instead of Vec,
+// encapsulate this detail to make store content not public
+// and provide only neccessary methods to work with the Store content
+
 // #[derive(Debug)]
 pub struct Store {
     pub funcs: Vec<FuncInst>,
