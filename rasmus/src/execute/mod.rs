@@ -43,10 +43,13 @@ use self::exec_cvtop::{
     i64_trunc_sat_f64_u,
 };
 use self::exec_memory::{
-    f32_load, f64_load, i32_load, i32_load_16, i32_load_8, i64_load, i64_load_16, i64_load_32,
-    i64_load_8, v128_load, v128_load16_lane, v128_load16_splat, v128_load32_lane,
-    v128_load32_splat, v128_load32_zero, v128_load64_lane, v128_load64_splat, v128_load64_zero,
-    v128_load8_lane, v128_load8_splat, v128_load_16x4, v128_load_32x2, v128_load_8x8,
+    f32_load, f32_store, f64_load, f64_store, i32_load, i32_load_16, i32_load_8, i32_store,
+    i32_store16, i32_store8, i64_load, i64_load_16, i64_load_32, i64_load_8, i64_store,
+    i64_store16, i64_store32, i64_store8, v128_load, v128_load16_lane, v128_load16_splat,
+    v128_load32_lane, v128_load32_splat, v128_load32_zero, v128_load64_lane, v128_load64_splat,
+    v128_load64_zero, v128_load8_lane, v128_load8_splat, v128_load_16x4, v128_load_32x2,
+    v128_load_8x8, v128_store, v128_store16_lane, v128_store32_lane, v128_store64_lane,
+    v128_store8_lane,
 };
 use self::exec_parametric::{exec_drop, exec_select};
 use self::exec_ref::{is_ref_null, ref_func, ref_null};
@@ -635,7 +638,21 @@ pub fn execute_instruction(
         }
         InstructionType::V128Load64Lane((mem_arg, lane_idx)) => {
             v128_load64_lane(stack, store, mem_arg, lane_idx)?
-        } // _ => unimplemented!(),
+        }
+        InstructionType::V128Store(mem_arg) => v128_store(stack, store, mem_arg)?,
+        InstructionType::I32Store(mem_arg) => i32_store(stack, store, mem_arg)?,
+        InstructionType::I64Store(mem_arg) => i64_store(stack, store, mem_arg)?,
+        InstructionType::F32Store(mem_arg) => f32_store(stack, store, mem_arg)?,
+        InstructionType::F64Store(mem_arg) => f64_store(stack, store, mem_arg)?,
+        InstructionType::I32Store8(mem_arg) => i32_store8(stack, store, mem_arg)?,
+        InstructionType::I64Store8(mem_arg) => i64_store8(stack, store, mem_arg)?,
+        InstructionType::I32Store16(mem_arg) => i32_store16(stack, store, mem_arg)?,
+        InstructionType::I64Store16(mem_arg) => i64_store16(stack, store, mem_arg)?,
+        InstructionType::I64Store32(mem_arg) => i64_store32(stack, store, mem_arg)?,
+        InstructionType::V128Store8Lane(arg) => v128_store8_lane(stack, store, arg)?,
+        InstructionType::V128Store16Lane(arg) => v128_store16_lane(stack, store, arg)?,
+        InstructionType::V128Store32Lane(arg) => v128_store32_lane(stack, store, arg)?,
+        InstructionType::V128Store64Lane(arg) => v128_store64_lane(stack, store, arg)?, // _ => unimplemented!(),
     }
 
     Ok(())
