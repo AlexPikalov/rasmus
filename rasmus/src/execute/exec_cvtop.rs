@@ -1,6 +1,9 @@
 use crate::instances::stack::Stack;
 use crate::instances::value::Val;
-use crate::result::RResult;
+use crate::result::{RResult, Trap};
+use crate::sign::Sign;
+
+use super::exec_const::i64_const;
 
 macro_rules! cvtop_impl {
     ($fn_name:ident, $input_val: path, $input_type: ty, $output_val: path, $output_type: ty) => {
@@ -249,6 +252,23 @@ pub fn i32_reinterpret_f32(stack: &mut Stack) -> RResult<()> {
 
 pub fn i64_reinterpret_f64(stack: &mut Stack) -> RResult<()> {
     f64_i64_cvtop(reinterpret!(f64, u64), stack)
+}
+
+pub fn f32_reinterpret_i32(stack: &mut Stack) -> RResult<()> {
+    f32_i32_cvtop(reinterpret!(f32, u32), stack)
+}
+
+pub fn f64_reinterpret_i64(stack: &mut Stack) -> RResult<()> {
+    f64_i64_cvtop(reinterpret!(f64, u64), stack)
+}
+
+pub fn i64_extend_i32(stack: &mut Stack, signed: Sign) -> RResult<()> {
+    let i = stack.pop_i32().ok_or(Trap)?;
+    let v = match signed {
+        Sign::Signed => i as i32 as u64,
+        Sign::Unsigned => i as u64,
+    };
+    i64_const(&v, stack)
 }
 
 #[cfg(test)]

@@ -6,6 +6,8 @@ use crate::{
     result::{RResult, Trap},
 };
 
+use super::memory_bytes::set_bytes;
+
 pub fn i32_store(
     stack: &mut Stack,
     store: &mut Store,
@@ -213,12 +215,6 @@ fn get_mem_addr(stack: &mut Stack) -> RResult<MemAddr> {
         .get(0)
         .cloned()
         .ok_or(Trap)
-}
-
-fn set_bytes<T: IntoIterator<Item = u8>>(data: &mut Vec<u8>, ea: usize, bytes: T) {
-    for (i, byte) in bytes.into_iter().enumerate() {
-        data[ea + i] = byte;
-    }
 }
 
 fn i32_wrap_8(t: u32) -> u8 {

@@ -2,6 +2,7 @@ mod as_float_trait;
 mod as_signed_trait;
 mod exec_binop;
 mod exec_const;
+mod exec_control;
 mod exec_cvtop;
 mod exec_memory;
 mod exec_parametric;
@@ -33,25 +34,29 @@ use self::exec_binop::{
     i64_rotl, i64_rotr, i64_shl, i64_shr_s, i64_shr_u, i64_sub, i64_xor,
 };
 use self::exec_const::{f32_const, f64_const, i32_const, i64_const, v128_const};
+use self::exec_control::{
+    block, exec_br, exec_brif, exec_brtable, exec_call, exec_call_indirect, exec_ifelse, exec_loop,
+    exec_return, exec_unreachable,
+};
 use self::exec_cvtop::{
     f32_convert_i32_s, f32_convert_i32_u, f32_convert_i64_s, f32_convert_i64_u, f32_demote_f64,
-    f64_convert_i32_s, f64_convert_i32_u, f64_convert_i64_s, f64_convert_i64_u, f64_promote_f32,
-    i32_reinterpret_f32, i32_trunc_f32_s, i32_trunc_f32_u, i32_trunc_f64_s, i32_trunc_f64_u,
-    i32_trunc_sat_f32_s, i32_trunc_sat_f32_u, i32_trunc_sat_f64_s, i32_trunc_sat_f64_u,
-    i32_wrap_i64, i64_reinterpret_f64, i64_trunc_f32_s, i64_trunc_f32_u, i64_trunc_f64_s,
-    i64_trunc_f64_u, i64_trunc_sat_f32_s, i64_trunc_sat_f32_u, i64_trunc_sat_f64_s,
-    i64_trunc_sat_f64_u,
+    f32_reinterpret_i32, f64_convert_i32_s, f64_convert_i32_u, f64_convert_i64_s,
+    f64_convert_i64_u, f64_promote_f32, f64_reinterpret_i64, i32_reinterpret_f32, i32_trunc_f32_s,
+    i32_trunc_f32_u, i32_trunc_f64_s, i32_trunc_f64_u, i32_trunc_sat_f32_s, i32_trunc_sat_f32_u,
+    i32_trunc_sat_f64_s, i32_trunc_sat_f64_u, i32_wrap_i64, i64_extend_i32, i64_reinterpret_f64,
+    i64_trunc_f32_s, i64_trunc_f32_u, i64_trunc_f64_s, i64_trunc_f64_u, i64_trunc_sat_f32_s,
+    i64_trunc_sat_f32_u, i64_trunc_sat_f64_s, i64_trunc_sat_f64_u,
 };
 use self::exec_memory::{
     f32_load, f32_store, f64_load, f64_store, i32_load, i32_load_16, i32_load_8, i32_store,
     i32_store16, i32_store8, i64_load, i64_load_16, i64_load_32, i64_load_8, i64_store,
-    i64_store16, i64_store32, i64_store8, v128_load, v128_load16_lane, v128_load16_splat,
-    v128_load32_lane, v128_load32_splat, v128_load32_zero, v128_load64_lane, v128_load64_splat,
-    v128_load64_zero, v128_load8_lane, v128_load8_splat, v128_load_16x4, v128_load_32x2,
-    v128_load_8x8, v128_store, v128_store16_lane, v128_store32_lane, v128_store64_lane,
-    v128_store8_lane,
+    i64_store16, i64_store32, i64_store8, memory_size, v128_load, v128_load16_lane,
+    v128_load16_splat, v128_load32_lane, v128_load32_splat, v128_load32_zero, v128_load64_lane,
+    v128_load64_splat, v128_load64_zero, v128_load8_lane, v128_load8_splat, v128_load_16x4,
+    v128_load_32x2, v128_load_8x8, v128_store, v128_store16_lane, v128_store32_lane,
+    v128_store64_lane, v128_store8_lane,
 };
-use self::exec_parametric::{exec_drop, exec_select};
+use self::exec_parametric::{exec_drop, exec_select, exec_select_vec};
 use self::exec_ref::{is_ref_null, ref_func, ref_null};
 use self::exec_table::{
     elem_drop, table_copy, table_fill, table_get, table_grow, table_init, table_set, table_size,
@@ -77,16 +82,16 @@ use self::exec_vec::{
     shape_f64_mul, shape_f64_nearest, shape_f64_neg, shape_f64_pmax, shape_f64_pmin,
     shape_f64_sqrt, shape_f64_sub, shape_f64_trunc, shape_ge_s, shape_ge_u, shape_gt_s, shape_gt_u,
     shape_i16_abs, shape_i16_add, shape_i16_avgr_u, shape_i16_max_s, shape_i16_max_u,
-    shape_i16_min_s, shape_i16_min_u, shape_i16_mulr_sat_s, shape_i16_neg, shape_i16_sat_add_s,
-    shape_i16_sat_add_u, shape_i16_sat_sub_s, shape_i16_sat_sub_u, shape_i16_sub, shape_i32_abs,
-    shape_i32_add, shape_i32_max_s, shape_i32_max_u, shape_i32_min_s, shape_i32_min_u,
-    shape_i32_neg, shape_i32_sub, shape_i64_abs, shape_i64_add, shape_i64_neg, shape_i64_sub,
-    shape_i8_abs, shape_i8_add, shape_i8_avgr_u, shape_i8_max_s, shape_i8_max_u, shape_i8_min_s,
-    shape_i8_min_u, shape_i8_neg, shape_i8_popcnt, shape_i8_sat_add_s, shape_i8_sat_add_u,
-    shape_i8_sat_sub_s, shape_i8_sat_sub_u, shape_i8_sub, shape_le_s, shape_le_u, shape_lt_s,
-    shape_lt_u, shape_ne, shapef_ge, shapef_gt, shapef_le, shapef_lt, shiftop_16x8, shiftop_32x4,
-    shiftop_64x2, shiftop_8x16, unop_16x8, unop_32x4, unop_64x2, unop_8x16, v128_and, v128_andnot,
-    v128_anytrue, v128_or, v128_xor, vternop, vvunop,
+    shape_i16_min_s, shape_i16_min_u, shape_i16_mul, shape_i16_mulr_sat_s, shape_i16_neg,
+    shape_i16_sat_add_s, shape_i16_sat_add_u, shape_i16_sat_sub_s, shape_i16_sat_sub_u,
+    shape_i16_sub, shape_i32_abs, shape_i32_add, shape_i32_max_s, shape_i32_max_u, shape_i32_min_s,
+    shape_i32_min_u, shape_i32_mul, shape_i32_neg, shape_i32_sub, shape_i64_abs, shape_i64_add,
+    shape_i64_mul, shape_i64_neg, shape_i64_sub, shape_i8_abs, shape_i8_add, shape_i8_avgr_u,
+    shape_i8_max_s, shape_i8_max_u, shape_i8_min_s, shape_i8_min_u, shape_i8_neg, shape_i8_popcnt,
+    shape_i8_sat_add_s, shape_i8_sat_add_u, shape_i8_sat_sub_s, shape_i8_sat_sub_u, shape_i8_sub,
+    shape_le_s, shape_le_u, shape_lt_s, shape_lt_u, shape_ne, shapef_ge, shapef_gt, shapef_le,
+    shapef_lt, shiftop_16x8, shiftop_32x4, shiftop_64x2, shiftop_8x16, unop_16x8, unop_32x4,
+    unop_64x2, unop_8x16, v128_and, v128_andnot, v128_anytrue, v128_or, v128_xor, vternop, vvunop,
 };
 use self::exec_vector::{
     all_true_16x8, all_true_32x4, all_true_64x2, all_true_8x16, bitmask_16x8, bitmask_32x4,
@@ -270,8 +275,12 @@ pub fn execute_instruction(
         InstructionType::F64ConvertI64U => f64_convert_i64_u(stack)?,
         InstructionType::F32DemoteF64 => f32_demote_f64(stack)?,
         InstructionType::F64PromoteF32 => f64_promote_f32(stack)?,
-        InstructionType::F32ReinterpretI32 => i32_reinterpret_f32(stack)?,
-        InstructionType::F64ReinterpretI64 => i64_reinterpret_f64(stack)?,
+        InstructionType::F32ReinterpretI32 => f32_reinterpret_i32(stack)?,
+        InstructionType::F64ReinterpretI64 => f64_reinterpret_i64(stack)?,
+        InstructionType::I32ReinterpretF32 => i32_reinterpret_f32(stack)?,
+        InstructionType::I64ReinterpretF64 => i64_reinterpret_f64(stack)?,
+        InstructionType::I64ExtendI32S => i64_extend_i32(stack, Sign::Signed)?,
+        InstructionType::I64ExtendI32U => i64_extend_i32(stack, Sign::Unsigned)?,
         // reference instructions
         InstructionType::RefNull(ref_type) => ref_null(ref_type, stack)?,
         InstructionType::RefIsNull => is_ref_null(stack)?,
@@ -377,6 +386,10 @@ pub fn execute_instruction(
         InstructionType::F64x2Add => binop_64x2(stack, shape_f64_add)?,
         InstructionType::F32x4Sub => binop_32x4(stack, shape_f32_sub)?,
         InstructionType::F64x2Sub => binop_64x2(stack, shape_f64_sub)?,
+        InstructionType::I16x8Mul => binop_16x8(stack, shape_i16_mul)?,
+        InstructionType::I32x4Mul => binop_32x4(stack, shape_i32_mul)?,
+        InstructionType::I32x4Mul => binop_32x4(stack, shape_i32_mul)?,
+        InstructionType::I64x2Mul => binop_64x2(stack, shape_i64_mul)?,
         InstructionType::F32x4Mul => binop_32x4(stack, shape_f32_mul)?,
         InstructionType::F64x2Mul => binop_64x2(stack, shape_f64_mul)?,
         InstructionType::F32x4Div => binop_32x4(stack, shape_f32_div)?,
@@ -569,6 +582,7 @@ pub fn execute_instruction(
         // parametric instructions
         InstructionType::Drop => exec_drop(stack)?,
         InstructionType::Select => exec_select(stack)?,
+        InstructionType::SelectVec(vector) => exec_select_vec(stack, vector)?,
 
         // variable instructions
         InstructionType::LocalGet(local_idx) => local_get(stack, local_idx)?,
@@ -652,8 +666,31 @@ pub fn execute_instruction(
         InstructionType::V128Store8Lane(arg) => v128_store8_lane(stack, store, arg)?,
         InstructionType::V128Store16Lane(arg) => v128_store16_lane(stack, store, arg)?,
         InstructionType::V128Store32Lane(arg) => v128_store32_lane(stack, store, arg)?,
-        InstructionType::V128Store64Lane(arg) => v128_store64_lane(stack, store, arg)?, // _ => unimplemented!(),
-    }
+        InstructionType::V128Store64Lane(arg) => v128_store64_lane(stack, store, arg)?,
+        InstructionType::MemorySize => memory_size(stack, store)?,
+        InstructionType::MemoryGrow => todo!(),
+        InstructionType::MemoryFill => todo!(),
+        InstructionType::MemoryCopy => todo!(),
+        InstructionType::MemoryInit(_x) => todo!(),
+        InstructionType::DataDrop(_x) => todo!(),
+
+        // control instructions
+        InstructionType::Nop => {}
+        InstructionType::Unreachable => exec_unreachable()?,
+        InstructionType::Block(block_instruction) => block(stack, store, block_instruction)?,
+        InstructionType::Loop(loop_instruction) => exec_loop(stack, store, loop_instruction)?,
+        InstructionType::IfElse(ifelse_instruction) => {
+            exec_ifelse(stack, store, ifelse_instruction)?
+        }
+        InstructionType::Br(label_idx) => exec_br(stack, store, label_idx)?,
+        InstructionType::BrIf(label_idx) => exec_brif(stack, store, label_idx)?,
+        InstructionType::BrTable(brtable_arg) => exec_brtable(stack, store, brtable_arg)?,
+        InstructionType::Return => exec_return(stack)?,
+        InstructionType::Call(func_idx) => exec_call(stack, func_idx)?,
+        InstructionType::CallIndirect(call_indirect_args) => {
+            exec_call_indirect(stack, call_indirect_args)?
+        }
+    };
 
     Ok(())
 }

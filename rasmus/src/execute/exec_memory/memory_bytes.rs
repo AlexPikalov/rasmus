@@ -87,3 +87,9 @@ pub fn get_u64_bytes<T: AsRef<[u8]>>(data: T, offset: usize) -> [u8; 8] {
     }
     arr
 }
+
+pub fn set_bytes<T: IntoIterator<Item = u8>>(data: &mut Vec<u8>, ea: usize, bytes: T) {
+    for (i, byte) in bytes.into_iter().enumerate() {
+        data[ea + i] = byte;
+    }
+}

@@ -43,4 +43,8 @@ impl MemInst {
 
         Err(Trap)
     }
+
+    pub fn size(&self) -> u32 {
+        (self.data.len() as u32) / (Self::PAGE_SIZE as u32)
+    }
 }

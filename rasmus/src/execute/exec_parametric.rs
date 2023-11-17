@@ -1,3 +1,5 @@
+use syntax::types::ValType;
+
 use crate::{
     instances::stack::{Stack, StackEntry},
     result::{RResult, Trap},
@@ -19,4 +21,8 @@ pub fn exec_select(stack: &mut Stack) -> RResult<()> {
     }
 
     Ok(())
+}
+
+pub fn exec_select_vec(stack: &mut Stack, vector: &Vec<ValType>) -> RResult<()> {
+    todo!()
 }

@@ -13,8 +13,8 @@ use crate::instances::{
 use super::as_float_trait::AsFloat;
 use super::as_signed_trait::AsSigned;
 use super::exec_binop::{
-    fadd, fdiv, fmul, fsub, iadd_32, iadd_64, iand, iandnot, ior, ishr_s_32, isub_32, isub_64,
-    ixor, max, min,
+    fadd, fdiv, fmul, fsub, iadd_32, iadd_64, iand, iandnot, imul_16, imul_32, imul_64, imul_8,
+    ior, ishr_s_32, isub_32, isub_64, ixor, max, min,
 };
 use super::exec_vector::{
     to_lanes_16x8, to_lanes_32x4, to_lanes_64x2, to_lanes_8x16, vec_from_lanes,
@@ -606,6 +606,18 @@ pub fn shape_f64_sub((left, right): (&u64, &u64)) -> u64 {
     let f_left = f64::from_be_bytes(left.to_be_bytes()).trunc();
     let f_right = f64::from_be_bytes(right.to_be_bytes()).trunc();
     u64::from_be_bytes((fsub(f_left, f_right).unwrap()).to_be_bytes())
+}
+
+pub fn shape_i16_mul((left, right): (&u16, &u16)) -> u16 {
+    imul_16(*left, *right)
+}
+
+pub fn shape_i32_mul((left, right): (&u32, &u32)) -> u32 {
+    imul_32(*left, *right).unwrap()
+}
+
+pub fn shape_i64_mul((left, right): (&u64, &u64)) -> u64 {
+    imul_64(*left, *right).unwrap()
 }
 
 pub fn shape_f32_mul((left, right): (&u32, &u32)) -> u32 {

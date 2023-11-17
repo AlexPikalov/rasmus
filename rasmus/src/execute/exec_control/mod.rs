@@ -1,0 +1,21 @@
+mod exec_block;
+mod exec_br;
+mod exec_brif;
+mod exec_brtable;
+mod exec_call;
+mod exec_call_indirect;
+mod exec_ifelse;
+mod exec_loop;
+mod exec_return;
+mod exec_unreachable;
+
+pub use exec_block::*;
+pub use exec_br::*;
+pub use exec_brif::*;
+pub use exec_brtable::*;
+pub use exec_call::*;
+pub use exec_call_indirect::*;
+pub use exec_ifelse::*;
+pub use exec_loop::*;
+pub use exec_return::*;
+pub use exec_unreachable::*;
