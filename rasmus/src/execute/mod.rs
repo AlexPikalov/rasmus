@@ -121,6 +121,7 @@ pub fn execute_expression(
         execute_instruction(instr, stack, store)?;
     }
 
+    // TODO: recheck what does it mean
     stack.pop_value().ok_or(Trap)
 }
 
@@ -679,7 +680,9 @@ pub fn execute_instruction(
         InstructionType::Block(block_instruction) => {
             block(stack, store, block_instruction, execute_instruction)?
         }
-        InstructionType::Loop(loop_instruction) => exec_loop(stack, store, loop_instruction)?,
+        InstructionType::Loop(loop_instruction) => {
+            exec_loop(stack, store, loop_instruction, execute_instruction)?
+        }
         InstructionType::IfElse(ifelse_instruction) => {
             exec_ifelse(stack, store, ifelse_instruction)?
         }

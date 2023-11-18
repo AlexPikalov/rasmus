@@ -7,11 +7,7 @@ use syntax::{
 
 use crate::{
     execute::exec_control::utils::pop_values_original_order,
-    instances::{
-        label::LabelInst,
-        stack::{Stack, StackEntry},
-        store::Store,
-    },
+    instances::{label::LabelInst, stack::Stack, store::Store},
     result::{RResult, Trap},
 };
 
