@@ -48,6 +48,14 @@ impl Stack {
         self.stack.push(entry);
     }
 
+    pub fn push_value(&mut self, value: Val) {
+        self.stack.push(StackEntry::Value(value));
+    }
+
+    pub fn push_label(&mut self, label: LabelInst) {
+        self.stack.push(StackEntry::Label(label));
+    }
+
     pub fn last(&self) -> Option<&StackEntry> {
         self.stack.last()
     }
@@ -139,6 +147,18 @@ impl Stack {
             }
             None => None,
         }
+    }
+
+    pub fn pop_label(&mut self) -> Option<LabelInst> {
+        if let Some(stack_entry) = self.stack.last() {
+            if stack_entry.is_label() {
+                if let Some(StackEntry::Label(label)) = self.stack.pop() {
+                    return Some(label);
+                }
+            }
+        }
+
+        None
     }
 
     pub fn current_frame(&mut self) -> Option<&mut Frame> {

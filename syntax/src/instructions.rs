@@ -1550,6 +1550,7 @@ impl ParseWithNom for InstructionType {
 #[derive(Debug, PartialEq, Clone)]
 pub struct BlockInstructionType {
     pub blocktype: BlockType,
+    // Change to Rc<Vec<InstructionType>>
     pub instructions: Vec<InstructionType>,
 }
 

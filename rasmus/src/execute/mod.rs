@@ -388,7 +388,6 @@ pub fn execute_instruction(
         InstructionType::F64x2Sub => binop_64x2(stack, shape_f64_sub)?,
         InstructionType::I16x8Mul => binop_16x8(stack, shape_i16_mul)?,
         InstructionType::I32x4Mul => binop_32x4(stack, shape_i32_mul)?,
-        InstructionType::I32x4Mul => binop_32x4(stack, shape_i32_mul)?,
         InstructionType::I64x2Mul => binop_64x2(stack, shape_i64_mul)?,
         InstructionType::F32x4Mul => binop_32x4(stack, shape_f32_mul)?,
         InstructionType::F64x2Mul => binop_64x2(stack, shape_f64_mul)?,
@@ -677,7 +676,9 @@ pub fn execute_instruction(
         // control instructions
         InstructionType::Nop => {}
         InstructionType::Unreachable => exec_unreachable()?,
-        InstructionType::Block(block_instruction) => block(stack, store, block_instruction)?,
+        InstructionType::Block(block_instruction) => {
+            block(stack, store, block_instruction, execute_instruction)?
+        }
         InstructionType::Loop(loop_instruction) => exec_loop(stack, store, loop_instruction)?,
         InstructionType::IfElse(ifelse_instruction) => {
             exec_ifelse(stack, store, ifelse_instruction)?

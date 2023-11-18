@@ -8,6 +8,7 @@ mod exec_ifelse;
 mod exec_loop;
 mod exec_return;
 mod exec_unreachable;
+mod utils;
 
 pub use exec_block::*;
 pub use exec_br::*;
