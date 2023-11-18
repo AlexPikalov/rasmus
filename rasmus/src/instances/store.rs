@@ -31,8 +31,10 @@ pub struct Store {
     pub tables: Vec<TableInst>,
     pub mems: Vec<MemInst>,
     pub globals: Vec<GlobalInst>,
+    // TODO: rewrite to HashMap<usize, ElemInst> ?
     pub elems: Vec<Option<ElemInst>>,
-    pub datas: Vec<DataInst>,
+    // TODO: rewrite to HashMap<usize, DataInst> ?
+    pub datas: Vec<Option<DataInst>>,
 }
 
 impl Store {
@@ -58,6 +60,20 @@ impl Store {
             .ok_or(Trap)?;
 
         self.elems[e] = None;
+
+        Ok(())
+    }
+
+    pub fn drop_data(&mut self, e: DataAddr) -> RResult<()> {
+        self.datas
+            .get(e)
+            // check if elem with index e exists
+            .ok_or(Trap)?
+            .as_ref()
+            // check if elem with index e is not None
+            .ok_or(Trap)?;
+
+        self.datas[e] = None;
 
         Ok(())
     }
@@ -132,7 +148,7 @@ impl Store {
 
     pub fn allocate_data(&mut self, data: Vec<Byte>) -> DataAddr {
         let data_inst = DataInst { data };
-        self.datas.push(data_inst);
+        self.datas.push(Some(data_inst));
 
         self.datas.len() - 1 as DataAddr
     }

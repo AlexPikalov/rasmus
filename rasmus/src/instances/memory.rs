@@ -14,34 +14,38 @@ impl MemInst {
     #[inline]
     pub fn grow(&mut self, n_val: &Val) -> RResult<()> {
         if let Val::I32(n) = n_val {
-            let num = *n as usize;
-            if self.data.len().checked_rem(Self::PAGE_SIZE).is_some() {
-                return Err(Trap);
-            }
-
-            let len = num + self.data.len() / Self::PAGE_SIZE;
-
-            if len > 2usize.pow(16) {
-                return Err(Trap);
-            }
-
-            let new_limits = LimitsType {
-                min: U32Type(len as u32),
-                max: self.mem_type.limits.max.clone(),
-            };
-            let new_mem_type = MemType { limits: new_limits };
-
-            if !is_memory_type_valid(&new_mem_type) {
-                return Err(Trap);
-            }
-
-            self.data.append(&mut vec![0x00; num]);
-            self.mem_type = new_mem_type;
-
-            return Ok(());
+            return self.grow_n(*n);
         }
 
         Err(Trap)
+    }
+
+    pub fn grow_n(&mut self, n: u32) -> RResult<()> {
+        let num = n as usize;
+        if self.data.len().checked_rem(Self::PAGE_SIZE).is_some() {
+            return Err(Trap);
+        }
+
+        let len = num + self.data.len() / Self::PAGE_SIZE;
+
+        if len > 2usize.pow(16) {
+            return Err(Trap);
+        }
+
+        let new_limits = LimitsType {
+            min: U32Type(len as u32),
+            max: self.mem_type.limits.max.clone(),
+        };
+        let new_mem_type = MemType { limits: new_limits };
+
+        if !is_memory_type_valid(&new_mem_type) {
+            return Err(Trap);
+        }
+
+        self.data.append(&mut vec![0x00; num]);
+        self.mem_type = new_mem_type;
+
+        return Ok(());
     }
 
     pub fn size(&self) -> u32 {

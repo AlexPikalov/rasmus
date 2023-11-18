@@ -48,13 +48,13 @@ use self::exec_cvtop::{
     i64_trunc_sat_f32_u, i64_trunc_sat_f64_s, i64_trunc_sat_f64_u,
 };
 use self::exec_memory::{
-    f32_load, f32_store, f64_load, f64_store, i32_load, i32_load_16, i32_load_8, i32_store,
-    i32_store16, i32_store8, i64_load, i64_load_16, i64_load_32, i64_load_8, i64_store,
-    i64_store16, i64_store32, i64_store8, memory_size, v128_load, v128_load16_lane,
-    v128_load16_splat, v128_load32_lane, v128_load32_splat, v128_load32_zero, v128_load64_lane,
-    v128_load64_splat, v128_load64_zero, v128_load8_lane, v128_load8_splat, v128_load_16x4,
-    v128_load_32x2, v128_load_8x8, v128_store, v128_store16_lane, v128_store32_lane,
-    v128_store64_lane, v128_store8_lane,
+    data_drop, f32_load, f32_store, f64_load, f64_store, i32_load, i32_load_16, i32_load_8,
+    i32_store, i32_store16, i32_store8, i64_load, i64_load_16, i64_load_32, i64_load_8, i64_store,
+    i64_store16, i64_store32, i64_store8, memory_copy, memory_fill, memory_grow, memory_init,
+    memory_size, v128_load, v128_load16_lane, v128_load16_splat, v128_load32_lane,
+    v128_load32_splat, v128_load32_zero, v128_load64_lane, v128_load64_splat, v128_load64_zero,
+    v128_load8_lane, v128_load8_splat, v128_load_16x4, v128_load_32x2, v128_load_8x8, v128_store,
+    v128_store16_lane, v128_store32_lane, v128_store64_lane, v128_store8_lane,
 };
 use self::exec_parametric::{exec_drop, exec_select, exec_select_vec};
 use self::exec_ref::{is_ref_null, ref_func, ref_null};
@@ -668,11 +668,11 @@ pub fn execute_instruction(
         InstructionType::V128Store32Lane(arg) => v128_store32_lane(stack, store, arg)?,
         InstructionType::V128Store64Lane(arg) => v128_store64_lane(stack, store, arg)?,
         InstructionType::MemorySize => memory_size(stack, store)?,
-        InstructionType::MemoryGrow => todo!(),
-        InstructionType::MemoryFill => todo!(),
-        InstructionType::MemoryCopy => todo!(),
-        InstructionType::MemoryInit(_x) => todo!(),
-        InstructionType::DataDrop(_x) => todo!(),
+        InstructionType::MemoryGrow => memory_grow(stack, store)?,
+        InstructionType::MemoryFill => memory_fill(stack, store)?,
+        InstructionType::MemoryCopy => memory_copy(stack, store)?,
+        InstructionType::MemoryInit(data_idx) => memory_init(stack, store, data_idx)?,
+        InstructionType::DataDrop(data_idx) => data_drop(stack, store, data_idx)?,
 
         // control instructions
         InstructionType::Nop => {}

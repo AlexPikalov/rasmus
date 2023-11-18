@@ -4,11 +4,10 @@ use crate::{
     address::{ElemAddr, TableAddr},
     execute::exec_const::i32_const,
     instances::{
-        elem::ElemInst,
         ref_inst::RefInst,
         stack::{Stack, StackEntry},
         store::Store,
-        table::{self, TableInst},
+        table::TableInst,
         value::Val,
     },
     result::{RResult, Trap},
@@ -77,7 +76,7 @@ pub fn table_grow(
     let ref_val = stack.pop_ref().ok_or(Trap)?;
     let err = -1i32 as u32;
 
-    let to_stack = match grow(table_instance, n, ref_val) {
+    let to_stack = match table_instance.grow_n(n, ref_val) {
         Ok(_) => size as u32,
         Err(_) => err,
     };
