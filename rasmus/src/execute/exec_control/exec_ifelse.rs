@@ -1,8 +1,8 @@
-use syntax::module::IfElseInstructionType;
+use syntax::module::{BlockInstructionType, IfElseInstructionType, InstructionType};
 
 use crate::{
     instances::{stack::Stack, store::Store},
-    result::RResult,
+    result::{RResult, Trap},
 };
 
 pub fn exec_ifelse(
@@ -13,6 +13,27 @@ pub fn exec_ifelse(
         ref if_instructions,
         ref else_instructions,
     }: &IfElseInstructionType,
+    execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<()> + Copy,
 ) -> RResult<()> {
-    todo!()
+    let c = stack.pop_i32().ok_or(Trap)?;
+
+    if c != 0 {
+        execute_instruction_fn(
+            &InstructionType::Block(BlockInstructionType {
+                blocktype: blocktype.clone(),
+                instructions: if_instructions.clone(),
+            }),
+            stack,
+            store,
+        )
+    } else {
+        execute_instruction_fn(
+            &InstructionType::Block(BlockInstructionType {
+                blocktype: blocktype.clone(),
+                instructions: else_instructions.clone(),
+            }),
+            stack,
+            store,
+        )
+    }
 }

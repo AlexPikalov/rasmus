@@ -684,7 +684,7 @@ pub fn execute_instruction(
             exec_loop(stack, store, loop_instruction, execute_instruction)?
         }
         InstructionType::IfElse(ifelse_instruction) => {
-            exec_ifelse(stack, store, ifelse_instruction)?
+            exec_ifelse(stack, store, ifelse_instruction, execute_instruction)?
         }
         InstructionType::Br(label_idx) => exec_br(stack, store, label_idx)?,
         InstructionType::BrIf(label_idx) => exec_brif(stack, store, label_idx)?,
