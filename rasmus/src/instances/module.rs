@@ -85,6 +85,7 @@ impl ModuleInst {
         stack.push_entry(StackEntry::Frame(Frame {
             module: aux_module.clone(),
             locals: Rc::new(RefCell::new(vec![])),
+            arity: None,
         }));
 
         let mut vals = Vec::with_capacity(module.globals.len());
@@ -130,6 +131,7 @@ impl ModuleInst {
         stack.push_entry(StackEntry::Frame(Frame {
             module: module_inst_rc.clone(),
             locals: Rc::new(RefCell::new(vec![])),
+            arity: None,
         }));
 
         Self::apply_elems(module, stack, store)?;

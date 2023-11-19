@@ -115,6 +115,7 @@ mod test {
         stack.push_entry(StackEntry::Frame(Frame {
             locals: Rc::new(RefCell::new(vec![])),
             module: module_inst,
+            arity: None,
         }));
 
         test_instruction_with_stack_and_store(

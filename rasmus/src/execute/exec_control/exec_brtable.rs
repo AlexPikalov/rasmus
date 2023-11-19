@@ -17,5 +17,5 @@ pub fn exec_brtable(
 
     let idx = brtable_arg.0.get(i as usize).unwrap_or(&brtable_arg.1);
 
-    return exec_br(stack, store, idx, execute_instruction_fn);
+    exec_br(stack, store, idx, execute_instruction_fn)
 }

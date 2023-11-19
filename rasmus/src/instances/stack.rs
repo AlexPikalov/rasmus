@@ -42,6 +42,10 @@ impl Stack {
         Stack { stack: vec![] }
     }
 
+    pub fn pop(&mut self) -> Option<StackEntry> {
+        self.stack.pop()
+    }
+
     pub fn push_entry(&mut self, entry: StackEntry) {
         self.stack.push(entry);
     }
