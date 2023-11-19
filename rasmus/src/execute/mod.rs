@@ -687,7 +687,9 @@ pub fn execute_instruction(
             exec_ifelse(stack, store, ifelse_instruction, execute_instruction)?
         }
         InstructionType::Br(label_idx) => exec_br(stack, store, label_idx, execute_instruction)?,
-        InstructionType::BrIf(label_idx) => exec_brif(stack, store, label_idx)?,
+        InstructionType::BrIf(label_idx) => {
+            exec_brif(stack, store, label_idx, execute_instruction)?
+        }
         InstructionType::BrTable(brtable_arg) => exec_brtable(stack, store, brtable_arg)?,
         InstructionType::Return => exec_return(stack)?,
         InstructionType::Call(func_idx) => exec_call(stack, func_idx)?,
