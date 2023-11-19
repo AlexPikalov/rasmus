@@ -27,7 +27,7 @@ pub fn invoke(
     function_addr: usize,
     execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<()> + Copy,
 ) -> RResult<()> {
-    let function = store.funcs.get(function_addr).ok_or(Trap)?;
+    let function = store.funcs.get(function_addr).cloned().ok_or(Trap)?;
     let func_type = function.get_type();
     let arity = func_type.results.len();
 
@@ -44,9 +44,7 @@ pub fn invoke(
         arity,
         instructions: Rc::new(vec![]),
     };
+    stack.push_label(label);
 
-    todo!()
-    // stack.push_label(label);
-
-    // let instructions = function.
+    function.invoke(stack, store, execute_instruction_fn)
 }

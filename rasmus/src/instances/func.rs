@@ -7,10 +7,11 @@ use crate::{
 
 use super::{module::ModuleInst, stack::Stack, store::Store};
 use syntax::{
-    module::{ExpressionType, InstructionType},
+    module::InstructionType,
     types::{Func, FuncType},
 };
 
+#[derive(Clone, Debug)]
 pub enum FuncInst {
     FuncInst(FuncInstLocal),
     HostFunc(HostFunc),
@@ -45,6 +46,7 @@ impl FuncInst {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct FuncInstLocal {
     pub func_type: FuncType,
     pub module: Rc<RefCell<ModuleInst>>,
@@ -83,6 +85,7 @@ impl FuncInstLocal {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct HostFunc {
     pub func_type: FuncType,
     pub host_code: HostCode,
