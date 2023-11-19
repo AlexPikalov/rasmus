@@ -50,6 +50,10 @@ impl Stack {
         self.stack.push(entry);
     }
 
+    pub fn push_frame(&mut self, frame: Frame) {
+        self.stack.push(StackEntry::Frame(frame));
+    }
+
     pub fn push_value(&mut self, value: Val) {
         self.stack.push(StackEntry::Value(value));
     }

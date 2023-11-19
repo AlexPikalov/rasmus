@@ -1,7 +1,29 @@
-use syntax::types::FuncIdx;
+use syntax::{
+    module::InstructionType,
+    types::{FuncIdx, U32Type},
+};
 
-use crate::{instances::stack::Stack, result::RResult};
+use crate::{
+    instances::{stack::Stack, store::Store},
+    result::{RResult, Trap},
+};
 
-pub fn exec_call(stack: &mut Stack, func_idx: &FuncIdx) -> RResult<()> {
-    todo!()
+use super::utils::invoke;
+
+pub fn exec_call(
+    stack: &mut Stack,
+    store: &mut Store,
+    &FuncIdx(U32Type(func_idx)): &FuncIdx,
+    execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<()> + Copy,
+) -> RResult<()> {
+    let current_frame = stack.current_frame().ok_or(Trap)?;
+    let function_addr = current_frame
+        .module
+        .borrow()
+        .funcaddrs
+        .get(func_idx as usize)
+        .cloned()
+        .ok_or(Trap)?;
+
+    invoke(stack, store, function_addr, execute_instruction_fn)
 }

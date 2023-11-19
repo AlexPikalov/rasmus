@@ -13,6 +13,8 @@ mod exec_variable;
 mod exec_vec;
 mod exec_vector;
 
+pub use exec_control::pop_values_original_order;
+
 use crate::result::{RResult, Trap};
 
 use crate::instances::instruction::{
@@ -694,7 +696,7 @@ pub fn execute_instruction(
             exec_brtable(stack, store, brtable_arg, execute_instruction)?
         }
         InstructionType::Return => exec_return(stack)?,
-        InstructionType::Call(func_idx) => exec_call(stack, func_idx)?,
+        InstructionType::Call(func_idx) => exec_call(stack, store, func_idx, execute_instruction)?,
         InstructionType::CallIndirect(call_indirect_args) => {
             exec_call_indirect(stack, call_indirect_args)?
         }
