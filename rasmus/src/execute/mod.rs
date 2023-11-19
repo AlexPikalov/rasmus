@@ -698,7 +698,7 @@ pub fn execute_instruction(
         InstructionType::Return => exec_return(stack)?,
         InstructionType::Call(func_idx) => exec_call(stack, store, func_idx, execute_instruction)?,
         InstructionType::CallIndirect(call_indirect_args) => {
-            exec_call_indirect(stack, call_indirect_args)?
+            exec_call_indirect(stack, store, call_indirect_args, execute_instruction)?
         }
     };
 

@@ -231,7 +231,7 @@ fn get_table_addr(stack: &mut Stack, idx: u32) -> RResult<TableAddr> {
         .ok_or(Trap)?
         .module
         .borrow()
-        .globaladdrs
+        .tableaddrs
         .get(idx as usize)
         .ok_or(Trap)
         .cloned()

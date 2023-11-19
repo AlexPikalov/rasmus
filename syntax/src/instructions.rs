@@ -81,7 +81,7 @@ pub enum InstructionType {
     BrTable((Vec<LabelIdx>, LabelIdx)),
     Return,
     Call(FuncIdx),
-    CallIndirect((TypeIdx, TableIdx)),
+    CallIndirect((TableIdx, TypeIdx)),
 
     // Reference Instructions
     RefNull(RefType),
