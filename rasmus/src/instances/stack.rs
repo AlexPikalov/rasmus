@@ -1,5 +1,3 @@
-use syntax::types::U32Type;
-
 use super::frame::Frame;
 use super::label::LabelInst;
 use super::ref_inst::RefInst;
@@ -58,6 +56,28 @@ impl Stack {
 
     pub fn last(&self) -> Option<&StackEntry> {
         self.stack.last()
+    }
+
+    pub fn count_labels(&self) -> usize {
+        self.stack.iter().rev().fold(0, |count, entry| match entry {
+            StackEntry::Label(_) => count + 1,
+            _ => count,
+        })
+    }
+
+    pub fn get_label(&self, label_idx: usize) -> Option<&LabelInst> {
+        let mut i = label_idx;
+
+        for entry in self.stack.iter().rev() {
+            if let StackEntry::Label(label) = entry {
+                if i == 0 {
+                    return Some(label);
+                }
+                i -= 1;
+            }
+        }
+
+        None
     }
 
     pub fn pop_value(&mut self) -> Option<Val> {

@@ -395,7 +395,7 @@ impl ParseWithNom for LocalIdx {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct LabelIdx(U32Type);
+pub struct LabelIdx(pub U32Type);
 
 impl ParseWithNom for LabelIdx {
     fn parse(bytes: &[u8]) -> NomResult<&[Byte], Self>
