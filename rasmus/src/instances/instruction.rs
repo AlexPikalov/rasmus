@@ -1,4 +1,4 @@
-use syntax::traits::AsSigned;
+use crate::entities::traits::AsSigned;
 
 use super::label::LabelInst;
 use super::ref_inst::RefInst;

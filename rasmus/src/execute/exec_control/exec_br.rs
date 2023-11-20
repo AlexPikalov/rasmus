@@ -1,4 +1,4 @@
-use syntax::{
+use crate::entities::{
     module::InstructionType,
     types::{LabelIdx, U32Type},
 };

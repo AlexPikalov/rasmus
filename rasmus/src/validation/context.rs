@@ -1,4 +1,4 @@
-use crate::{module::DataType, types::*};
+use crate::entities::{module::DataType, types::*};
 
 // TODO: make it like struct ValidationContext(&Module)
 pub struct ValidationContext {

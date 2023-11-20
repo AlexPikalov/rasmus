@@ -1,4 +1,4 @@
-use syntax::traits::{Max, Min};
+use crate::entities::traits::{Max, Min};
 
 use crate::instances::{
     stack::{Stack, StackEntry},

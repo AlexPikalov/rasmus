@@ -17,6 +17,8 @@ pub use exec_control::pop_values_original_order;
 
 use crate::result::{RResult, Trap};
 
+use crate::entities::instructions::{ExpressionType, InstructionType};
+use crate::entities::types::{F32Type, F64Type, FuncIdx, I32Type, I64Type, LaneIdx, U32Type};
 use crate::instances::instruction::{
     bitselect, eq, eqz, ges, geu, gts, gtu, les, leu, lts, ltu, neq,
 };
@@ -25,8 +27,6 @@ use crate::instances::store::Store;
 use crate::instances::value::Val;
 use crate::sign::Sign;
 use crate::{relop_impl, testop_impl};
-use syntax::instructions::{ExpressionType, InstructionType};
-use syntax::types::{F32Type, F64Type, FuncIdx, I32Type, I64Type, LaneIdx, U32Type};
 
 use self::exec_binop::{
     f32_add, f32_copysign, f32_div, f32_max, f32_min, f32_mul, f32_sub, f64_add, f64_copysign,

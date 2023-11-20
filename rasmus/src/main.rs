@@ -1,11 +1,14 @@
 mod address;
+mod binary;
 mod cli;
+mod entities;
 mod execute;
 mod instances;
 mod module;
 mod module_registry;
 mod result;
 pub mod sign;
+mod validation;
 
 #[cfg(test)]
 mod execute_test;

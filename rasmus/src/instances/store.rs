@@ -11,14 +11,14 @@ use super::module::ModuleInst;
 use super::ref_inst::RefInst;
 use super::table::TableInst;
 use super::value::Val;
+use crate::entities::{
+    module::{ExportDescription, Module},
+    types::{Byte, Func, FuncType, GlobalType, MemType, RefType, TableType},
+};
+use crate::validation::types_validation::{is_memory_type_valid, is_table_type_valid};
 use crate::{
     address::*,
     result::{RResult, Trap},
-};
-use syntax::validation::types_validation::{is_memory_type_valid, is_table_type_valid};
-use syntax::{
-    module::{ExportDescription, Module},
-    types::{Byte, Func, FuncType, GlobalType, MemType, RefType, TableType},
 };
 
 // TODO: consider using HashMap instead of Vec,
@@ -430,7 +430,7 @@ impl Store {
 mod test {
     use std::{cell::RefCell, rc::Rc};
 
-    use syntax::{
+    use crate::entities::{
         module::ExpressionType,
         types::{Func, FuncType, TypeIdx, U32Type},
     };

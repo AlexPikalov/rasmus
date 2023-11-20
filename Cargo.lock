@@ -37,10 +37,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "code_gen"
-version = "0.1.0"
-
-[[package]]
 name = "errno"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -134,7 +130,7 @@ name = "rasmus"
 version = "0.1.0"
 dependencies = [
  "clap",
- "syntax",
+ "nom",
 ]
 
 [[package]]
@@ -156,13 +152,6 @@ name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
-
-[[package]]
-name = "syntax"
-version = "0.1.0"
-dependencies = [
- "nom",
-]
 
 [[package]]
 name = "termcolor"

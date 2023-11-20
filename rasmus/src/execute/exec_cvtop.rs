@@ -104,7 +104,7 @@ macro_rules! reinterpret {
     ($arg_type: ty, $ret_type: ty) => {
         |arg: $arg_type| -> RResult<$ret_type> {
             let mut bytes = arg.to_le_bytes();
-            Ok(::syntax::read_unsigned_leb128!($ret_type)(
+            Ok($crate::read_unsigned_leb128!($ret_type)(
                 &mut bytes,
                 &mut 0usize,
             ))
@@ -273,7 +273,7 @@ pub fn i64_extend_i32(stack: &mut Stack, signed: Sign) -> RResult<()> {
 
 #[cfg(test)]
 mod test {
-    use syntax::{
+    use crate::entities::{
         module::InstructionType,
         types::{F32Type, F64Type, I64Type},
     };

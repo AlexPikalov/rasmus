@@ -1,4 +1,4 @@
-use crate::types::LocalIdx;
+use crate::entities::types::LocalIdx;
 
 // TODO: try to add more debugging information to each option
 #[derive(Debug, PartialEq)]
@@ -25,7 +25,7 @@ pub enum ValidationError {
     LaneIdxTooBix,
     DataNotFound,
     TypeNotFound,
-    InconsistentBlocktype
+    InconsistentBlocktype,
 }
 
 pub type ValidationResult<T> = Result<T, ValidationError>;

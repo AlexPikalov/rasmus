@@ -1,4 +1,4 @@
-use syntax::types::{DataIdx, U32Type};
+use crate::entities::types::{DataIdx, U32Type};
 
 use crate::{
     address::{DataAddr, MemAddr},

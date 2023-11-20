@@ -1,5 +1,5 @@
 use super::ref_inst::RefInst;
-use syntax::types::RefType;
+use crate::entities::types::RefType;
 
 #[derive(Debug, Clone)]
 pub struct ElemInst {

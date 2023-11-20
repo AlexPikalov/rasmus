@@ -1,7 +1,8 @@
-use super::binary::parse_trait::ParseWithNom;
-use super::binary::parser_helpers::{
+use crate::binary::parse_trait::ParseWithNom;
+use crate::binary::parser_helpers::{
     parse as nom_parse, read_s33_leb128, read_u32_leb128, read_u64_leb128,
 };
+
 use super::instructions::ExpressionType;
 use nom::error::ParseError as NomParseError;
 use nom::{
@@ -491,30 +492,6 @@ pub struct Func {
     pub func_type: TypeIdx,
     pub locals: Vec<ValType>,
     pub body: ExpressionType,
-}
-
-pub type ParseResult<T> = Result<T, SyntaxError>;
-
-#[derive(Debug, PartialEq)]
-pub enum SyntaxError {
-    UnexpectedSectionIdValue,
-    ModuleMagicNotFound,
-    ModuleVersionNotFound,
-    InvalidModuleSection,
-    InvalidTypesModuleSection,
-    InvalidCodeModuleSection,
-    InvalidFuncsModuleSection,
-    InvalidImportsModuleSection,
-    InvalidTablesModuleSection,
-    InvalidMemsModuleSection,
-    InvalidGlobalsModuleSection,
-    InvalidStartModuleSection,
-    InvalidElementSegmentModuleSection,
-    InvalidDatasModuleSection,
-    InvalidDataCountModuleSection,
-    InvalidVectorLen,
-    UnexpectedModuleSectionId,
-    DataCountDoesntMatchDataLen,
 }
 
 pub struct NomError;

@@ -1,5 +1,5 @@
 use crate::address::*;
-use syntax::types::NameType;
+use crate::entities::types::NameType;
 
 #[derive(Debug, PartialEq)]
 pub struct ExportInst {

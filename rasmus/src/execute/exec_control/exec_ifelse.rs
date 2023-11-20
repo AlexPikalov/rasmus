@@ -1,4 +1,4 @@
-use syntax::module::{BlockInstructionType, IfElseInstructionType, InstructionType};
+use crate::entities::module::{BlockInstructionType, IfElseInstructionType, InstructionType};
 
 use crate::{
     instances::{stack::Stack, store::Store},

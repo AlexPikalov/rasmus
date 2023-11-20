@@ -1,8 +1,10 @@
-use crate::types::*;
+// use crate::types::*;
+
+use crate::entities::types::Byte;
 
 use super::parse_trait::ParseWithNom;
 
-use nom::{bytes::complete::take_till, IResult as NomResult, Slice};
+use nom::{IResult as NomResult, Slice};
 
 #[macro_export]
 macro_rules! read_unsigned_leb128 {
@@ -108,22 +110,25 @@ pub fn read_s33_leb128(slice: &[u8], position: &mut usize) -> i64 {
 }
 
 // Unlike to Vec::parse this function should be used for cases when a number
-// of structures is not-known
+// of structures is unknown
 pub fn parse_all_to_vec<T>(bytes: &[Byte], till: Byte) -> NomResult<&[Byte], Vec<T>>
 where
     T: ParseWithNom + Sized,
 {
-    let (bytes, bytes_to_parse) = take_till(|b| b == till)(bytes)?;
-    let mut remaining_bytes = bytes_to_parse;
+    let mut remaining_bytes = bytes;
     let mut accumulator: Vec<T> = Vec::new();
 
     while !remaining_bytes.is_empty() {
         let parsed = T::parse(remaining_bytes)?;
         remaining_bytes = parsed.0;
         accumulator.push(parsed.1);
+
+        if remaining_bytes.first().map(|b| *b == till).unwrap_or(true) {
+            break;
+        }
     }
 
-    Ok((bytes.slice(1..), accumulator))
+    Ok((remaining_bytes.slice(1..), accumulator))
 }
 
 // TODO: create unit test for parse_all_to_vec

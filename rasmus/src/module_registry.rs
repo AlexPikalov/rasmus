@@ -1,5 +1,5 @@
+use crate::entities::module::Module;
 use crate::instances::export::ExportInst;
-use syntax::module::Module;
 
 pub struct ModuleRegistry;
 
@@ -18,7 +18,7 @@ impl ModuleRegistry {
         // of imports is not equal to the number
         // of provided external values, then:
         //
-        // Fail. 
+        // Fail.
         // TODO:
         vec![]
     }

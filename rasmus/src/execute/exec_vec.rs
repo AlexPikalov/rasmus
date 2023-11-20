@@ -1,6 +1,6 @@
 use std::ops::Neg;
 
-use syntax::types::LaneIdx;
+use crate::entities::types::LaneIdx;
 
 use crate::nearest;
 use crate::result::{RResult, Trap};

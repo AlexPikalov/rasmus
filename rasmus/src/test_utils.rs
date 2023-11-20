@@ -1,4 +1,4 @@
-use syntax::module::InstructionType;
+use crate::entities::module::InstructionType;
 
 use crate::instances::{stack::Stack, store::Store, value::Val};
 

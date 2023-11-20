@@ -1,6 +1,6 @@
 use crate::check;
-use crate::instructions::{BlockType, InstructionType, InstructionType as I};
-use crate::types::*;
+use crate::entities::instructions::{BlockType, InstructionType, InstructionType as I};
+use crate::entities::types::*;
 
 use super::context::ValidationContext;
 use super::validation_error::{ValidationError, ValidationResult};

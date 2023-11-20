@@ -1,4 +1,4 @@
-use syntax::types::U32Type;
+use crate::entities::types::U32Type;
 
 use crate::{
     address::MemAddr,

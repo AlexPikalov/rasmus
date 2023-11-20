@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{module::ModuleInst, stack::Stack, store::Store};
-use syntax::{
+use crate::entities::{
     module::InstructionType,
     types::{Func, FuncType},
 };

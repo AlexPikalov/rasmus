@@ -1,7 +1,5 @@
 [workspace]
 
 members = [
-  "code_gen",
   "rasmus",
-  "syntax"
 ]

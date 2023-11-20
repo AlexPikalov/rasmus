@@ -1,8 +1,8 @@
 #![allow(non_upper_case_globals)]
 
-use super::binary::parse_trait::ParseWithNom;
-use super::binary::parser_helpers::{parse, parse_all_to_vec};
 use super::types::*;
+use crate::binary::parse_trait::ParseWithNom;
+use crate::binary::parser_helpers::{parse, parse_all_to_vec};
 
 use nom::{
     bytes::complete::{tag, take},

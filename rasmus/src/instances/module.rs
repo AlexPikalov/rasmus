@@ -2,12 +2,12 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::address::*;
+use crate::entities::module::*;
+use crate::entities::types::*;
 use crate::execute::{execute_expression, execute_instruction};
 use crate::instances::{frame::Frame, stack::Stack, stack::StackEntry, store::Store};
 use crate::module_registry::ModuleRegistry;
 use crate::result::{RResult, Trap};
-use syntax::module::*;
-use syntax::types::*;
 
 use super::export::{ExportInst, ExternVal};
 use super::value::Val;
@@ -339,7 +339,7 @@ impl ModuleInst {
 
 #[cfg(test)]
 mod test {
-    use syntax::module::Module;
+    use crate::entities::module::Module;
 
     use crate::{
         instances::{stack::Stack, store::Store},

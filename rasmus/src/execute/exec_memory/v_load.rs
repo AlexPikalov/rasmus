@@ -1,4 +1,4 @@
-use syntax::types::{LaneIdx, U32Type};
+use crate::entities::types::{LaneIdx, U32Type};
 
 use crate::{
     address::MemAddr,

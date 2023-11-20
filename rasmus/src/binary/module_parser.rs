@@ -3,9 +3,14 @@ use nom::{
     IResult as NomResult,
 };
 
-use crate::binary::parse_trait::*;
-use crate::module::*;
-use crate::types::*;
+use crate::entities::types::*;
+use crate::{
+    binary::{
+        parse_trait::*,
+        syntax_error::{ParseResult, SyntaxError},
+    },
+    entities::module::*,
+};
 pub struct ModuleParser;
 
 macro_rules! get_section_content {
@@ -39,15 +44,6 @@ impl ModuleParser {
         let (bytes, section_content) = take(size.0)(bytes)?;
 
         Ok((bytes, (section_id_bytes[0], section_content)))
-    }
-
-    fn parse_custom_section(bytes: &[Byte]) -> ParseResult<CustomSection> {
-        let (bytes, name) =
-            NameType::parse(bytes).map_err(|_| SyntaxError::InvalidModuleSection)?;
-        Ok(CustomSection {
-            name: name.0,
-            bytes: bytes.to_vec(),
-        })
     }
 
     fn parse_types_section(bytes: &[Byte]) -> ParseResult<Vec<FuncType>> {
@@ -382,6 +378,9 @@ impl ParseBin<Module> for ModuleParser {
 
         while !remainig_bytes.is_empty() {
             let (b, section_id, section_content) = get_section_content!(remainig_bytes);
+            println!("CURRENT MODULE {module:?}");
+            println!("FOUND section {section_id:?}\n");
+            println!("=======================================================================");
             match section_id {
                 SectionId::Custom => {
                     // custom sections are not a part of the Module structure, so ignore so far
@@ -420,10 +419,10 @@ mod test {
     use super::*;
     use crate::binary::parse_trait::ParseBin;
 
-    // #[test]
+    #[test]
     fn test_complete_module() {
         let wasm = std::fs::read(format!(
-            "{}/wasm_files/table.wasm",
+            "{}/wasm_files/complete_module.wasm",
             std::env::var("CARGO_MANIFEST_DIR").unwrap()
         ))
         .unwrap();

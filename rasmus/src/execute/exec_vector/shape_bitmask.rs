@@ -103,7 +103,7 @@ pub fn bitmask_64x2(stack: &mut Stack) -> RResult<()> {
 
 #[cfg(test)]
 mod test {
-    use syntax::module::InstructionType;
+    use crate::entities::module::InstructionType;
 
     use crate::{execute::exec_vector::vec_from_lanes, test_utils::test_instruction};
 

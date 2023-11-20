@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use syntax::module::InstructionType;
+use crate::entities::module::InstructionType;
 
 #[derive(Debug, Clone)]
 pub struct LabelInst {

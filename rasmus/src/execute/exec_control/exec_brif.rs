@@ -1,4 +1,4 @@
-use syntax::{module::InstructionType, types::LabelIdx};
+use crate::entities::{module::InstructionType, types::LabelIdx};
 
 use crate::{
     instances::{stack::Stack, store::Store},

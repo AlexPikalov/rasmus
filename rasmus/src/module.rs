@@ -1,6 +1,6 @@
+use crate::binary::{module_parser::ModuleParser, parse_trait::ParseBin};
 use std::fs::read;
 use std::path::Path;
-use syntax::binary::{module_parser::ModuleParser, parse_trait::ParseBin};
 
 pub struct ModuleInstance;
 

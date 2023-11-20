@@ -1,6 +1,6 @@
+use crate::entities::types::RefType;
 use crate::instances::ref_inst::RefInst;
 use crate::instances::{stack::StackEntry, value::Val};
-use syntax::types::RefType;
 
 use crate::{
     instances::stack::Stack,
@@ -49,7 +49,7 @@ pub fn is_ref_null(stack: &mut Stack) -> RResult<()> {
 mod test {
     use std::{cell::RefCell, rc::Rc};
 
-    use syntax::{
+    use crate::entities::{
         module::{CodeType, ExpressionType, FuncCodeType, InstructionType, Module},
         types::{FuncIdx, FuncType, RefType, TypeIdx, U32Type},
     };

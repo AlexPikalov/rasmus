@@ -1,12 +1,8 @@
-use std::cell::Ref;
-
+use crate::entities::types::RefType;
 use crate::{
     address::{ExternAddr, FuncAddr},
     result::{RResult, Trap},
 };
-use syntax::types::RefType;
-
-use super::func;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum RefInst {

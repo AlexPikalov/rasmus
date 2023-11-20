@@ -1,4 +1,4 @@
-use syntax::types::ValType;
+use crate::entities::types::ValType;
 
 use crate::{
     instances::stack::{Stack, StackEntry},

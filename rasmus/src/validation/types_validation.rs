@@ -1,6 +1,6 @@
 use super::context::ValidationContext;
-use crate::instructions::BlockType;
-use crate::types::*;
+use crate::entities::instructions::BlockType;
+use crate::entities::types::*;
 
 // TODO: refactor following functions to returl ValidationResult instead of bool
 

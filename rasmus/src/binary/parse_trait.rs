@@ -1,8 +1,7 @@
-use super::super::types::*;
-use nom::{
-    bytes::complete::{take, take_till},
-    IResult as NomResult,
-};
+use crate::entities::types::*;
+use nom::{bytes::complete::take, IResult as NomResult};
+
+use super::syntax_error::ParseResult;
 
 pub trait ParseBin<T: Sized> {
     fn parse(bytes: &[u8]) -> ParseResult<(Vec<Byte>, T)>

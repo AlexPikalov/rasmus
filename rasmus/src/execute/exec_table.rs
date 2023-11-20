@@ -1,4 +1,4 @@
-use syntax::types::{ElemIdx, TableIdx, U32Type};
+use crate::entities::types::{ElemIdx, TableIdx, U32Type};
 
 use crate::{
     address::{ElemAddr, TableAddr},

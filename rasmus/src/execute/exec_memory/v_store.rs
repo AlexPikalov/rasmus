@@ -1,4 +1,4 @@
-use syntax::types::{LaneIdx, U32Type};
+use crate::entities::types::{LaneIdx, U32Type};
 
 use crate::{
     address::MemAddr,
@@ -34,10 +34,7 @@ pub fn v128_store(
 pub fn v128_store8_lane(
     stack: &mut Stack,
     store: &mut Store,
-    &((U32Type(offset), U32Type(_align)), LaneIdx(x)): &(
-        (syntax::types::U32Type, syntax::types::U32Type),
-        LaneIdx,
-    ),
+    &((U32Type(offset), U32Type(_align)), LaneIdx(x)): &((U32Type, U32Type), LaneIdx),
 ) -> RResult<()> {
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get_mut(mem_addr).ok_or(Trap)?;
@@ -60,10 +57,7 @@ pub fn v128_store8_lane(
 pub fn v128_store16_lane(
     stack: &mut Stack,
     store: &mut Store,
-    &((U32Type(offset), U32Type(_align)), LaneIdx(x)): &(
-        (syntax::types::U32Type, syntax::types::U32Type),
-        LaneIdx,
-    ),
+    &((U32Type(offset), U32Type(_align)), LaneIdx(x)): &((U32Type, U32Type), LaneIdx),
 ) -> RResult<()> {
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get_mut(mem_addr).ok_or(Trap)?;
@@ -86,10 +80,7 @@ pub fn v128_store16_lane(
 pub fn v128_store32_lane(
     stack: &mut Stack,
     store: &mut Store,
-    &((U32Type(offset), U32Type(_align)), LaneIdx(x)): &(
-        (syntax::types::U32Type, syntax::types::U32Type),
-        LaneIdx,
-    ),
+    &((U32Type(offset), U32Type(_align)), LaneIdx(x)): &((U32Type, U32Type), LaneIdx),
 ) -> RResult<()> {
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get_mut(mem_addr).ok_or(Trap)?;
@@ -112,10 +103,7 @@ pub fn v128_store32_lane(
 pub fn v128_store64_lane(
     stack: &mut Stack,
     store: &mut Store,
-    &((U32Type(offset), U32Type(_align)), LaneIdx(x)): &(
-        (syntax::types::U32Type, syntax::types::U32Type),
-        LaneIdx,
-    ),
+    &((U32Type(offset), U32Type(_align)), LaneIdx(x)): &((U32Type, U32Type), LaneIdx),
 ) -> RResult<()> {
     let mem_addr = get_mem_addr(stack)?;
     let mem_inst = store.mems.get_mut(mem_addr).ok_or(Trap)?;

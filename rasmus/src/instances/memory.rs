@@ -1,7 +1,7 @@
 use super::value::Val;
+use crate::entities::types::{Byte, LimitsType, MemType, U32Type};
 use crate::result::{RResult, Trap};
-use syntax::types::{Byte, LimitsType, MemType, U32Type};
-use syntax::validation::types_validation::is_memory_type_valid;
+use crate::validation::types_validation::is_memory_type_valid;
 
 pub struct MemInst {
     pub mem_type: MemType,

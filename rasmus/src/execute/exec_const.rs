@@ -1,4 +1,4 @@
-use syntax::types::Byte;
+use crate::entities::types::Byte;
 
 use crate::{
     instances::{
@@ -48,7 +48,7 @@ fn v128_from_vec(v: &Vec<Byte>) -> RResult<u128> {
 
 #[cfg(test)]
 mod test {
-    use syntax::{
+    use crate::entities::{
         module::InstructionType,
         types::{F32Type, F64Type, I32Type, I64Type},
     };

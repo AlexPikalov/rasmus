@@ -1,4 +1,4 @@
-use syntax::types::{GlobalIdx, LocalIdx, U32Type};
+use crate::entities::types::{GlobalIdx, LocalIdx, U32Type};
 
 use crate::{
     instances::{

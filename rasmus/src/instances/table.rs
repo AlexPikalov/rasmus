@@ -1,8 +1,8 @@
 use super::ref_inst::RefInst;
 use super::value::Val;
+use crate::entities::types::{LimitsType, TableType, U32Type};
 use crate::result::{RResult, Trap};
-use syntax::types::{LimitsType, TableType, U32Type};
-use syntax::validation::types_validation::is_table_type_valid;
+use crate::validation::types_validation::is_table_type_valid;
 
 pub struct TableInst {
     pub table_type: TableType,

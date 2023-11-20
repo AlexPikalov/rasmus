@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use syntax::{
+use crate::entities::{
     module::{BlockInstructionType, BlockType, InstructionType},
     types::{FuncType, S33Type},
 };

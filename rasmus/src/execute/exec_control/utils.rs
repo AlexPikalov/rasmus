@@ -1,9 +1,6 @@
-use std::{
-    cell::{Ref, RefCell},
-    rc::Rc,
-};
+use std::{cell::RefCell, rc::Rc};
 
-use syntax::module::InstructionType;
+use crate::entities::module::InstructionType;
 
 use crate::{
     instances::{frame::Frame, label::LabelInst, stack::Stack, store::Store, value::Val},

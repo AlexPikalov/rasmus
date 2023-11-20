@@ -5,7 +5,7 @@ pub struct UserInput {
 impl UserInput {
     pub fn parse_args() -> UserInput {
         UserInput {
-            source_file_path: "./wasm_files/complete_module.wasm".into(),
+            source_file_path: "./rasmus/tests/files/factorial.wasm".into(),
         }
     }
 }

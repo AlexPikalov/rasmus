@@ -177,7 +177,7 @@ fn f64_unop(exec_fn: impl FnOnce(f64) -> f64, stack: &mut Stack) -> RResult<()> 
 
 #[cfg(test)]
 mod test {
-    use syntax::{
+    use crate::entities::{
         module::InstructionType,
         types::{I32Type, I64Type},
     };

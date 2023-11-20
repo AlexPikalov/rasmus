@@ -1,6 +1,9 @@
-use super::binary::parse_trait::ParseWithNom;
 pub use super::instructions::*;
 use super::types::*;
+use crate::binary::{
+    parse_trait::ParseWithNom,
+    syntax_error::{ParseResult, SyntaxError},
+};
 
 use nom::{bytes::complete::take, IResult as NomResult};
 
