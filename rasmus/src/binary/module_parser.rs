@@ -65,7 +65,7 @@ impl ModuleParser {
     }
 
     fn parse_func_type(bytes: &[Byte]) -> NomResult<&[Byte], FuncType> {
-        let (bytes, _) = tag(&[FuncType::ENCODE_BYTE])(bytes)?;
+        let (bytes, _) = tag(&[FuncType::ENCODE_BYTE_FUNC])(bytes)?;
         let (bytes, parameters_vec_len) = U32Type::parse(bytes)?;
 
         let mut remaining_bytes = bytes;
@@ -176,7 +176,7 @@ impl ModuleParser {
             let func_name = func_name_parsed.1;
             remaining_bytes = func_name_parsed.0;
 
-            let import_desc_parsed = Self::parse_import_desc_type(remaining_bytes)
+            let import_desc_parsed = ImportDescription::parse(remaining_bytes)
                 .map_err(|_| SyntaxError::InvalidImportsModuleSection)?;
             let import_desc = import_desc_parsed.1;
             remaining_bytes = import_desc_parsed.0;
@@ -189,29 +189,6 @@ impl ModuleParser {
         }
 
         Ok(import_types)
-    }
-
-    fn parse_import_desc_type(bytes: &[Byte]) -> NomResult<&[Byte], ImportDescription> {
-        let (bytes, encode_byte) =
-            take(1usize)(bytes).map(|(b, encode_byte_slice)| (b, encode_byte_slice[0]))?;
-
-        match encode_byte {
-            ImportDescription::ENCODE_BYTE_FUNC => U32Type::parse(bytes)
-                .map(|(b, u32_val)| (b, ImportDescription::Func(TypeIdx(u32_val)))),
-            ImportDescription::ENCODE_BYTE_TABLE => {
-                TableType::parse(bytes).map(|(b, val)| (b, ImportDescription::Table(val)))
-            }
-            ImportDescription::ENCODE_BYTE_MEM => {
-                MemType::parse(bytes).map(|(b, val)| (b, ImportDescription::Mem(val)))
-            }
-            ImportDescription::ENCODE_BYTE_GLOBAL => {
-                GlobalType::parse(bytes).map(|(b, val)| (b, ImportDescription::Global(val)))
-            }
-            _ => Err(nom::Err::Failure(nom::error::Error::new(
-                bytes,
-                nom::error::ErrorKind::Char,
-            ))),
-        }
     }
 
     fn parse_table_section(bytes: &[Byte]) -> ParseResult<Vec<TableType>> {
@@ -285,7 +262,7 @@ impl ModuleParser {
             let func_name = func_name_parsed.1;
             remaining_bytes = func_name_parsed.0;
 
-            let export_desc_parsed = Self::parse_export_desc_type(remaining_bytes)
+            let export_desc_parsed = ExportDescription::parse(remaining_bytes)
                 .map_err(|_| SyntaxError::InvalidImportsModuleSection)?;
             let export_desc = export_desc_parsed.1;
             remaining_bytes = export_desc_parsed.0;
@@ -297,26 +274,6 @@ impl ModuleParser {
         }
 
         Ok(export_types)
-    }
-
-    fn parse_export_desc_type(bytes: &[Byte]) -> NomResult<&[Byte], ExportDescription> {
-        let (bytes, encode_byte) =
-            take(1usize)(bytes).map(|(b, encode_byte_slice)| (b, encode_byte_slice[0]))?;
-
-        match encode_byte {
-            ExportDescription::ENCODE_BYTE_FUNC => U32Type::parse(bytes)
-                .map(|(b, u32_val)| (b, ExportDescription::Func(TypeIdx(u32_val)))),
-            ExportDescription::ENCODE_BYTE_TABLE => U32Type::parse(bytes)
-                .map(|(b, u32_val)| (b, ExportDescription::Table(TableIdx(u32_val)))),
-            ExportDescription::ENCODE_BYTE_MEM => U32Type::parse(bytes)
-                .map(|(b, u32_val)| (b, ExportDescription::Mem(MemIdx(u32_val)))),
-            ExportDescription::ENCODE_BYTE_GLOBAL => U32Type::parse(bytes)
-                .map(|(b, u32_val)| (b, ExportDescription::Global(GlobalIdx(u32_val)))),
-            _ => Err(nom::Err::Failure(nom::error::Error::new(
-                bytes,
-                nom::error::ErrorKind::Char,
-            ))),
-        }
     }
 
     fn parse_start_section(bytes: &[Byte]) -> ParseResult<StartType> {
