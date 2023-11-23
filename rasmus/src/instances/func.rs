@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    execute::pop_values_original_order,
+    execute::{executor::ExitType, pop_values_original_order},
     result::{RResult, Trap},
 };
 
@@ -36,9 +36,9 @@ impl FuncInst {
         &self,
         stack: &mut Stack,
         store: &mut Store,
-        execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<()>
+        execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<ExitType>
             + Copy,
-    ) -> RResult<()> {
+    ) -> RResult<ExitType> {
         match self {
             FuncInst::FuncInst(f) => f.invoke(stack, store, execute_instruction_fn),
             FuncInst::HostFunc(h) => h.invoke(stack, store),
@@ -58,30 +58,24 @@ impl FuncInstLocal {
         &self,
         stack: &mut Stack,
         store: &mut Store,
-        execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<()>
+        execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<ExitType>
             + Copy,
-    ) -> RResult<()> {
-        let mut returned = false;
+    ) -> RResult<ExitType> {
         for ref instruction in &self.code.body.instructions {
-            // TODO: handle function finishing after return
-            execute_instruction_fn(instruction, stack, store)?;
-            if let InstructionType::Return = instruction {
-                returned = true;
-                break;
+            if execute_instruction_fn(instruction, stack, store)? == ExitType::Returned {
+                return Ok(ExitType::Completed);
             }
         }
 
-        if !returned {
-            let result = pop_values_original_order(stack, self.func_type.results.len())?;
-            stack.pop_label().ok_or(Trap)?;
-            stack.pop_frame().ok_or(Trap)?;
+        let result = pop_values_original_order(stack, self.func_type.results.len())?;
+        stack.pop_label().ok_or(Trap)?;
+        stack.pop_frame().ok_or(Trap)?;
 
-            for value in result {
-                stack.push_value(value);
-            }
+        for value in result {
+            stack.push_value(value);
         }
 
-        Ok(())
+        Ok(ExitType::Completed)
     }
 }
 
@@ -92,7 +86,7 @@ pub struct HostFunc {
 }
 
 impl HostFunc {
-    pub fn invoke(&self, stack: &mut Stack, store: &mut Store) -> RResult<()> {
+    pub fn invoke(&self, stack: &mut Stack, store: &mut Store) -> RResult<ExitType> {
         todo!()
     }
 }

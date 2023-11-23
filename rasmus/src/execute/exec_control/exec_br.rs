@@ -1,6 +1,9 @@
-use crate::entities::{
-    module::InstructionType,
-    types::{LabelIdx, U32Type},
+use crate::{
+    entities::{
+        module::InstructionType,
+        types::{LabelIdx, U32Type},
+    },
+    execute::executor::ExitType,
 };
 
 use crate::{
@@ -14,8 +17,9 @@ pub fn exec_br(
     stack: &mut Stack,
     store: &mut Store,
     &LabelIdx(U32Type(label_idx)): &LabelIdx,
-    execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<()> + Copy,
-) -> RResult<()> {
+    execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<ExitType>
+        + Copy,
+) -> RResult<ExitType> {
     if stack.count_labels() < (label_idx + 1) as usize {
         return Err(Trap);
     }
@@ -40,8 +44,10 @@ pub fn exec_br(
     }
 
     for ref instruction in label_instructions.iter() {
-        execute_instruction_fn(instruction, stack, store)?;
+        if execute_instruction_fn(instruction, stack, store)? == ExitType::Returned {
+            return Ok(ExitType::Returned);
+        }
     }
 
-    Ok(())
+    Ok(ExitType::Completed)
 }

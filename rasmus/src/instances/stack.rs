@@ -42,6 +42,10 @@ impl Stack {
         Stack { stack: vec![] }
     }
 
+    pub fn snapshot(&self) -> Vec<StackEntry> {
+        self.stack.clone()
+    }
+
     pub fn pop(&mut self) -> Option<StackEntry> {
         self.stack.pop()
     }

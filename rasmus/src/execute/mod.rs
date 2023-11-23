@@ -12,6 +12,7 @@ mod exec_unop;
 mod exec_variable;
 mod exec_vec;
 mod exec_vector;
+pub mod executor;
 
 pub use exec_control::pop_values_original_order;
 
@@ -107,6 +108,7 @@ use self::exec_vector::{
     shape_f32_convert_i32_s, shape_f32_convert_i32_u, shape_f32_demote_f64, shape_i32_trunc_f32_s,
     shape_i32_trunc_f32_u, shape_i32_trunc_f64_s, shape_i32_trunc_f64_u, Half,
 };
+use self::executor::ExitType;
 
 #[allow(dead_code)]
 pub fn execute_expression(
@@ -133,7 +135,7 @@ pub fn execute_instruction(
     stack: &mut Stack,
     store: &mut Store,
     // frame_ref: &Frame,
-) -> RResult<()> {
+) -> RResult<ExitType> {
     match instr {
         InstructionType::I32Const(I32Type(num_val)) => i32_const(num_val, stack)?,
         InstructionType::I64Const(I64Type(num_val)) => i64_const(num_val, stack)?,
@@ -680,29 +682,35 @@ pub fn execute_instruction(
         InstructionType::Nop => {}
         InstructionType::Unreachable => exec_unreachable()?,
         InstructionType::Block(block_instruction) => {
-            block(stack, store, block_instruction, execute_instruction)?
+            return block(stack, store, block_instruction, execute_instruction);
         }
         InstructionType::Loop(loop_instruction) => {
-            exec_loop(stack, store, loop_instruction, execute_instruction)?
+            return exec_loop(stack, store, loop_instruction, execute_instruction);
         }
         InstructionType::IfElse(ifelse_instruction) => {
-            exec_ifelse(stack, store, ifelse_instruction, execute_instruction)?
+            return exec_ifelse(stack, store, ifelse_instruction, execute_instruction);
         }
-        InstructionType::Br(label_idx) => exec_br(stack, store, label_idx, execute_instruction)?,
+        InstructionType::Br(label_idx) => {
+            return exec_br(stack, store, label_idx, execute_instruction);
+        }
         InstructionType::BrIf(label_idx) => {
-            exec_brif(stack, store, label_idx, execute_instruction)?
+            return exec_brif(stack, store, label_idx, execute_instruction);
         }
         InstructionType::BrTable(brtable_arg) => {
-            exec_brtable(stack, store, brtable_arg, execute_instruction)?
+            return exec_brtable(stack, store, brtable_arg, execute_instruction);
         }
-        InstructionType::Return => exec_return(stack)?,
-        InstructionType::Call(func_idx) => exec_call(stack, store, func_idx, execute_instruction)?,
+        InstructionType::Return => {
+            return exec_return(stack);
+        }
+        InstructionType::Call(func_idx) => {
+            return exec_call(stack, store, func_idx, execute_instruction);
+        }
         InstructionType::CallIndirect(call_indirect_args) => {
-            exec_call_indirect(stack, store, call_indirect_args, execute_instruction)?
+            return exec_call_indirect(stack, store, call_indirect_args, execute_instruction);
         }
     };
 
-    Ok(())
+    Ok(ExitType::Completed)
 }
 
 testop_impl!(i32_testop, Val::I32, u32);

@@ -1,6 +1,9 @@
-use crate::entities::{
-    module::InstructionType,
-    types::{TableIdx, TypeIdx, U32Type},
+use crate::{
+    entities::{
+        module::InstructionType,
+        types::{TableIdx, TypeIdx, U32Type},
+    },
+    execute::executor::ExitType,
 };
 
 use crate::{
@@ -15,8 +18,9 @@ pub fn exec_call_indirect(
     stack: &mut Stack,
     store: &mut Store,
     &(TableIdx(U32Type(table_idx)), TypeIdx(U32Type(type_idx))): &(TableIdx, TypeIdx),
-    execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<()> + Copy,
-) -> RResult<()> {
+    execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<ExitType>
+        + Copy,
+) -> RResult<ExitType> {
     let table_addr = get_table_addr(stack, table_idx)?;
     let table_inst = store.tables.get(table_addr).ok_or(Trap)?;
     let expected_type = stack

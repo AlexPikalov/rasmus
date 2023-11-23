@@ -2,6 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::entities::module::InstructionType;
 
+use crate::execute::executor::ExitType;
 use crate::{
     instances::{frame::Frame, label::LabelInst, stack::Stack, store::Store, value::Val},
     result::{RResult, Trap},
@@ -22,8 +23,9 @@ pub fn invoke(
     stack: &mut Stack,
     store: &mut Store,
     function_addr: usize,
-    execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<()> + Copy,
-) -> RResult<()> {
+    execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<ExitType>
+        + Copy,
+) -> RResult<ExitType> {
     let function = store.funcs.get(function_addr).cloned().ok_or(Trap)?;
     let func_type = function.get_type();
     let arity = func_type.results.len();

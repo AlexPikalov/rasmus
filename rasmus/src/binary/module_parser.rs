@@ -335,13 +335,9 @@ impl ParseBin<Module> for ModuleParser {
 
         while !remainig_bytes.is_empty() {
             let (b, section_id, section_content) = get_section_content!(remainig_bytes);
-            println!("CURRENT MODULE {module:?}");
-            println!("FOUND section {section_id:?}\n");
-            println!("=======================================================================");
             match section_id {
                 SectionId::Custom => {
                     // custom sections are not a part of the Module structure, so ignore so far
-                    // println!("{:?}", Self::parse_custom_section(section_content))
                 }
                 SectionId::Type => module.types = Self::parse_types_section(section_content)?,
                 SectionId::Code => module.code = Self::parse_code_section(section_content)?,
@@ -386,8 +382,6 @@ mod test {
         let (remaining_bytes, module) = ModuleParser::parse(&wasm).unwrap();
 
         assert!(remaining_bytes.is_empty(), "should consume all bytes");
-
-        println!("{:#?}", module);
 
         assert_eq!(
             module.types,
@@ -469,7 +463,7 @@ mod test {
             module.exports,
             vec![ExportType {
                 name: NameType("e".into()),
-                desc: ExportDescription::Func(TypeIdx(U32Type(1)))
+                desc: ExportDescription::Func(FuncIdx(U32Type(1)))
             }],
             "module.exports"
         );

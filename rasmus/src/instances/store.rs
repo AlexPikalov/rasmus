@@ -83,10 +83,6 @@ impl Store {
         func: Func,
         module_inst: Rc<RefCell<ModuleInst>>,
     ) -> FuncAddr {
-        println!(
-            "trying to allocate func - {func:?} types - {:?}",
-            module_inst
-        );
         let func_type = module_inst.borrow().types[func.func_type.0 .0 as usize].clone();
         let func_inst = FuncInst::FuncInst(FuncInstLocal {
             func_type,
@@ -360,7 +356,7 @@ impl Store {
             self.allocate_data(data.clone_data());
         }
 
-        let mut module_inst_rc = Rc::new(RefCell::new(module_inst));
+        let module_inst_rc = Rc::new(RefCell::new(module_inst));
 
         // func allocations
         let funcs = module.get_funcs().ok_or(Trap)?;
@@ -381,11 +377,11 @@ impl Store {
             let export_inst = ExportInst {
                 name: export_declaration.name.clone(),
                 value: match &export_declaration.desc {
-                    ExportDescription::Func(type_idx) => {
+                    ExportDescription::Func(func_idx) => {
                         let funcaddr = module_inst_rc
                             .borrow()
                             .funcaddrs
-                            .get(type_idx.0 .0 as usize)
+                            .get(func_idx.0 .0 as usize)
                             .ok_or(Trap)?
                             .clone();
                         ExternVal::Func(funcaddr)

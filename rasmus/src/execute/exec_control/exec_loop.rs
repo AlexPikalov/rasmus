@@ -1,8 +1,11 @@
 use std::rc::Rc;
 
-use crate::entities::{
-    module::{BlockType, InstructionType, LoopInstructionType},
-    types::{FuncType, S33Type},
+use crate::{
+    entities::{
+        module::{BlockType, InstructionType, LoopInstructionType},
+        types::{FuncType, S33Type},
+    },
+    execute::executor::ExitType,
 };
 
 use crate::{
@@ -19,8 +22,9 @@ pub fn exec_loop(
         ref blocktype,
         ref instructions,
     }: &LoopInstructionType,
-    execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<()> + Copy,
-) -> RResult<()> {
+    execute_instruction_fn: impl FnOnce(&InstructionType, &mut Stack, &mut Store) -> RResult<ExitType>
+        + Copy,
+) -> RResult<ExitType> {
     let current_frame = stack.current_frame().ok_or(Trap)?;
     let expand_blocktype = match blocktype {
         &BlockType::Empty => FuncType {
@@ -58,7 +62,9 @@ pub fn exec_loop(
 
     // instructions execution
     for ref instruction in instructions {
-        execute_instruction_fn(instruction, stack, store)?;
+        if execute_instruction_fn(instruction, stack, store)? == ExitType::Returned {
+            return Ok(ExitType::Returned);
+        }
     }
 
     // taking result values according to blocktype
@@ -72,5 +78,5 @@ pub fn exec_loop(
         stack.push_value(value);
     }
 
-    Ok(())
+    Ok(ExitType::Completed)
 }

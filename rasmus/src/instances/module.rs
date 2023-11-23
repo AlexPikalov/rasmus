@@ -66,22 +66,6 @@ impl ModuleInst {
 
         aux_module.borrow_mut().funcaddrs = funcaddrs_aux;
 
-        // for func in module.get_funcs().ok_or(Trap)? {
-        //     let module_ref = aux_module.clone();
-        //     match Rc::get_mut(&mut aux_module) {
-        //         Some(inst) => {
-        //             // FIXME: this function allocation is needed for val evaluation process
-        //             // aux module allocation should be freed when module is popped out of stack
-        //             inst.funcaddrs
-        //                 .push(store.allocate_local_func(func, module_ref));
-        //         }
-        //         None => {
-        //             println!("unable to borrow");
-        //             return Err(Trap);
-        //         }
-        //     }
-        // }
-
         stack.push_entry(StackEntry::Frame(Frame {
             module: aux_module.clone(),
             locals: Rc::new(RefCell::new(vec![])),

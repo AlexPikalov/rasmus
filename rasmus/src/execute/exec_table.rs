@@ -249,29 +249,6 @@ fn get_elem_addr(stack: &mut Stack, idx: u32) -> RResult<ElemAddr> {
         .cloned()
 }
 
-fn grow(table_inst: &mut TableInst, increase: u32, init_val: RefInst) -> RResult<()> {
-    let n = table_inst
-        .elem
-        .len()
-        .checked_add(increase as usize)
-        .ok_or(Trap)?;
-
-    let mut limits_new = table_inst.table_type.limits.clone();
-    limits_new.min = U32Type(n as u32);
-
-    if limits_new.max.is_some() && limits_new.min > limits_new.max.clone().unwrap() {
-        return Err(Trap);
-    }
-
-    for _ in 0..increase {
-        table_inst.elem.push(init_val.clone());
-    }
-
-    table_inst.table_type.limits = limits_new;
-
-    Ok(())
-}
-
 fn to_table_idx<T>(v: T) -> TableIdx
 where
     T: Into<u32>,

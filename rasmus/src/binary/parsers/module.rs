@@ -71,7 +71,7 @@ impl ParseWithNom for ExportDescription {
 
         match encode_byte {
             ENCODE_BYTE_EXPORT_FUNC => U32Type::parse(bytes)
-                .map(|(b, u32_val)| (b, ExportDescription::Func(TypeIdx(u32_val)))),
+                .map(|(b, u32_val)| (b, ExportDescription::Func(FuncIdx(u32_val)))),
             ENCODE_BYTE_EXPORT_TABLE => U32Type::parse(bytes)
                 .map(|(b, u32_val)| (b, ExportDescription::Table(TableIdx(u32_val)))),
             ENCODE_BYTE_EXPORT_MEM => U32Type::parse(bytes)

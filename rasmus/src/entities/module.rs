@@ -116,7 +116,7 @@ pub struct ExportType {
 
 #[derive(Debug, PartialEq)]
 pub enum ExportDescription {
-    Func(TypeIdx),
+    Func(FuncIdx),
     Table(TableIdx),
     Mem(MemIdx),
     Global(GlobalIdx),
