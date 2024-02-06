@@ -1,4 +1,6 @@
-use crate::entities::types::LocalIdx;
+use crate::entities::types::{LocalIdx, RefType};
+
+use super::validation_stack::ValidationType;
 
 // TODO: try to add more debugging information to each option
 #[derive(Debug, PartialEq)]
@@ -7,9 +9,15 @@ pub enum ValidationError {
     NoLocalFound(LocalIdx),
     InsufficientOperandStackForInstruction,
     CannotFindRefFuncInValidationContext,
-    LaneIndexIsOutOfRange { value: u8, max_allowed: u8 },
+    LaneIndexIsOutOfRange {
+        value: u8,
+        max_allowed: u8,
+    },
     // Length of SelectVec argument sequence should be equal to 1
     InvalidSelectVecOperandSequence,
+    // When branches are neither both numbers nor both vectors
+    InvalidSelectBranchTypes,
+    InvalidSelectTypeSequenceLength,
     LocalNotFound,
     GlobalNotFound,
     UnableToSetToConstGlobal,
@@ -26,6 +34,22 @@ pub enum ValidationError {
     DataNotFound,
     TypeNotFound,
     InconsistentBlocktype,
+    ControlFrameNotFound,
+    FrameNotFound,
+    UnexpectedType {
+        actual: ValidationType,
+        expected: ValidationType,
+    },
+    UnexpectedRefType {
+        actual: RefType,
+        expected: RefType,
+    },
+    NotConsistentArity,
+    UnknownReturnType,
+    ReturnNotFoundInContext,
+    FuncTypeNotFound {
+        func_idx: usize,
+    },
 }
 
 pub type ValidationResult<T> = Result<T, ValidationError>;

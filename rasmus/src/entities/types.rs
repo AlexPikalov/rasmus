@@ -10,6 +10,30 @@ pub enum ValType {
 }
 
 impl ValType {
+    pub fn is_num(&self) -> bool {
+        if let ValType::NumType(_) = self {
+            return true;
+        }
+
+        false
+    }
+
+    pub fn is_vec(&self) -> bool {
+        if let ValType::VecType(_) = self {
+            return true;
+        }
+
+        false
+    }
+
+    pub fn is_ref(&self) -> bool {
+        if let ValType::RefType(_) = self {
+            return true;
+        }
+
+        false
+    }
+
     pub fn get_num_types() -> Vec<ValType> {
         let all_num_types = NumType::get_all();
         let mut num_types = Vec::with_capacity(all_num_types.len());
