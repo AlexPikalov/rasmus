@@ -112,7 +112,7 @@ impl ValidationStack {
         let end_types = frame.end_types.clone();
         let height = frame.height;
 
-        self.pop_vals(&end_types);
+        self.pop_vals(&end_types)?;
 
         if self.vals.len() != height {
             return Err(ValidationError::InsufficientOperandStackForInstruction);

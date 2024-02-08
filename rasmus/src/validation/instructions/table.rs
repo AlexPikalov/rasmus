@@ -60,8 +60,8 @@ pub fn table_grow(
         return Err(ValidationError::TableNotFound);
     }
 
-    val_stack.pop_val_expect(ValidationType::reference());
-    val_stack.pop_val_expect(ValidationType::i32());
+    val_stack.pop_val_expect(ValidationType::reference())?;
+    val_stack.pop_val_expect(ValidationType::i32())?;
     val_stack.push_val(ValidationType::i32());
 
     Ok(())
@@ -76,9 +76,9 @@ pub fn table_fill(
         return Err(ValidationError::TableNotFound);
     }
 
-    val_stack.pop_val_expect(ValidationType::reference());
-    val_stack.pop_val_expect(ValidationType::i32());
-    val_stack.pop_val_expect(ValidationType::reference());
+    val_stack.pop_val_expect(ValidationType::reference())?;
+    val_stack.pop_val_expect(ValidationType::i32())?;
+    val_stack.pop_val_expect(ValidationType::reference())?;
 
     Ok(())
 }
@@ -102,9 +102,9 @@ pub fn table_copy(
         return Err(ValidationError::UnableToCopyIncosistentTableTypes);
     }
 
-    val_stack.pop_val_expect(ValidationType::i32());
-    val_stack.pop_val_expect(ValidationType::i32());
-    val_stack.pop_val_expect(ValidationType::i32());
+    val_stack.pop_val_expect(ValidationType::i32())?;
+    val_stack.pop_val_expect(ValidationType::i32())?;
+    val_stack.pop_val_expect(ValidationType::i32())?;
 
     Ok(())
 }
@@ -129,9 +129,9 @@ pub fn table_init(
         return Err(ValidationError::WrongElemType);
     }
 
-    val_stack.pop_val_expect(ValidationType::i32());
-    val_stack.pop_val_expect(ValidationType::i32());
-    val_stack.pop_val_expect(ValidationType::i32());
+    val_stack.pop_val_expect(ValidationType::i32())?;
+    val_stack.pop_val_expect(ValidationType::i32())?;
+    val_stack.pop_val_expect(ValidationType::i32())?;
 
     Ok(())
 }

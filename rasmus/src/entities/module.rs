@@ -127,7 +127,7 @@ pub struct StartType {
     pub func: FuncIdx,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Global {
     pub global_type: GlobalType,
     pub init: ExpressionType,

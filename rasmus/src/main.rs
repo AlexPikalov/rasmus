@@ -28,7 +28,8 @@ mod execute_test;
 mod test_utils;
 
 fn main() {
-    let file_content = read("./rasmus/tests/files/factorial.wasm").expect("should read");
+    let input = cli::UserInput::parse_args();
+    let file_content = read(input.source_file_path).expect("should read");
     let (_, module) = ModuleParser::parse(&file_content).unwrap();
 
     let module_registry = Box::new(ModuleRegistry::new());

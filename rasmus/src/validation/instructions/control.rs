@@ -4,7 +4,7 @@ use crate::{
             BlockInstructionType, BlockType, IfElseInstructionType, InstructionType,
             LoopInstructionType,
         },
-        types::{FuncIdx, LabelIdx, RefType, TableIdx, TypeIdx, U32Type, ValType},
+        types::{FuncIdx, LabelIdx, RefType, ResultType, TableIdx, TypeIdx, U32Type, ValType},
     },
     validation::{
         context::ValidationContext,
@@ -34,15 +34,23 @@ pub fn block(
     val_stack.push_ctrl(
         InstructionType::Block(block_instruction_type.clone()),
         input_types,
-        output_types,
+        output_types.clone(),
         false,
     );
 
+    let mut block_ctx = ctx.clone();
+    block_ctx.labels.push_back(ResultType(output_types.clone()));
+
     for instruction in &block_instruction_type.instructions {
-        validate_instruction(&instruction, ctx, val_stack)?;
+        validate_instruction(&instruction, &mut block_ctx, val_stack)?;
     }
 
-    end(val_stack)
+    let return_types = val_stack.pop_vals(&output_types.iter().map(Into::into).collect())?;
+
+    end(val_stack)?;
+
+    val_stack.push_vals_2(return_types);
+    Ok(())
 }
 
 pub fn loop_instr(
@@ -62,15 +70,23 @@ pub fn loop_instr(
     val_stack.push_ctrl(
         InstructionType::Loop(loop_instruction_type.clone()),
         input_types,
-        output_types,
+        output_types.clone(),
         false,
     );
 
+    let mut loop_ctx = ctx.clone();
+    loop_ctx.labels.push_back(ResultType(output_types.clone()));
+
     for instruction in &loop_instruction_type.instructions {
-        validate_instruction(&instruction, ctx, val_stack)?;
+        validate_instruction(&instruction, &mut loop_ctx, val_stack)?;
     }
 
-    end(val_stack)
+    let return_types = val_stack.pop_vals(&output_types.iter().map(Into::into).collect())?;
+
+    end(val_stack)?;
+
+    val_stack.push_vals_2(return_types);
+    Ok(())
 }
 
 pub fn if_else(
@@ -96,9 +112,16 @@ pub fn if_else(
         false,
     );
 
+    let mut ifelse_ctx = ctx.clone();
+    ifelse_ctx
+        .labels
+        .push_back(ResultType(output_types.clone()));
+
     for instruction in &ifelse_instruction_type.if_instructions {
-        validate_instruction(&instruction, ctx, val_stack)?;
+        validate_instruction(&instruction, &mut ifelse_ctx, val_stack)?;
     }
+
+    val_stack.pop_vals(&output_types.iter().map(Into::into).collect())?;
 
     end(val_stack)?;
 
@@ -106,15 +129,20 @@ pub fn if_else(
     val_stack.push_ctrl(
         InstructionType::IfElse(ifelse_instruction_type.clone()),
         input_types,
-        output_types,
+        output_types.clone(),
         false,
     );
 
     for instruction in &ifelse_instruction_type.else_instructions {
-        validate_instruction(&instruction, ctx, val_stack)?;
+        validate_instruction(&instruction, &mut ifelse_ctx, val_stack)?;
     }
 
-    end(val_stack)
+    let return_types = val_stack.pop_vals(&output_types.iter().map(Into::into).collect())?;
+
+    end(val_stack)?;
+
+    val_stack.push_vals_2(return_types);
+    Ok(())
 }
 
 pub fn br(
