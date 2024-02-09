@@ -1,3 +1,5 @@
+use crate::validation::module::validate;
+
 pub use super::instructions::*;
 use super::types::*;
 
@@ -5,7 +7,6 @@ use super::types::*;
 pub struct Module {
     pub types: Vec<FuncType>,
     pub imports: Vec<ImportType>,
-    // TODO: rewrite to func
     pub funcs: Vec<TypeIdx>,
     pub tables: Vec<TableType>,
     pub mems: Vec<MemType>,
@@ -22,9 +23,13 @@ impl Module {
     pub const VERSION: [u8; 4] = [0x01, 0x00, 0x00, 0x00];
 
     pub fn is_valid(&self) -> bool {
-        // TODO: validate according to
-        // so it is guarated that element expression list always reduces to a reference value
-        true
+        match validate(&self) {
+            Err(validation_error) => {
+                println!("Invalid module. Validation error {validation_error:?}");
+                false
+            }
+            Ok(_) => true,
+        }
     }
 
     pub fn get_funcs(&self) -> Option<Vec<Func>> {
@@ -160,7 +165,6 @@ impl ElementSegmentType {
     }
 
     pub fn get_init(&self) -> &Vec<ExpressionType> {
-        // TODO:
         unimplemented!()
     }
 

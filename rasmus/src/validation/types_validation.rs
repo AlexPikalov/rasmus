@@ -1,8 +1,7 @@
 use super::context::ValidationContext;
+use super::validation_error::{ValidationError, ValidationResult};
 use crate::entities::instructions::BlockType;
 use crate::entities::types::*;
-
-// TODO: refactor following functions to returl ValidationResult instead of bool
 
 pub fn is_limit_type_valid(limit: &LimitsType, range: U32Type) -> bool {
     limit.min <= range
@@ -37,20 +36,12 @@ pub fn is_block_type_valid(block: BlockType, valid_as: FuncType, ctx: Validation
     }
 }
 
-pub fn is_func_type_valid(_func_type: FuncType, _ctx: ValidationContext) -> bool {
-    true
-}
-
 pub fn is_table_type_valid(table_type: &TableType) -> bool {
     is_limit_type_valid(&table_type.limits, U32Type(u32::MAX))
 }
 
 pub fn is_memory_type_valid(memory_type: &MemType) -> bool {
     is_limit_type_valid(&memory_type.limits, U32Type(2u32.pow(16)))
-}
-
-pub fn is_global_type_valid(_global_type: GlobalType, _ctx: ValidationContext) -> bool {
-    true
 }
 
 // Can be used for imports sub-type checking
@@ -74,4 +65,17 @@ pub fn does_memories_match(lhs: MemType, rhs: MemType) -> bool {
 
 pub fn does_globals_match(lhs: GlobalType, rhs: GlobalType) -> bool {
     lhs == rhs
+}
+
+pub fn validate_func_type(ctx: &ValidationContext, func_type: &TypeIdx) -> ValidationResult<()> {
+    let func_idx = func_type.0 .0 as usize;
+    ctx.funcs
+        .get(func_idx)
+        .ok_or(ValidationError::FuncTypeNotFound { func_idx })
+        .map(|_| ())
+}
+
+pub fn validate_global_type(_global_type: &GlobalType) -> ValidationResult<()> {
+    // global type is always valid
+    Ok(())
 }

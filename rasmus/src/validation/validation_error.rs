@@ -1,4 +1,7 @@
-use crate::entities::types::{LocalIdx, RefType};
+use crate::entities::{
+    instructions::InstructionType,
+    types::{LocalIdx, MemType, RefType, TableType},
+};
 
 use super::validation_stack::ValidationType;
 
@@ -49,6 +52,19 @@ pub enum ValidationError {
     ReturnNotFoundInContext,
     FuncTypeNotFound {
         func_idx: usize,
+    },
+    CodeNotFound,
+    IfControlFrameIsExpected,
+    InvalidTableType {
+        table_type: TableType,
+    },
+    InvalidMemoryType {
+        memory_type: MemType,
+    },
+    InvalidGlobalInit,
+    InvalidStartFunctionType,
+    NonConstantInstruction {
+        instruction: InstructionType,
     },
 }
 

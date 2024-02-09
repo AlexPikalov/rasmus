@@ -9,7 +9,7 @@ use crate::{
     validation::{
         context::ValidationContext,
         validation_error::{ValidationError, ValidationResult},
-        validation_stack::{label_types, VType, ValidationStack, ValidationType},
+        validation_stack::{label_types, CtrlFrame, ValidationStack, ValidationType},
     },
 };
 
@@ -39,7 +39,7 @@ pub fn block(
     );
 
     let mut block_ctx = ctx.clone();
-    block_ctx.labels.push_back(ResultType(output_types.clone()));
+    block_ctx.labels.insert(0, ResultType(output_types.clone()));
 
     for instruction in &block_instruction_type.instructions {
         validate_instruction(&instruction, &mut block_ctx, val_stack)?;
@@ -75,7 +75,7 @@ pub fn loop_instr(
     );
 
     let mut loop_ctx = ctx.clone();
-    loop_ctx.labels.push_back(ResultType(output_types.clone()));
+    loop_ctx.labels.insert(0, ResultType(output_types.clone()));
 
     for instruction in &loop_instruction_type.instructions {
         validate_instruction(&instruction, &mut loop_ctx, val_stack)?;
@@ -99,6 +99,8 @@ pub fn if_else(
         &mut ValidationStack,
     ) -> ValidationResult<()>,
 ) -> ValidationResult<()> {
+    val_stack.pop_val_expect(ValidationType::i32())?;
+
     let (input_types, output_types): (Vec<ValType>, Vec<ValType>) =
         get_input_output_types(&ifelse_instruction_type.blocktype, ctx)?;
 
@@ -115,7 +117,7 @@ pub fn if_else(
     let mut ifelse_ctx = ctx.clone();
     ifelse_ctx
         .labels
-        .push_back(ResultType(output_types.clone()));
+        .insert(0, ResultType(output_types.clone()));
 
     for instruction in &ifelse_instruction_type.if_instructions {
         validate_instruction(&instruction, &mut ifelse_ctx, val_stack)?;
@@ -123,7 +125,14 @@ pub fn if_else(
 
     val_stack.pop_vals(&output_types.iter().map(Into::into).collect())?;
 
-    end(val_stack)?;
+    let ctrl = val_stack.pop_ctrl()?;
+
+    match ctrl.opcode {
+        InstructionType::IfElse(_) => {}
+        _ => {
+            return Err(ValidationError::IfControlFrameIsExpected);
+        }
+    }
 
     // else instruction sequence validation
     val_stack.push_ctrl(
@@ -139,7 +148,14 @@ pub fn if_else(
 
     let return_types = val_stack.pop_vals(&output_types.iter().map(Into::into).collect())?;
 
-    end(val_stack)?;
+    let ctrl = val_stack.pop_ctrl()?;
+
+    match ctrl.opcode {
+        InstructionType::IfElse(_) => {}
+        _ => {
+            return Err(ValidationError::IfControlFrameIsExpected);
+        }
+    }
 
     val_stack.push_vals_2(return_types);
     Ok(())
@@ -153,10 +169,13 @@ pub fn br(
         .get_ctrl(label_idx as usize)
         .ok_or_else(|| ValidationError::InsufficientOperandStackForInstruction)?;
 
-    val_stack.pop_vals(&label_types(ctrl_frame).clone())?;
+    let vals = val_stack.pop_vals(&label_types(ctrl_frame).clone())?;
 
     val_stack.unreachable()?;
-    end(val_stack)
+    end(val_stack)?;
+    val_stack.push_vals_2(vals);
+
+    Ok(())
 }
 
 pub fn br_if(
@@ -170,10 +189,13 @@ pub fn br_if(
     let types = label_types(ctrl_frame).clone();
     val_stack.pop_val_expect(ValidationType::i32())?;
     val_stack.pop_vals(&types)?;
+    // FIXME: re-check if it should be removed
+    // val_stack.push_vals_2(types);
+    val_stack.unreachable()?;
+    end(val_stack)?;
     val_stack.push_vals_2(types);
 
-    val_stack.unreachable()?;
-    end(val_stack)
+    Ok(())
 }
 
 pub fn br_table(
@@ -204,10 +226,13 @@ pub fn br_table(
         val_stack.push_vals_2(label_types_val);
     }
 
-    val_stack.pop_vals(&types)?;
+    let vals = val_stack.pop_vals(&types)?;
     val_stack.unreachable()?;
 
-    end(val_stack)
+    end(val_stack)?;
+    val_stack.push_vals_2(vals);
+
+    Ok(())
 }
 
 pub fn return_instr(
@@ -220,10 +245,12 @@ pub fn return_instr(
         .ok_or_else(|| ValidationError::ReturnNotFoundInContext)?
         .0;
 
-    val_stack.pop_vals(&return_type.iter().map(Into::into).collect())?;
+    let vals = val_stack.pop_vals(&return_type.iter().map(Into::into).collect())?;
 
     val_stack.unreachable()?;
-    end(val_stack)
+    val_stack.push_vals_2(vals);
+
+    Ok(())
 }
 
 pub fn call(
@@ -280,7 +307,7 @@ pub fn call_indirect(
     Ok(())
 }
 
-fn end(val_stack: &mut ValidationStack) -> ValidationResult<()> {
+pub fn end(val_stack: &mut ValidationStack) -> ValidationResult<()> {
     let frame = val_stack.pop_ctrl()?;
     val_stack.push_vals_2(frame.end_types);
 

@@ -26,7 +26,7 @@ impl ValidationStack {
         let frame = self
             .ctrls
             .get(0)
-            .ok_or(ValidationError::ControlFrameNotFound)?;
+            .ok_or_else(|| ValidationError::ControlFrameNotFound)?;
 
         if self.vals.len() == frame.height && frame.unreachable {
             return Ok(ValidationType::Unknown);
@@ -261,6 +261,7 @@ impl From<&ValType> for VType {
     }
 }
 
+#[derive(Debug)]
 pub struct CtrlFrame {
     pub opcode: InstructionType,
     pub start_types: Vec<ValidationType>,

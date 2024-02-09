@@ -1,5 +1,3 @@
-use std::collections::VecDeque;
-
 use crate::entities::{
     module::{DataType, Module},
     types::*,
@@ -15,7 +13,7 @@ pub struct ValidationContext {
     pub elems: Vec<RefType>,
     pub datas: Vec<DataType>,
     pub locals: Vec<ValType>,
-    pub labels: VecDeque<ResultType>,
+    pub labels: Vec<ResultType>,
     pub maybe_return: Option<ResultType>,
     pub refs: Vec<FuncIdx>,
 }
@@ -84,7 +82,7 @@ impl ValidationContext {
                 locals
             },
             labels: {
-                let mut labels = VecDeque::new();
+                let mut labels = Vec::new();
                 labels.extend(extend_with.labels.iter().cloned());
                 labels.extend(self.labels.iter().cloned());
 
@@ -165,7 +163,7 @@ impl ValidationContext {
                 locals
             },
             labels: {
-                let mut labels = VecDeque::new();
+                let mut labels = Vec::new();
                 labels.extend(self.labels.iter().cloned());
                 labels.extend(extend_with.labels.iter().cloned());
 
@@ -189,8 +187,8 @@ impl ValidationContext {
     }
 }
 
-impl From<Module> for ValidationContext {
-    fn from(module: Module) -> Self {
+impl From<&Module> for ValidationContext {
+    fn from(module: &Module) -> Self {
         ValidationContext {
             types: module.types.clone(),
             funcs: module
@@ -208,7 +206,7 @@ impl From<Module> for ValidationContext {
             elems: module.elems.iter().map(|e| e.get_type()).collect(),
             datas: module.datas.clone(),
             locals: vec![],
-            labels: VecDeque::new(),
+            labels: Vec::new(),
             maybe_return: None,
             refs: vec![],
         }

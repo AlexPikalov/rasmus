@@ -9,74 +9,6 @@ pub enum ValType {
     RefType(RefType),
 }
 
-impl ValType {
-    pub fn is_num(&self) -> bool {
-        if let ValType::NumType(_) = self {
-            return true;
-        }
-
-        false
-    }
-
-    pub fn is_vec(&self) -> bool {
-        if let ValType::VecType(_) = self {
-            return true;
-        }
-
-        false
-    }
-
-    pub fn is_ref(&self) -> bool {
-        if let ValType::RefType(_) = self {
-            return true;
-        }
-
-        false
-    }
-
-    pub fn get_num_types() -> Vec<ValType> {
-        let all_num_types = NumType::get_all();
-        let mut num_types = Vec::with_capacity(all_num_types.len());
-
-        for num_type in all_num_types {
-            num_types.push(Self::NumType(num_type))
-        }
-
-        num_types
-    }
-
-    pub fn get_ref_types() -> Vec<ValType> {
-        let all_ref_types = RefType::get_all();
-        let mut ref_types = Vec::with_capacity(all_ref_types.len());
-
-        for ref_type in all_ref_types {
-            ref_types.push(Self::RefType(ref_type))
-        }
-
-        ref_types
-    }
-
-    pub fn v128() -> Self {
-        Self::VecType(VecType::V128)
-    }
-
-    pub fn i32() -> Self {
-        Self::NumType(NumType::I32)
-    }
-
-    pub fn i64() -> Self {
-        Self::NumType(NumType::I64)
-    }
-
-    pub fn f32() -> Self {
-        Self::NumType(NumType::F32)
-    }
-
-    pub fn f64() -> Self {
-        Self::NumType(NumType::F64)
-    }
-}
-
 #[derive(Debug, PartialEq, Clone)]
 pub struct ResultType(pub Vec<ValType>);
 
@@ -93,12 +25,6 @@ pub enum NumType {
     I64,
     F32,
     F64,
-}
-
-impl NumType {
-    pub fn get_all() -> Vec<Self> {
-        vec![Self::I32, Self::I64, Self::F32, Self::F64]
-    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
