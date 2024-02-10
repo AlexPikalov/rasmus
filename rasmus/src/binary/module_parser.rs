@@ -26,10 +26,6 @@ macro_rules! get_section_content {
 }
 
 impl ModuleParser {
-    pub fn new() -> Self {
-        ModuleParser {}
-    }
-
     fn take_magic(bytes: &[Byte]) -> NomResult<&[Byte], ()> {
         tag(Module::MAGIC)(bytes).map(|(input, _)| (input, ()))
     }

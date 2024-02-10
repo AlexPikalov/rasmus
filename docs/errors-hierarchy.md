@@ -1,0 +1,4 @@
+# Errors Hierarchy
+
+- Trap
+  - ModuleRegistryError

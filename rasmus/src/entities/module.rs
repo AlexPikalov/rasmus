@@ -3,7 +3,7 @@ use crate::validation::module::validate;
 pub use super::instructions::*;
 use super::types::*;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Module {
     pub types: Vec<FuncType>,
     pub imports: Vec<ImportType>,
@@ -96,14 +96,14 @@ pub struct CustomSection {
     pub bytes: Vec<Byte>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ImportType {
     pub module: NameType,
     pub name: NameType,
     pub desc: ImportDescription,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ImportDescription {
     Func(TypeIdx),
     Table(TableType),
@@ -113,13 +113,13 @@ pub enum ImportDescription {
 
 impl ImportDescription {}
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ExportType {
     pub name: NameType,
     pub desc: ExportDescription,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ExportDescription {
     Func(FuncIdx),
     Table(TableIdx),
@@ -138,7 +138,7 @@ pub struct Global {
     pub init: ExpressionType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ElementSegmentType {
     Active0Functions(Active0FunctionsElementSegmentType),
     ElemKindPassiveFunctions(ElemKindPassiveFunctionsElementSegmentType),
@@ -177,79 +177,79 @@ impl ElementSegmentType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Active0FunctionsElementSegmentType {
     pub mode: ElemModeActive0,
     // RefType::FuncRef only
     pub init: Vec<FuncIdx>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ElemKindPassiveFunctionsElementSegmentType {
     pub elem_kind: ElemKind,
     pub init: Vec<FuncIdx>,
     pub mode: ElemModePassive,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ElemKindActiveFunctionsElementSegmentType {
     pub elem_kind: ElemKind,
     pub init: Vec<FuncIdx>,
     pub mode: ElemModeActive,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ElemKindDeclarativeFunctionsElementSegmentType {
     pub elem_kind: ElemKind,
     pub init: Vec<FuncIdx>,
     pub mode: ElemModeDeclarative,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Active0ExprElementSegmentType {
     pub init: Vec<ExpressionType>,
     pub mode: ElemModeActive0,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PassiveRefElementSegmentType {
     pub ref_type: RefType,
     pub init: Vec<ExpressionType>,
     pub mode: ElemModePassive,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ActiveRefElementSegmentType {
     pub ref_type: RefType,
     pub init: Vec<ExpressionType>,
     pub mode: ElemModeActive,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct DeclarativeRefElementSegmentType {
     pub ref_type: RefType,
     pub init: Vec<ExpressionType>,
     pub mode: ElemModeDeclarative,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ElemModeActive {
     pub table_idx: TableIdx,
     pub offset: ExpressionType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ElemModeActive0 {
     pub offset: ExpressionType,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ElemModePassive;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ElemModeDeclarative;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ElemKind {
     FuncRef,
 }
@@ -260,7 +260,7 @@ impl Into<RefType> for &ElemKind {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct CodeType {
     pub size: U32Type,
     pub code: FuncCodeType,

@@ -186,7 +186,7 @@ pub fn shape_i32_trunc_f64_u(f: u64) -> u32 {
         return u32::MAX;
     }
 
-    if trunced < 0 {
+    if (trunced as i32) < 0 {
         return 0;
     }
 

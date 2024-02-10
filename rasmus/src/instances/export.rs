@@ -1,7 +1,7 @@
 use crate::address::*;
 use crate::entities::types::NameType;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ExportInst {
     pub name: NameType,
     pub value: ExternVal,

@@ -1,11 +1,12 @@
 # Tasks
 
+- [ ] errors hierarchy
 - [ ] dependencies
   - [ ] mechanism to provide modules with names
     - [ ] investigate existing standards
     - [ ] if not found define own stadard
     - [ ] impelement selected standard: imports resolution via module registry, hierarchical module instantiation
-  - [ ] mechanism to select a module by name to run
+  - [x] mechanism to select a module by name to run
 - [ ] host modules
   - [ ] mechanism to run host code similarly to running regular non-host functions
   - [ ] implement `console` module

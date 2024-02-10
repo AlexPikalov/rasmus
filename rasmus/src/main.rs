@@ -1,9 +1,6 @@
-use std::fs::read;
-
 use crate::{
-    binary::module_parser::ModuleParser,
     controller::run_func,
-    instances::{module::ModuleInst, stack::Stack, store::Store, value::Val},
+    instances::{stack::Stack, store::Store, value::Val},
     module_registry::ModuleRegistry,
 };
 
@@ -20,23 +17,32 @@ mod result;
 pub mod sign;
 mod validation;
 
-use binary::parse_trait::ParseBin;
-
 #[cfg(test)]
 mod execute_test;
 #[cfg(test)]
 mod test_utils;
 
+const MAIN_MODULE: &'static str = "$MAIN";
+
 fn main() {
     let input = cli::UserInput::parse_args();
-    let file_content = read(input.source_file_path).expect("should read");
-    let (_, module) = ModuleParser::parse(&file_content).unwrap();
 
-    let module_registry = Box::new(ModuleRegistry::new());
     let mut store = Store::new();
     let mut stack = Stack::new();
-    let module_inst = ModuleInst::instantiate(&mut store, &mut stack, &module, &module_registry)
-        .expect("should instantiate module");
+
+    let mut module_registry = ModuleRegistry::new(&mut store, &mut stack);
+    module_registry
+        .register_module(MAIN_MODULE.into(), input.source_file_path.into())
+        .expect("Unable register");
+
+    let module_inst = module_registry
+        .get_instance(&MAIN_MODULE.into())
+        .expect("Unable resolve")
+        .clone();
+    let module = module_registry
+        .get_module(&MAIN_MODULE.into())
+        .expect("Unable to get module")
+        .clone();
 
     let result = run_func(
         module_inst.clone(),
