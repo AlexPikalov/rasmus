@@ -35,6 +35,13 @@ fn main() {
         .register_module(MAIN_MODULE.into(), input.source_file_path.into())
         .expect("Unable register");
 
+    module_registry
+        .register_module(
+            "factorial-lib".into(),
+            "./rasmus/tests/files/factorial-lib.wasm".into(),
+        )
+        .expect("Unable register");
+
     let module_inst = module_registry
         .get_instance(&MAIN_MODULE.into())
         .expect("Unable resolve")

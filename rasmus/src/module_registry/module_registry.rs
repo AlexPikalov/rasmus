@@ -6,9 +6,8 @@ use std::rc::Rc;
 use crate::binary::module_parser::ModuleParser;
 use crate::binary::parse_trait::ParseBin;
 use crate::entities::module::Module;
-use crate::entities::types::NameType;
-use crate::instances::export::ExportInst;
-use crate::instances::module::ModuleInst;
+use crate::instances::export::ExternVal;
+use crate::instances::module::{ExternalDependency, ModuleInst};
 use crate::instances::stack::Stack;
 use crate::instances::store::Store;
 use crate::module_registry::ModuleRegistryError;
@@ -23,11 +22,6 @@ pub struct ModuleRegistry<'a> {
     instances: RefCell<HashMap<ModuleName, Rc<RefCell<ModuleInst>>>>,
     store: &'a mut Store,
     stack: &'a mut Stack,
-}
-
-pub struct ModuleMetadata {
-    pub name: String,
-    pub path: String,
 }
 
 impl<'a> ModuleRegistry<'a> {
@@ -63,21 +57,6 @@ impl<'a> ModuleRegistry<'a> {
         self.modules.get(name)
     }
 
-    pub fn resolve_import(&self, module: NameType, name: NameType) -> Vec<ExportInst> {
-        // TODO: validation
-        //Assert:
-        // is valid with external types
-        // classifying its imports.
-        //
-        // If the number
-        // of imports is not equal to the number
-        // of provided external values, then:
-        //
-        // Fail.
-        // TODO:
-        vec![]
-    }
-
     fn module_exists(&self, name: &String) -> bool {
         self.modules.get(name).is_some()
     }
@@ -110,14 +89,13 @@ impl<'a> ModuleRegistry<'a> {
             Trap::from(ModuleRegistryError::ModuleNotRegistered { name: name.clone() })
         })?;
 
-        let resolved_imports: Vec<Option<ExportInst>> = module
+        let resolved_imports: Vec<Option<ExternalDependency>> = module
             .imports
             .iter()
             .map(|import| {
                 let module_name = &import.module.0;
                 let val_name = &import.name;
-                // we can unwrap because it is happening in the code either
-                // after the dependency tree is resolved or the resolution has failed with error
+
                 self.instances
                     .borrow()
                     .get(module_name)
@@ -129,16 +107,36 @@ impl<'a> ModuleRegistry<'a> {
                             .iter()
                             .cloned()
                             .find(|export| &export.name == val_name)
+                            .map(|export_inst| match export_inst.value {
+                                ExternVal::Func(func_addr) => ExternalDependency::Func {
+                                    func_addr,
+                                    func_type: self.store.funcs[func_addr].get_type().clone(),
+                                },
+                                ExternVal::Table(table_addr) => ExternalDependency::Table {
+                                    table_addr,
+                                    table_type: self.store.tables[table_addr].table_type.clone(),
+                                },
+                                ExternVal::Mem(mem_addr) => ExternalDependency::Mem {
+                                    mem_addr,
+                                    mem_type: self.store.mems[mem_addr].mem_type.clone(),
+                                },
+                                ExternVal::Global(global_addr) => ExternalDependency::Global {
+                                    global_addr,
+                                    global_type: self.store.globals[global_addr]
+                                        .global_type
+                                        .clone(),
+                                },
+                            })
                     })
             })
             .collect();
 
-        let mut externals: Vec<ExportInst> = Vec::with_capacity(resolved_imports.len());
+        let mut externals: Vec<ExternalDependency> = Vec::with_capacity(resolved_imports.len());
 
-        for resolved_import in &resolved_imports {
+        for resolved_import in resolved_imports {
             match resolved_import {
                 Some(external) => {
-                    externals.push(external.clone());
+                    externals.push(external);
                 }
                 None => {
                     // TODO: iterate through extern_vals and throw error if any is none

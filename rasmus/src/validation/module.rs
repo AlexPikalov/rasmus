@@ -9,31 +9,37 @@ use crate::{
             ImportType, Module, StartType,
         },
         types::{
-            FuncType, GlobalType, MemType, MutType, NumType, RefType, ResultType, TableType,
-            TypeIdx, ValType, VecType,
+            FuncIdx, FuncType, GlobalType, MemType, MutType, NumType, RefType, ResultType,
+            TableType, TypeIdx, ValType, VecType,
         },
     },
+    instances::{export::ExportInst, module::ExternalDependency},
     validation::{validation_error::ValidationError, validation_stack::ValidationStack},
 };
 
 use super::{
     context::ValidationContext,
     types_validation::{
-        is_memory_type_valid, is_table_type_valid, validate_func_type, validate_global_type,
+        is_memory_type_valid, is_table_type_valid, validate_export_func_type, validate_func_type,
+        validate_global_type,
     },
     validate_instruction::validate_instruction,
     validation_error::ValidationResult,
 };
 
-pub fn validate(module: &Module) -> ValidationResult<()> {
-    let ctx = create_context(module);
-    let sub_ctx = create_sub_context(module);
+pub fn validate(module: &Module, externals: &Vec<ExternalDependency>) -> ValidationResult<()> {
+    let ctx = create_context(module, externals);
+    let sub_ctx = create_sub_context(module, externals);
     let mut val_stack = ValidationStack::new();
 
     for func_idx in &module.funcs {
         let idx = func_idx.0 .0 as usize;
         let func_code = module.code.get(idx).ok_or(ValidationError::CodeNotFound)?;
-        let func_type = module.types.get(idx).ok_or(ValidationError::TypeNotFound)?;
+        let func_type = module
+            .funcs
+            .get(idx)
+            .and_then(|func_idx| module.types.get(func_idx.0 .0 as usize))
+            .ok_or(ValidationError::TypeNotFound)?;
 
         validate_func(&mut val_stack, &ctx, func_type, func_code)?;
     }
@@ -222,7 +228,7 @@ fn validate_import(ctx: &ValidationContext, import_type: &ImportType) -> Validat
 fn validate_export(ctx: &ValidationContext, export_type: &ExportType) -> ValidationResult<()> {
     match export_type.desc {
         ExportDescription::Func(ref func_idx) => {
-            validate_func_type(ctx, &TypeIdx(func_idx.0.clone()))
+            validate_export_func_type(ctx, &FuncIdx(func_idx.0.clone()))
         }
         ExportDescription::Global(ref global_idx) => ctx
             .globals
@@ -305,15 +311,10 @@ fn validate_data(data_type: &DataType, ctx: &ValidationContext) -> ValidationRes
     }
 }
 
-fn create_context(module_src: &Module) -> ValidationContext {
+fn create_context(module_src: &Module, externals: &Vec<ExternalDependency>) -> ValidationContext {
     ValidationContext {
         types: module_src.types.clone(),
-        // TODO: add imported external types to funcs
-        funcs: module_src
-            .funcs
-            .iter()
-            .map(|idx| module_src.types[idx.0 .0 as usize].clone())
-            .collect(),
+        funcs: get_func_types(module_src, externals),
         // TODO: add imported external types to tables
         tables: module_src.tables.clone(),
         // TODO: add imported external types to mems
@@ -334,18 +335,39 @@ fn create_context(module_src: &Module) -> ValidationContext {
     }
 }
 
-fn create_sub_context(module_src: &Module) -> ValidationContext {
+fn get_func_types(module_src: &Module, externals: &Vec<ExternalDependency>) -> Vec<FuncType> {
+    let mut external_func_types: Vec<FuncType> = externals
+        .iter()
+        .filter_map(|external| {
+            if let ExternalDependency::Func { func_type, .. } = external {
+                Some(func_type.clone())
+            } else {
+                None
+            }
+        })
+        .collect();
+    let module_func_types: Vec<FuncType> = module_src
+        .funcs
+        .iter()
+        .map(|idx| module_src.types[idx.0 .0 as usize].clone())
+        .collect();
+
+    external_func_types.extend_from_slice(&module_func_types);
+
+    external_func_types
+}
+
+fn create_sub_context(
+    module_src: &Module,
+    externals: &Vec<ExternalDependency>,
+) -> ValidationContext {
     ValidationContext {
         globals: module_src
             .globals
             .iter()
             .map(|g| g.global_type.clone())
             .collect(),
-        funcs: module_src
-            .funcs
-            .iter()
-            .map(|idx| module_src.types[idx.0 .0 as usize].clone())
-            .collect(),
+        funcs: get_func_types(module_src, externals),
         // TODO: collect function indexes wherever they occur in the module, but skip its own functions and a start function
         refs: vec![],
         ..Default::default()

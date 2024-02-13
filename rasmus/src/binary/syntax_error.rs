@@ -17,7 +17,5 @@ pub enum SyntaxError {
     InvalidElementSegmentModuleSection,
     InvalidDatasModuleSection,
     InvalidDataCountModuleSection,
-    InvalidVectorLen,
-    UnexpectedModuleSectionId,
     DataCountDoesntMatchDataLen,
 }

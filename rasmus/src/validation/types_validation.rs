@@ -46,6 +46,17 @@ pub fn is_memory_type_valid(memory_type: &MemType) -> bool {
 
 pub fn validate_func_type(ctx: &ValidationContext, func_type: &TypeIdx) -> ValidationResult<()> {
     let func_idx = func_type.0 .0 as usize;
+    ctx.types
+        .get(func_idx)
+        .ok_or(ValidationError::FuncTypeNotFound { func_idx })
+        .map(|_| ())
+}
+
+pub fn validate_export_func_type(
+    ctx: &ValidationContext,
+    func_type: &FuncIdx,
+) -> ValidationResult<()> {
+    let func_idx = func_type.0 .0 as usize;
     ctx.funcs
         .get(func_idx)
         .ok_or(ValidationError::FuncTypeNotFound { func_idx })

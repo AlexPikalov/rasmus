@@ -7,7 +7,7 @@ use super::export::{ExportInst, ExternVal};
 use super::func::{FuncInst, FuncInstLocal, HostCode, HostFunc};
 use super::global::GlobalInst;
 use super::memory::MemInst;
-use super::module::ModuleInst;
+use super::module::{ExternalDependency, ModuleInst};
 use super::ref_inst::RefInst;
 use super::table::TableInst;
 use super::value::Val;
@@ -275,7 +275,7 @@ impl Store {
     pub fn allocate_module(
         &mut self,
         module: &Module,
-        extern_vals: Vec<ExternVal>,
+        extern_vals: &Vec<ExternalDependency>,
         mut globals: Vec<Val>,
         mut refs: Vec<Vec<RefInst>>,
     ) -> RResult<Rc<RefCell<ModuleInst>>> {
@@ -306,7 +306,7 @@ impl Store {
         module_inst
             .tableaddrs
             .extend(extern_vals.iter().filter_map(|v| match v {
-                ExternVal::Table(addr) => Some(addr),
+                ExternalDependency::Table { table_addr, .. } => Some(*table_addr),
                 _ => None,
             }));
 
@@ -324,7 +324,7 @@ impl Store {
         module_inst
             .memaddrs
             .extend(extern_vals.iter().filter_map(|v| match v {
-                ExternVal::Mem(addr) => Some(addr),
+                ExternalDependency::Mem { mem_addr, .. } => Some(*mem_addr),
                 _ => None,
             }));
 
@@ -339,7 +339,7 @@ impl Store {
         module_inst
             .globaladdrs
             .extend(extern_vals.iter().filter_map(|v| match v {
-                ExternVal::Global(addr) => Some(addr),
+                ExternalDependency::Global { global_addr, .. } => Some(*global_addr),
                 _ => None,
             }));
 
@@ -368,7 +368,7 @@ impl Store {
             .borrow_mut()
             .funcaddrs
             .extend(extern_vals.iter().filter_map(|v| match v {
-                ExternVal::Func(addr) => Some(addr),
+                ExternalDependency::Func { func_addr, .. } => Some(*func_addr),
                 _ => None,
             }));
 

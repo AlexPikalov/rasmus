@@ -1,0 +1,2 @@
+[dependencies]
+lib = "./rasmums/test/files/factorial-lib.wat"

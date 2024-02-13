@@ -24,6 +24,26 @@ pub struct ModuleInst {
     pub start: Option<StartType>,
 }
 
+#[derive(Debug)]
+pub enum ExternalDependency {
+    Func {
+        func_addr: FuncAddr,
+        func_type: FuncType,
+    },
+    Table {
+        table_addr: TableAddr,
+        table_type: TableType,
+    },
+    Mem {
+        mem_addr: MemAddr,
+        mem_type: MemType,
+    },
+    Global {
+        global_addr: GlobalAddr,
+        global_type: GlobalType,
+    },
+}
+
 // Takes module declaration type,
 // creates following inputs for module allocation
 // - externals
@@ -35,9 +55,10 @@ impl ModuleInst {
         store: &mut Store,
         stack: &mut Stack,
         module: &Module,
-        externals: Vec<ExportInst>,
+        // externals: Vec<ExportInst>,
+        externals: Vec<ExternalDependency>,
     ) -> RResult<Rc<RefCell<Self>>> {
-        if !module.is_valid() {
+        if !module.is_valid(&externals) {
             return Err(Trap);
         }
 
@@ -45,8 +66,8 @@ impl ModuleInst {
             types: module.types.clone(),
             globaladdrs: externals
                 .iter()
-                .filter_map(|external| match external.value {
-                    ExternVal::Global(a) => Some(a),
+                .filter_map(|external| match external {
+                    ExternalDependency::Global { global_addr, .. } => Some(*global_addr),
                     _ => None,
                 })
                 .collect(),
@@ -103,12 +124,12 @@ impl ModuleInst {
             return Err(Trap);
         }
 
-        let globals = externals
-            .iter()
-            .map(|export_inst| export_inst.value.clone())
-            .collect();
+        // let globals = externals
+        //     .iter()
+        //     .map(|export_inst| export_inst.value.clone())
+        //     .collect();
 
-        let module_inst_rc = store.allocate_module(&module, globals, vals, refs_refs)?;
+        let module_inst_rc = store.allocate_module(&module, &externals, vals, refs_refs)?;
 
         stack.push_entry(StackEntry::Frame(Frame {
             module: module_inst_rc.clone(),

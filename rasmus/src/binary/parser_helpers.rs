@@ -49,41 +49,6 @@ macro_rules! impl_read_unsigned_leb128 {
 impl_read_unsigned_leb128!(read_u32_leb128, u32);
 impl_read_unsigned_leb128!(read_u64_leb128, u64);
 
-macro_rules! impl_read_signed_leb128 {
-    ($fn_name:ident, $int_ty:ty) => {
-        #[inline]
-        pub fn $fn_name(slice: &[u8], position: &mut usize) -> $int_ty {
-            let mut result = 0;
-            let mut shift = 0;
-            let mut byte;
-
-            loop {
-                byte = slice[*position];
-                *position += 1;
-                result |= <$int_ty>::from(byte & 0x7F) << shift;
-                shift += 7;
-
-                if (byte & 0x80) == 0 {
-                    break;
-                }
-            }
-
-            if (shift < <$int_ty>::BITS) && ((byte & 0x40) != 0) {
-                // sign extend
-                result |= !0 << shift;
-            }
-
-            result
-        }
-    };
-}
-
-impl_read_signed_leb128!(read_i16_leb128, i16);
-impl_read_signed_leb128!(read_i32_leb128, i32);
-impl_read_signed_leb128!(read_i64_leb128, i64);
-impl_read_signed_leb128!(read_i128_leb128, i128);
-impl_read_signed_leb128!(read_isize_leb128, isize);
-
 // impl_read_signed_leb128 with 33 bytes and i64 as container type
 pub fn read_s33_leb128(slice: &[u8], position: &mut usize) -> i64 {
     let mut result = 0;
@@ -138,11 +103,6 @@ where
     T: ParseWithNom,
 {
     T::parse(bytes)
-}
-
-const fn max_leb128_len<T>() -> usize {
-    // The longest LEB128 encoding for an integer uses 7 bits per byte.
-    (std::mem::size_of::<T>() * 8 + 6) / 7
 }
 
 #[macro_export]

@@ -1,4 +1,4 @@
-use crate::validation::module::validate;
+use crate::{instances::module::ExternalDependency, validation::module::validate};
 
 pub use super::instructions::*;
 use super::types::*;
@@ -22,8 +22,8 @@ impl Module {
     pub const MAGIC: [u8; 4] = [0x00, 0x61, 0x73, 0x6D];
     pub const VERSION: [u8; 4] = [0x01, 0x00, 0x00, 0x00];
 
-    pub fn is_valid(&self) -> bool {
-        match validate(&self) {
+    pub fn is_valid(&self, externals: &Vec<ExternalDependency>) -> bool {
+        match validate(&self, externals) {
             Err(validation_error) => {
                 println!("Invalid module. Validation error {validation_error:?}");
                 false
@@ -165,14 +165,6 @@ impl ElementSegmentType {
     }
 
     pub fn get_init(&self) -> &Vec<ExpressionType> {
-        unimplemented!()
-    }
-
-    pub fn get_offset(&self) -> &ExpressionType {
-        unimplemented!()
-    }
-
-    pub fn get_table_idx(&self) -> TableIdx {
         unimplemented!()
     }
 }

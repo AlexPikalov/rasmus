@@ -11,7 +11,7 @@ impl UserInput {
         UserInput {
             source_file_path: args
                 .nth(1)
-                .unwrap_or("./rasmus/tests/files/factorial.wasm".into()),
+                .unwrap_or("./rasmus/tests/files/factorial-main.wasm".into()),
         }
     }
 }

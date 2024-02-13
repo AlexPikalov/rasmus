@@ -39,10 +39,18 @@ pub fn run_func(
         }
     };
 
-    let return_arity = module
-        .types
+    let func_addr = module_inst
+        .borrow()
+        .funcaddrs
         .get(func_idx.0 .0 as usize)
         .ok_or(Trap)?
+        .clone();
+
+    let return_arity = store
+        .funcs
+        .get(func_addr)
+        .ok_or(Trap)?
+        .get_type()
         .results
         .len();
 
