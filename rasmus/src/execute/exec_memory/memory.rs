@@ -4,7 +4,6 @@ use crate::{
     address::{DataAddr, MemAddr},
     execute::exec_const::i32_const,
     instances::{
-        data,
         stack::{Stack, StackEntry},
         store::Store,
         value::Val,

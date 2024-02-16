@@ -183,6 +183,7 @@ impl ValidationType {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_ref(&self) -> bool {
         match self {
             ValidationType::Known(val) => val == &VType::Ref,

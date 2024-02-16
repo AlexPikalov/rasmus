@@ -13,8 +13,8 @@ use crate::instances::{
 use super::as_float_trait::AsFloat;
 use super::as_signed_trait::AsSigned;
 use super::exec_binop::{
-    fadd, fdiv, fmul, fsub, iadd_32, iadd_64, iand, iandnot, imul_16, imul_32, imul_64, imul_8,
-    ior, ishr_s_32, isub_32, isub_64, ixor, max, min,
+    fadd, fdiv, fmul, fsub, iadd_32, iadd_64, iand, iandnot, imul_16, imul_32, imul_64, ior,
+    ishr_s_32, isub_32, isub_64, ixor, max, min,
 };
 use super::exec_vector::{
     to_lanes_16x8, to_lanes_32x4, to_lanes_64x2, to_lanes_8x16, vec_from_lanes,

@@ -1,10 +1,5 @@
-use std::fmt::Binary;
-
 use crate::{
-    execute::{
-        as_signed_trait::AsSigned,
-        exec_binop::{imul_16, imul_32, imul_64},
-    },
+    execute::exec_binop::{imul_16, imul_32, imul_64},
     instances::{
         stack::{Stack, StackEntry},
         value::Val,
@@ -12,7 +7,7 @@ use crate::{
     result::{RResult, Trap},
 };
 
-use super::{to_lanes_16x8, to_lanes_32x4, to_lanes_64x2, to_lanes_8x16, vec_from_lanes, Half};
+use super::{to_lanes_16x8, to_lanes_32x4, to_lanes_8x16, vec_from_lanes, Half};
 
 pub fn i16x8_extmul_half_i8x16(stack: &mut Stack, half: Half, is_signed: bool) -> RResult<()> {
     let lanes_1 = to_lanes_8x16(stack.pop_v128().ok_or(Trap)?);

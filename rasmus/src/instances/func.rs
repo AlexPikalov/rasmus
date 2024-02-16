@@ -86,7 +86,7 @@ pub struct HostFunc {
 }
 
 impl HostFunc {
-    pub fn invoke(&self, stack: &mut Stack, store: &mut Store) -> RResult<ExitType> {
+    pub fn invoke(&self, _stack: &mut Stack, _store: &mut Store) -> RResult<ExitType> {
         todo!()
     }
 }

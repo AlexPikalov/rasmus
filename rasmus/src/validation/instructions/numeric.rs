@@ -115,6 +115,7 @@ pub fn f64_relop(val_stack: &mut ValidationStack) -> ValidationResult<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn i64_to_i32_cvtop(val_stack: &mut ValidationStack) -> ValidationResult<()> {
     val_stack.pop_val_expect(ValidationType::i64())?;
     val_stack.push_val(ValidationType::i32());

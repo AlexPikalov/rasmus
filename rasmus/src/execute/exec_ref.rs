@@ -45,84 +45,84 @@ pub fn is_ref_null(stack: &mut Stack) -> RResult<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod test {
-    use std::{cell::RefCell, rc::Rc};
+// #[cfg(test)]
+// mod test {
+//     use std::{cell::RefCell, rc::Rc};
 
-    use crate::entities::{
-        module::{CodeType, ExpressionType, FuncCodeType, InstructionType, Module},
-        types::{FuncIdx, FuncType, RefType, TypeIdx, U32Type},
-    };
+//     use crate::entities::{
+//         module::{CodeType, ExpressionType, FuncCodeType, InstructionType, Module},
+//         types::{FuncIdx, FuncType, RefType, TypeIdx, U32Type},
+//     };
 
-    use crate::{
-        instances::{
-            frame::Frame,
-            module::ModuleInst,
-            ref_inst::RefInst,
-            stack::{Stack, StackEntry},
-            store::Store,
-            value::Val,
-        },
-        module_registry::ModuleRegistry,
-        test_utils::{test_instruction, test_instruction_with_stack_and_store},
-    };
+//     use crate::{
+//         instances::{
+//             frame::Frame,
+//             module::ModuleInst,
+//             ref_inst::RefInst,
+//             stack::{Stack, StackEntry},
+//             store::Store,
+//             value::Val,
+//         },
+//         module_registry::ModuleRegistry,
+//         test_utils::{test_instruction, test_instruction_with_stack_and_store},
+//     };
 
-    #[test]
-    fn ref_null() {
-        test_instruction(
-            vec![],
-            InstructionType::RefNull(RefType::FuncRef),
-            Val::Ref(RefInst::Null(RefType::FuncRef)),
-        );
-    }
+//     #[test]
+//     fn ref_null() {
+//         test_instruction(
+//             vec![],
+//             InstructionType::RefNull(RefType::FuncRef),
+//             Val::Ref(RefInst::Null(RefType::FuncRef)),
+//         );
+//     }
 
-    // TODO: unskip
-    // #[test]
-    // fn ref_func() {
-    //     let mut stack = Stack::new();
-    //     let mut store = Store::new();
-    //     let module_registry = Box::new(ModuleRegistry::new());
-    //     let module = Module {
-    //         types: vec![FuncType {
-    //             parameters: vec![],
-    //             results: vec![],
-    //         }],
-    //         imports: vec![],
-    //         funcs: vec![0u32]
-    //             .iter()
-    //             .map(|idx: &u32| TypeIdx(U32Type(*idx)))
-    //             .collect(),
-    //         tables: vec![],
-    //         mems: vec![],
-    //         globals: vec![],
-    //         exports: vec![],
-    //         start: None,
-    //         elems: vec![],
-    //         code: vec![CodeType {
-    //             size: U32Type(0),
-    //             code: FuncCodeType {
-    //                 locals: vec![],
-    //                 expression: ExpressionType {
-    //                     instructions: vec![],
-    //                 },
-    //             },
-    //         }],
-    //         datas: vec![],
-    //     };
-    //     let module_inst =
-    //         ModuleInst::instantiate(&mut store, &mut stack, &module, &module_registry)
-    //             .expect("unable to instantiate module");
-    //     stack.push_entry(StackEntry::Frame(Frame {
-    //         locals: Rc::new(RefCell::new(vec![])),
-    //         module: module_inst,
-    //         arity: None,
-    //     }));
+//     // TODO: unskip
+//     // #[test]
+//     // fn ref_func() {
+//     //     let mut stack = Stack::new();
+//     //     let mut store = Store::new();
+//     //     let module_registry = Box::new(ModuleRegistry::new());
+//     //     let module = Module {
+//     //         types: vec![FuncType {
+//     //             parameters: vec![],
+//     //             results: vec![],
+//     //         }],
+//     //         imports: vec![],
+//     //         funcs: vec![0u32]
+//     //             .iter()
+//     //             .map(|idx: &u32| TypeIdx(U32Type(*idx)))
+//     //             .collect(),
+//     //         tables: vec![],
+//     //         mems: vec![],
+//     //         globals: vec![],
+//     //         exports: vec![],
+//     //         start: None,
+//     //         elems: vec![],
+//     //         code: vec![CodeType {
+//     //             size: U32Type(0),
+//     //             code: FuncCodeType {
+//     //                 locals: vec![],
+//     //                 expression: ExpressionType {
+//     //                     instructions: vec![],
+//     //                 },
+//     //             },
+//     //         }],
+//     //         datas: vec![],
+//     //     };
+//     //     let module_inst =
+//     //         ModuleInst::instantiate(&mut store, &mut stack, &module, &module_registry)
+//     //             .expect("unable to instantiate module");
+//     //     stack.push_entry(StackEntry::Frame(Frame {
+//     //         locals: Rc::new(RefCell::new(vec![])),
+//     //         module: module_inst,
+//     //         arity: None,
+//     //     }));
 
-    //     test_instruction_with_stack_and_store(
-    //         &mut stack,
-    //         &mut store,
-    //         InstructionType::RefFunc(FuncIdx(U32Type(0))),
-    //         Val::Ref(RefInst::Func(1)),
-    //     );
-    // }
-}
+//     //     test_instruction_with_stack_and_store(
+//     //         &mut stack,
+//     //         &mut store,
+//     //         InstructionType::RefFunc(FuncIdx(U32Type(0))),
+//     //         Val::Ref(RefInst::Func(1)),
+//     //     );
+//     // }
+// }

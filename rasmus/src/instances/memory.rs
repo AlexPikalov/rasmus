@@ -12,6 +12,7 @@ impl MemInst {
     pub const PAGE_SIZE: usize = 2usize.pow(16);
 
     #[inline]
+    #[allow(dead_code)]
     pub fn grow(&mut self, n_val: &Val) -> RResult<()> {
         if let Val::I32(n) = n_val {
             return self.grow_n(*n);

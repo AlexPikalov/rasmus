@@ -1,6 +1,6 @@
 use crate::entities::{
     instructions::InstructionType,
-    types::{LocalIdx, MemType, RefType, TableType},
+    types::{MemType, RefType, TableType},
 };
 
 use super::validation_stack::ValidationType;
@@ -8,8 +8,6 @@ use super::validation_stack::ValidationType;
 // TODO: try to add more debugging information to each option
 #[derive(Debug, PartialEq)]
 pub enum ValidationError {
-    WrongInstructionSequence,
-    NoLocalFound(LocalIdx),
     InsufficientOperandStackForInstruction,
     CannotFindRefFuncInValidationContext,
     LaneIndexIsOutOfRange {
@@ -20,7 +18,6 @@ pub enum ValidationError {
     InvalidSelectVecOperandSequence,
     // When branches are neither both numbers nor both vectors
     InvalidSelectBranchTypes,
-    InvalidSelectTypeSequenceLength,
     LocalNotFound,
     GlobalNotFound,
     UnableToSetToConstGlobal,
@@ -36,7 +33,6 @@ pub enum ValidationError {
     LaneIdxTooBix,
     DataNotFound,
     TypeNotFound,
-    InconsistentBlocktype,
     ControlFrameNotFound,
     FrameNotFound,
     UnexpectedType {
@@ -48,7 +44,6 @@ pub enum ValidationError {
         expected: RefType,
     },
     NotConsistentArity,
-    UnknownReturnType,
     ReturnNotFoundInContext,
     FuncTypeNotFound {
         func_idx: usize,
@@ -61,7 +56,6 @@ pub enum ValidationError {
     InvalidMemoryType {
         memory_type: MemType,
     },
-    InvalidGlobalInit,
     InvalidStartFunctionType,
     NonConstantInstruction {
         instruction: InstructionType,

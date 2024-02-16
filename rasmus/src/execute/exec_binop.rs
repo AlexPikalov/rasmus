@@ -252,10 +252,10 @@ pub fn isub_64(a: u64, b: u64) -> RResult<u64> {
     Ok(((a as u128) + base - (b as u128)).rem_euclid(base) as u64)
 }
 
-pub fn imul_8(a: u8, b: u8) -> u8 {
-    let base = 2u128.pow(8);
-    ((a as u128) * (b as u128)).rem_euclid(base) as u8
-}
+// pub fn imul_8(a: u8, b: u8) -> u8 {
+//     let base = 2u128.pow(8);
+//     ((a as u128) * (b as u128)).rem_euclid(base) as u8
+// }
 
 pub fn imul_16(a: u16, b: u16) -> u16 {
     let base = 2u128.pow(16);
@@ -375,15 +375,15 @@ where
     Ok(lhs ^ rhs)
 }
 
-pub fn bitselect<T>(first: T, second: T, third: T) -> RResult<T>
-where
-    T: ::std::ops::Not<Output = T>
-        + ::std::ops::BitAnd<Output = T>
-        + ::std::ops::BitOr<Output = T>
-        + ::std::marker::Copy,
-{
-    Ok((first & third) | (second & !third))
-}
+// pub fn bitselect<T>(first: T, second: T, third: T) -> RResult<T>
+// where
+//     T: ::std::ops::Not<Output = T>
+//         + ::std::ops::BitAnd<Output = T>
+//         + ::std::ops::BitOr<Output = T>
+//         + ::std::marker::Copy,
+// {
+//     Ok((first & third) | (second & !third))
+// }
 
 pub fn ishl_32(lhs: u32, rhs: u32) -> RResult<u32> {
     let k = rhs.rem_euclid(32);

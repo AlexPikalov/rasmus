@@ -8,12 +8,9 @@ use crate::{
             ElementSegmentType, ExportDescription, ExportType, Global, ImportDescription,
             ImportType, Module, StartType,
         },
-        types::{
-            FuncIdx, FuncType, GlobalType, MemType, MutType, NumType, RefType, ResultType,
-            TableType, TypeIdx, ValType, VecType,
-        },
+        types::{FuncIdx, FuncType, MemType, MutType, NumType, ResultType, TableType, ValType},
     },
-    instances::{export::ExportInst, module::ExternalDependency},
+    instances::module::ExternalDependency,
     validation::{validation_error::ValidationError, validation_stack::ValidationStack},
 };
 

@@ -25,6 +25,7 @@ pub fn test_instruction(
     }
 }
 
+#[allow(dead_code)]
 pub fn test_instruction_with_stack_and_store(
     stack: &mut Stack,
     store: &mut Store,

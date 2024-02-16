@@ -256,7 +256,7 @@ pub fn memory_init(
 }
 
 pub fn data_drop(
-    val_stack: &mut ValidationStack,
+    _val_stack: &mut ValidationStack,
     ctx: &ValidationContext,
     data_idx: &DataIdx,
 ) -> ValidationResult<()> {

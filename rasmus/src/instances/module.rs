@@ -8,7 +8,7 @@ use crate::execute::{execute_expression, execute_instruction};
 use crate::instances::{frame::Frame, stack::Stack, stack::StackEntry, store::Store};
 use crate::result::{RResult, Trap};
 
-use super::export::{ExportInst, ExternVal};
+use super::export::ExportInst;
 use super::value::Val;
 
 #[derive(Debug, Default)]

@@ -11,7 +11,6 @@ mod controller;
 mod entities;
 mod execute;
 mod instances;
-mod module;
 mod module_registry;
 mod result;
 pub mod sign;

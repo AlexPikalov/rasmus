@@ -1,5 +1,5 @@
 use crate::{
-    entities::{instructions::BlockInstructionType, types::ValType},
+    entities::types::ValType,
     validation::{
         validation_error::{ValidationError, ValidationResult},
         validation_stack::{ValidationStack, ValidationType},

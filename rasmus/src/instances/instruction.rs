@@ -1,25 +1,6 @@
 use crate::entities::traits::AsSigned;
 
-use super::label::LabelInst;
-use super::ref_inst::RefInst;
-use super::stack::StackEntry;
-use super::value::Val;
-use super::{frame::Frame, stack::Stack};
-use crate::{
-    address::{ExternAddr, FuncAddr},
-    result::{RResult, Trap},
-};
-
-#[derive(Debug)]
-pub enum InstructionInst {
-    Trap,
-    Ref(FuncAddr),
-    RefExtern(ExternAddr),
-    Invoke(FuncAddr),
-    Label(LabelInst),
-    Frame(Frame),
-    End,
-}
+use crate::result::RResult;
 
 #[macro_export]
 macro_rules! binop {

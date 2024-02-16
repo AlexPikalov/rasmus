@@ -4,10 +4,8 @@ use crate::{
     address::{ElemAddr, TableAddr},
     execute::exec_const::i32_const,
     instances::{
-        ref_inst::RefInst,
         stack::{Stack, StackEntry},
         store::Store,
-        table::TableInst,
         value::Val,
     },
     result::{RResult, Trap},

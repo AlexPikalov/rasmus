@@ -67,12 +67,6 @@ impl Module {
 
 pub type SectionIdValue = Byte;
 
-pub struct Section<T> {
-    pub section_id: SectionId,
-    pub size: U32Type,
-    pub cont: T,
-}
-
 #[derive(Debug, PartialEq)]
 pub enum SectionId {
     Custom,

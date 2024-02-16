@@ -32,7 +32,7 @@ pub fn table_set(
     }
 
     val_stack.pop_val_expect(ValidationType::i32())?;
-    val_stack.pop_val_expect(ValidationType::reference());
+    val_stack.pop_val_expect(ValidationType::reference())?;
 
     Ok(())
 }

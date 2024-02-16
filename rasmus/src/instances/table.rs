@@ -13,6 +13,7 @@ impl TableInst {
     pub const MAX_TABLE_SIZE: usize = 2usize.pow(32);
 
     #[inline]
+    #[allow(dead_code)]
     pub fn grow(&mut self, n_val: &Val, reference: RefInst) -> RResult<()> {
         if let Val::I32(n) = n_val {
             return self.grow_n(*n, reference);

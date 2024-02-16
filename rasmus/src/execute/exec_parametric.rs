@@ -23,6 +23,6 @@ pub fn exec_select(stack: &mut Stack) -> RResult<()> {
     Ok(())
 }
 
-pub fn exec_select_vec(stack: &mut Stack, vector: &Vec<ValType>) -> RResult<()> {
+pub fn exec_select_vec(_stack: &mut Stack, _vector: &Vec<ValType>) -> RResult<()> {
     todo!()
 }

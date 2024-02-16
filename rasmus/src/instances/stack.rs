@@ -11,6 +11,7 @@ pub enum StackEntry {
 }
 
 impl StackEntry {
+    #[allow(dead_code)]
     pub fn is_value(&self) -> bool {
         match self {
             StackEntry::Value(_) => true,
@@ -40,10 +41,6 @@ pub struct Stack {
 impl Stack {
     pub fn new() -> Self {
         Stack { stack: vec![] }
-    }
-
-    pub fn snapshot(&self) -> Vec<StackEntry> {
-        self.stack.clone()
     }
 
     pub fn pop(&mut self) -> Option<StackEntry> {
